@@ -55,13 +55,26 @@ void DatasetCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		String::Utf8Value value(isolate, arg);
 		//printf("V8Logged: PixelEngine.Dataset(%s) is called. \n", *value ) ;
 		//cout<<"tempdata ok"<<endl; 
+
+		//attach tiledata to Dataset
 		Local<ArrayBuffer> arrbuff = ArrayBuffer::New(isolate, g_tempdata.data() , g_tempdata.size() * sizeof(short));
 		Local<Int16Array>  shtarr  = Int16Array::New(arrbuff, 0, g_tempdata.size());
-
 		Local<Object> dsobj = Object::New( isolate ) ;
 		dsobj->CreateDataProperty( isolate->GetCurrentContext() ,
 			String::NewFromUtf8(isolate, "tiledata").ToLocalChecked() ,
             shtarr);
+
+		//attach forEachPixel function object to Dataset
+		v8::Local<v8::Value> forPixelFuncObj = context->Global()->Get(context ,
+			 v8::String::NewFromUtf8( isolate, "forEachPixelFunction").ToLocalChecked()).ToLocalChecked();
+		Maybe<bool> attachPixelFuncOk = dsobj->Set( isolate->GetCurrentContext() ,
+			String::NewFromUtf8(isolate, "forEachPixel").ToLocalChecked(),
+			forPixelFuncObj  ) ;
+		if( attachPixelFuncOk.IsNothing() )
+		{
+			cout<<"failed to attach forEachPixel."<<endl;
+		}
+
 		//printf("set ok.\n") ;
   		args.GetReturnValue().Set(dsobj);
 
@@ -100,10 +113,27 @@ bool PixelEngine::Initialize()
 	global->Set(String::NewFromUtf8(GetIsolate(), "PixelEngine").ToLocalChecked() ,
               pixelengineObj );
 
+
 	v8::Local<v8::Context> context = Context::New(GetIsolate(), NULL, global);//make local context and pass in global object
-	m_context.Reset(GetIsolate(), context);//persisit local context
+	//m_context.Reset(GetIsolate(), context);//persisit local context
 	 
 	Context::Scope context_scope(context);//switch to this context do something.
+
+	//forEachPixel function
+	v8::Local<v8::String> sourceForEachPixel = v8::String::NewFromUtf8(GetIsolate(), "var forEachPixelFunction=function( pixelFunction ){log('inside forEachPixelFunction');var nband = 5 ;var width = 1024 ;var height = 1024 ;var asize = width*height ;var pxvalues = new Int16Array(nband) ;var outarr = new Int16Array(width*height) ;for(var i = 0 ; i<asize ; ++i  ){for(var ib = 0 ; ib <nband ; ++ib ){pxvalues[ib] = this.tiledata[i*nband+ib] ;}outarr[i] = pixelFunction( pxvalues , i );}return outarr ;}").ToLocalChecked();
+    v8::Local<v8::Script> scriptForEachPixel = v8::Script::Compile(context, sourceForEachPixel).ToLocalChecked();
+    v8::TryCatch tryCatch(GetIsolate());
+    v8::MaybeLocal<v8::Value> resultForEachPixel = scriptForEachPixel->Run(context);
+    if (resultForEachPixel.IsEmpty()) {
+        v8::String::Utf8Value e(GetIsolate(), tryCatch.Exception());
+        std::cerr << "Exception: " << *e << std::endl;
+        return false ;
+    } else {
+        v8::String::Utf8Value r(GetIsolate(), resultForEachPixel.ToLocalChecked());
+        std::cout << *r << std::endl;
+    }
+    v8::Local<v8::Value> forPixelFuncObj = context->Global()->Get(context , v8::String::NewFromUtf8(GetIsolate(), "forEachPixelFunction").ToLocalChecked()).ToLocalChecked();
+    m_context.Reset(GetIsolate(), context);//persisit local context
 
 	return true ;
 }
@@ -153,14 +183,33 @@ int main()
 		PixelEngine.log("this is pixelengine.");
 		var ds1 = PixelEngine.Dataset("fy3d");
 		var sum = 0 ;
-		function pixelfunction(pxval){var t2=0; if(pxval>255){ t2=(pxval/Math.cos(0.5) -500)/(pxval/Math.cos(0.5)+500) ;}else{ t2=(pxval/Math.cos(0.6) -500)/(pxval/Math.cos(0.6)+500) ;}   return t2; }
+		var pixelfunction = function(pxval,index){var t2=0; if(pxval[0]>255){ t2=(pxval[0]/Math.cos(0.5) -500)/(pxval[0]/Math.cos(0.5)+500) ;}else{ t2=(pxval[0]/Math.cos(0.6) -500)/(pxval[0]/Math.cos(0.6)+500) ;}   return t2; }
+		var pixelfunction2 = function(pxval,index){var t2=0; if(pxval[0]>255){ t2=(pxval[0]/Math.cos(0.5) -500)/(pxval[0]/Math.cos(0.5)+500) ;}else{ t2=(pxval[0]/Math.cos(0.6) -500)/(pxval[0]/Math.cos(0.6)+500) ;}   return t2+pxval[0]; }
 		var tdata = ds1.tiledata ;
+		var outdata0 = new Int16Array(1024*1024);
+		var pxvals = new Int16Array(5);
 		for(var i = 0 ; i<1024*1024;++i )
 		{
-			sum += pixelfunction( tdata[i]) ;
+			for( var ib = 0 ; ib<5 ; ++ ib )
+			{
+				pxvals[ib] = tdata[i*5+ib];
+			}
+			outdata0[i] = pixelfunction2( pxvals ,i) ;
 		}
-		log(sum); )" ;
+		log('outdata0:' + outdata0[1]) ;
+		 )" ;
 
+	string js_source2 = R"(
+		log("hello"); 
+		PixelEngine.log("this is pixelengine. test2");
+		var ds1 = PixelEngine.Dataset("fy3d");
+		var sum = 0 ;
+		var pixelfunction = function(pxval,index){var t2=0; if(pxval[0]>255){ t2=(pxval[0]/Math.cos(0.5) -500)/(pxval[0]/Math.cos(0.5)+500) ;}else{ t2=(pxval[0]/Math.cos(0.6) -500)/(pxval[0]/Math.cos(0.6)+500) ;}   return t2; }
+		var pixelfunction2 = function(pxval,index){var t2=0; if(pxval[0]>255){ t2=(pxval[0]/Math.cos(0.5) -500)/(pxval[0]/Math.cos(0.5)+500) ;}else{ t2=(pxval[0]/Math.cos(0.6) -500)/(pxval[0]/Math.cos(0.6)+500) ;}   return t2+pxval[0]; }
+		var sum2 = 0 ;
+		var outdata2 = ds1.forEachPixel( pixelfunction2 ) ;
+		log('outdata2:' + outdata2[1]) ;
+		 )" ;
 
 	for(int i = 0 ; i< g_tempdata.size() ; ++ i )
 	{
@@ -194,10 +243,21 @@ int main()
 	for(int i = 0 ; i<5 ; ++ i )
 	{
 		unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		pe.ExecuteScript( js_source2) ;
+		unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();			
+		cout<<"dura2 : "<<now1-now<<endl ;
+	}
+
+	for(int i = 0 ; i<5 ; ++ i )
+	{
+		unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		pe.ExecuteScript( js_source) ;
 		unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();			
 		cout<<"dura : "<<now1-now<<endl ;
 	}
+
+
+	
 
 	 
 	return 0;
