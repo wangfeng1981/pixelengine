@@ -9,10 +9,14 @@
 #include <stdexcept>
 #include <memory>
 #include <iostream>
+#include <ctime>
+#include <chrono>
+
 
 using namespace v8;
 using namespace std;
 
+const int PIXELENGINE_DATETIME_CURRENT = -1 ;
 
 void LogCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
   if (args.Length() < 1) return;
@@ -22,7 +26,51 @@ void LogCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
   Local<Value> arg = args[0];
   String::Utf8Value value(isolate, arg);
   printf("V8Logged: %s\n", *value ) ;
+
 }
+
+struct PEDataset
+{
+	int dataType ;//1 - byte , 3 - short
+	int width ;
+	int height ;
+	vector<unsigned char> tiledata ;
+} ;
+
+// PixelEngine.Dataset( strTableName, intDatetime, bandindices ) ;
+// e.g. PixelEngine.Dataset("fy3d" , 20190601 , [0,1,2,3] );
+// e.g. PixelEngine.Dataset("fy3d" , PixelEngine.Current() , [0,1,2,3] );
+// PixelEngine.Dataset( strTableName ) ;// get current datetime with all bands
+vector<short> g_tempdata(1024*1024*5) ;
+void DatasetCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+	if (args.Length() == 1 || args.Length() == 3 )
+	{//ok
+		Isolate* isolate = args.GetIsolate();
+		HandleScope scope(isolate);
+		Local<Context> context( isolate->GetCurrentContext() );
+		//v8::Local<v8::Context> context = v8::Context::New(isolate, nullptr);
+		//Context::Scope context_scope(context);
+
+		Local<Value> arg = args[0];
+		String::Utf8Value value(isolate, arg);
+		//printf("V8Logged: PixelEngine.Dataset(%s) is called. \n", *value ) ;
+		//cout<<"tempdata ok"<<endl; 
+		Local<ArrayBuffer> arrbuff = ArrayBuffer::New(isolate, g_tempdata.data() , g_tempdata.size() * sizeof(short));
+		Local<Int16Array>  shtarr  = Int16Array::New(arrbuff, 0, g_tempdata.size());
+
+		Local<Object> dsobj = Object::New( isolate ) ;
+		dsobj->CreateDataProperty( isolate->GetCurrentContext() ,
+			String::NewFromUtf8(isolate, "tiledata").ToLocalChecked() ,
+            shtarr);
+		//printf("set ok.\n") ;
+  		args.GetReturnValue().Set(dsobj);
+
+	}else
+	{
+		return ;
+	}
+}
+
 
 struct PixelEngine 
 {
@@ -33,8 +81,6 @@ struct PixelEngine
 	Global<Context> m_context ;
 	bool Initialize();
 	bool ExecuteScript(string cscript) ;
-
-
 } ;
 
 bool PixelEngine::Initialize()
@@ -44,6 +90,16 @@ bool PixelEngine::Initialize()
   	global->Set(String::NewFromUtf8(GetIsolate(), "log").ToLocalChecked() ,
               FunctionTemplate::New(GetIsolate(), LogCallback));// global object bind cpp function to js 'log' function.
 
+
+  	Local<ObjectTemplate> pixelengineObj = ObjectTemplate::New( GetIsolate() ) ;
+  	pixelengineObj->Set(String::NewFromUtf8(GetIsolate(), "log").ToLocalChecked() ,
+              FunctionTemplate::New(GetIsolate(), LogCallback));
+  	pixelengineObj->Set(String::NewFromUtf8(GetIsolate(), "Dataset").ToLocalChecked() ,
+              FunctionTemplate::New(GetIsolate(), DatasetCallback));
+  	// set ( name , value )
+	global->Set(String::NewFromUtf8(GetIsolate(), "PixelEngine").ToLocalChecked() ,
+              pixelengineObj );
+
 	v8::Local<v8::Context> context = Context::New(GetIsolate(), NULL, global);//make local context and pass in global object
 	m_context.Reset(GetIsolate(), context);//persisit local context
 	 
@@ -52,15 +108,15 @@ bool PixelEngine::Initialize()
 	return true ;
 }
 
-bool PixelEngine::ExecuteScript( string cstring ) {
+bool PixelEngine::ExecuteScript( string cscript ) {
   HandleScope handle_scope(GetIsolate());
   TryCatch try_catch(GetIsolate());
   //Local<Context> context = Context::New( GetIsolate() );
   Local<Context> context = Local<Context>::New( GetIsolate(), m_context);
   Context::Scope context_scope(context);	
- 
-  string ss2 = "log(\"hello\");" ;
-  Local<String> script =  String::NewFromUtf8( GetIsolate() , ss2.c_str(),
+ //var ds1 = PixelEngine.Dataset(\"fy3d\"); log(ds1.tiledata[999]); 
+  //string ss2 = "log(\"hello\"); PixelEngine.log(\"this is pixelengine.\");var ds1 = PixelEngine.Dataset(\"fy3d\");  log(ds1.tiledata[999]); " ;
+  Local<String> script =  String::NewFromUtf8( GetIsolate() , cscript.c_str(),
 					 NewStringType::kNormal).ToLocalChecked();
   Local<Script> compiled_script;
   // Compile the script and check for errors.
@@ -92,10 +148,27 @@ bool PixelEngine::ExecuteScript( string cstring ) {
 
 int main()
 {
-	std::string js_source = R"(
-		log(\"start....\") ;
+	std::string js_source =  R"(
+		log("hello"); 
+		PixelEngine.log("this is pixelengine.");
+		var ds1 = PixelEngine.Dataset("fy3d");
+		var sum = 0 ;
+		function pixelfunction(pxval){var t2=0; if(pxval>255){ t2=(pxval/Math.cos(0.5) -500)/(pxval/Math.cos(0.5)+500) ;}else{ t2=(pxval/Math.cos(0.6) -500)/(pxval/Math.cos(0.6)+500) ;}   return t2; }
+		var tdata = ds1.tiledata ;
+		for(var i = 0 ; i<1024*1024;++i )
+		{
+			sum += pixelfunction( tdata[i]) ;
+		}
+		log(sum); )" ;
 
-	)";
+
+	for(int i = 0 ; i< g_tempdata.size() ; ++ i )
+	{
+		g_tempdata[i] = i % 1024 ;
+	}
+
+		//function pixelfunction(pxval){var t2=0; if(pxval>255){ t2=(pxval/Math.cos(0.5) -500)/(pxval/Math.cos(0.5)+500) ;}else{ t2=(pxval/Math.cos(0.6) -500)/(pxval/Math.cos(0.6)+500) ;}   return t2; }
+  
 	
 
 	v8::V8::InitializeICUDefaultLocation(".");
@@ -117,7 +190,15 @@ int main()
 
 	PixelEngine pe(isolate) ;
 	pe.Initialize() ;
-	pe.ExecuteScript( js_source) ;
+
+	for(int i = 0 ; i<5 ; ++ i )
+	{
+		unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		pe.ExecuteScript( js_source) ;
+		unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();			
+		cout<<"dura : "<<now1-now<<endl ;
+	}
+
 	 
 	return 0;
 }
