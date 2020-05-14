@@ -17,6 +17,8 @@ using namespace v8;
 using namespace std;
 
 const int PIXELENGINE_DATETIME_CURRENT = -1 ;
+vector<short> g_tempdata ;
+
 
 void LogCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
   if (args.Length() < 1) return;
@@ -26,6 +28,38 @@ void LogCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
   Local<Value> arg = args[0];
   String::Utf8Value value(isolate, arg);
   printf("V8Logged: %s\n", *value ) ;
+}
+
+
+// iband , vmin , vmax , nodata , nodataColor[0,0,0,0]
+void Dataset_RenderGray_Callback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  if (args.Length() != 5 ) return;
+  Isolate* isolate = args.GetIsolate();
+  HandleScope scope(isolate);
+  Local<Context> context( isolate->GetCurrentContext() ) ;
+
+  Local<Value> v8_iband = args[0];
+  Local<Value> v8_vmin = args[1] ;
+  Local<Value> v8_vmax = args[2] ;
+  Local<Value> v8_nodata = args[3] ;
+  Local<Value> v8_nodatacolor = args[4] ;
+
+  int iband = v8_iband->ToInteger(context).ToLocalChecked()->Value() ;
+  int vmin = v8_vmin->ToInteger(context).ToLocalChecked()->Value() ;
+  int vmax = v8_vmax->ToInteger(context).ToLocalChecked()->Value() ;
+  int nodata = v8_nodata->ToInteger(context).ToLocalChecked()->Value() ;
+
+  int nodataColor[] = {0,0,0,0} ;
+  nodataColor[0] = v8_nodatacolor->ToObject(context).ToLocalChecked()->Get(context,0).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+  nodataColor[1] = v8_nodatacolor->ToObject(context).ToLocalChecked()->Get(context,1).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+  nodataColor[2] = v8_nodatacolor->ToObject(context).ToLocalChecked()->Get(context,2).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+  nodataColor[3] = v8_nodatacolor->ToObject(context).ToLocalChecked()->Get(context,3).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+
+  cout<<"iband "<<iband<<endl ;
+  cout<<"vmin "<<vmin<<endl; 
+  cout<<"vmax "<<vmax<<endl ;
+  cout<<"nodata "<<nodata<<endl ;
+  cout<<"ndcolor "<<nodataColor[0] << " "<<nodataColor[1]<<" "<<nodataColor[2]<<" "<<nodataColor[3]<<endl ;
 
 }
 
@@ -35,13 +69,14 @@ struct PEDataset
 	int width ;
 	int height ;
 	vector<unsigned char> tiledata ;
+
+
 } ;
 
 // PixelEngine.Dataset( strTableName, intDatetime, bandindices ) ;
 // e.g. PixelEngine.Dataset("fy3d" , 20190601 , [0,1,2,3] );
 // e.g. PixelEngine.Dataset("fy3d" , PixelEngine.Current() , [0,1,2,3] );
 // PixelEngine.Dataset( strTableName ) ;// get current datetime with all bands
-vector<short> g_tempdata(1024*1024*5) ;
 void DatasetCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (args.Length() == 1 || args.Length() == 3 )
 	{//ok
@@ -80,7 +115,39 @@ void DatasetCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 	}else
 	{
-		return ;
+		Isolate* isolate = args.GetIsolate();
+		HandleScope scope(isolate);
+		Local<Context> context( isolate->GetCurrentContext() );
+
+		//attach tiledata
+		Local<Object> dsobj = Object::New( isolate ) ;
+		dsobj->CreateDataProperty( isolate->GetCurrentContext() ,
+			String::NewFromUtf8(isolate, "tiledata").ToLocalChecked() ,
+            Null(isolate) );
+
+		//attach forEachPixel function object to Dataset
+		v8::Local<v8::Value> forPixelFuncObj = context->Global()->Get(context ,
+			 v8::String::NewFromUtf8( isolate, "forEachPixelFunction").ToLocalChecked()).ToLocalChecked();
+		Maybe<bool> attachPixelFuncOk = dsobj->Set( isolate->GetCurrentContext() ,
+			String::NewFromUtf8(isolate, "forEachPixel").ToLocalChecked(),
+			forPixelFuncObj  ) ;
+		if( attachPixelFuncOk.IsNothing() )
+		{
+			cout<<"failed to attach forEachPixel."<<endl;
+		}
+
+		//attach RenderGray function
+  		MaybeLocal<Function> renderGrayFunc = Function::New( context ,Dataset_RenderGray_Callback ) ;
+  		Maybe<bool> renderGrayOk = dsobj->Set( isolate->GetCurrentContext(),
+  				String::NewFromUtf8( isolate, "RenderGray").ToLocalChecked() , 
+  				renderGrayFunc.ToLocalChecked() );//  
+		if( renderGrayOk.IsNothing() )
+		{
+			cout<<"failed to attach RenderGray."<<endl;
+		}
+
+		//printf("set ok.\n") ;
+  		args.GetReturnValue().Set(dsobj);
 	}
 }
 
@@ -120,7 +187,7 @@ bool PixelEngine::Initialize()
 	Context::Scope context_scope(context);//switch to this context do something.
 
 	//forEachPixel function
-	v8::Local<v8::String> sourceForEachPixel = v8::String::NewFromUtf8(GetIsolate(), "var forEachPixelFunction=function( pixelFunction ){log('inside forEachPixelFunction');var nband = 5 ;var width = 1024 ;var height = 1024 ;var asize = width*height ;var pxvalues = new Int16Array(nband) ;var outarr = new Int16Array(width*height) ;for(var i = 0 ; i<asize ; ++i  ){for(var ib = 0 ; ib <nband ; ++ib ){pxvalues[ib] = this.tiledata[i*nband+ib] ;}outarr[i] = pixelFunction( pxvalues , i );}return outarr ;}").ToLocalChecked();
+	v8::Local<v8::String> sourceForEachPixel = v8::String::NewFromUtf8(GetIsolate(), "var forEachPixelFunction=function( pixelFunction ){log('inside forEachPixelFunction');var nband = 5 ;var width = 1024 ;var height = 1024 ;var asize = width*height ;var pxvalues = new Int16Array(nband) ;var outarr = new Int16Array(width*height) ;for(var i = 0 ; i<asize ; ++i  ){for(var ib = 0 ; ib <nband ; ++ib ){pxvalues[ib] = this.tiledata[i*nband+ib] ;}outarr[i] = pixelFunction( pxvalues , i );} var dsout = PixelEngine.Dataset() ; dsout.tiledata = outarr ; return dsout ;}").ToLocalChecked();
     v8::Local<v8::Script> scriptForEachPixel = v8::Script::Compile(context, sourceForEachPixel).ToLocalChecked();
     v8::TryCatch tryCatch(GetIsolate());
     v8::MaybeLocal<v8::Value> resultForEachPixel = scriptForEachPixel->Run(context);
@@ -168,7 +235,7 @@ bool PixelEngine::ExecuteScript( string cscript ) {
     return false;
   }
   String::Utf8Value res(GetIsolate(), result);
-  cout<< *res <<endl ;
+  cout<< "script result: " << *res <<endl ;
 
   return true;
 }
@@ -178,47 +245,49 @@ bool PixelEngine::ExecuteScript( string cscript ) {
 
 int main()
 {
-	std::string js_source =  R"(
-		log("hello"); 
-		PixelEngine.log("this is pixelengine.");
-		var ds1 = PixelEngine.Dataset("fy3d");
-		var sum = 0 ;
-		var pixelfunction = function(pxval,index){var t2=0; if(pxval[0]>255){ t2=(pxval[0]/Math.cos(0.5) -500)/(pxval[0]/Math.cos(0.5)+500) ;}else{ t2=(pxval[0]/Math.cos(0.6) -500)/(pxval[0]/Math.cos(0.6)+500) ;}   return t2; }
-		var pixelfunction2 = function(pxval,index){var t2=0; if(pxval[0]>255){ t2=(pxval[0]/Math.cos(0.5) -500)/(pxval[0]/Math.cos(0.5)+500) ;}else{ t2=(pxval[0]/Math.cos(0.6) -500)/(pxval[0]/Math.cos(0.6)+500) ;}   return t2+pxval[0]; }
-		var tdata = ds1.tiledata ;
-		var outdata0 = new Int16Array(1024*1024);
-		var pxvals = new Int16Array(5);
-		for(var i = 0 ; i<1024*1024;++i )
-		{
-			for( var ib = 0 ; ib<5 ; ++ ib )
-			{
-				pxvals[ib] = tdata[i*5+ib];
-			}
-			outdata0[i] = pixelfunction2( pxvals ,i) ;
-		}
-		log('outdata0:' + outdata0[1]) ;
-		 )" ;
-
-	string js_source2 = R"(
-		log("hello"); 
-		PixelEngine.log("this is pixelengine. test2");
-		var ds1 = PixelEngine.Dataset("fy3d");
-		var sum = 0 ;
-		var pixelfunction = function(pxval,index){var t2=0; if(pxval[0]>255){ t2=(pxval[0]/Math.cos(0.5) -500)/(pxval[0]/Math.cos(0.5)+500) ;}else{ t2=(pxval[0]/Math.cos(0.6) -500)/(pxval[0]/Math.cos(0.6)+500) ;}   return t2; }
-		var pixelfunction2 = function(pxval,index){var t2=0; if(pxval[0]>255){ t2=(pxval[0]/Math.cos(0.5) -500)/(pxval[0]/Math.cos(0.5)+500) ;}else{ t2=(pxval[0]/Math.cos(0.6) -500)/(pxval[0]/Math.cos(0.6)+500) ;}   return t2+pxval[0]; }
-		var sum2 = 0 ;
-		var outdata2 = ds1.forEachPixel( pixelfunction2 ) ;
-		log('outdata2:' + outdata2[1]) ;
-		 )" ;
-
-	for(int i = 0 ; i< g_tempdata.size() ; ++ i )
+	const int testDataShortSize = 512*512*6 ;
+	const int testDataByteSize = testDataShortSize*2 ;
+	
+	//load test data fy3d 512x512x6 short , BIP order
 	{
-		g_tempdata[i] = i % 1024 ;
+		vector<short> testTileData( testDataShortSize ) ;
+		FILE* pf = fopen("/home/hadoop/tempdata/fy3d512bip","rb") ;
+		if( pf==0)
+		{
+			cout<<"error : failed to open test file."<<endl ;
+			return 1;
+		}
+		fread( testTileData.data() , 1 , testDataByteSize , pf ) ;
+		fclose(pf) ;
+		g_tempdata.resize( testDataShortSize ) ;
+		for(int i = 0 ; i<testDataShortSize ; ++ i )
+		{
+			g_tempdata[i] = testTileData[i] ;
+		}
+		cout<<"load data ok."<<endl ;
 	}
 
-		//function pixelfunction(pxval){var t2=0; if(pxval>255){ t2=(pxval/Math.cos(0.5) -500)/(pxval/Math.cos(0.5)+500) ;}else{ t2=(pxval/Math.cos(0.6) -500)/(pxval/Math.cos(0.6)+500) ;}   return t2; }
-  
-	
+	std::string js_ndviscript =  R"(
+		function pemain() {
+			var ndvifunction = function(pxvalues , index )
+			{
+				var ndvi = 0.0 ;
+				if( pxvalues[0] > 0 )
+				{
+					ndvi = (pxvalues[3]-pxvalues[2])/(pxvalues[3]+pxvalues[2])*10000 ;
+				}else
+				{
+					ndvi = -9999 ;
+				}
+				return ndvi ;
+			};
+
+			var fy3ds = PixelEngine.Dataset("fy3d") ;
+			var ndvids = fy3ds.forEachPixel( ndvifunction ) ;
+			return ndvids.RenderGray(0 , 0 , 10000 , -9999 , [0,0,0,255]) ;
+		}
+		pemain() ;
+		)" ;
 
 	v8::V8::InitializeICUDefaultLocation(".");
 	v8::V8::InitializeExternalStartupData(".");
@@ -233,31 +302,16 @@ int main()
 	Isolate::Scope isolate_scope(isolate);
 	HandleScope scope(isolate);
 
-	
-	//String::New(js_source.c_str(), js_source.size());
-	Local<String> source = String::NewFromUtf8( isolate, js_source.c_str()).ToLocalChecked();
-
 	PixelEngine pe(isolate) ;
 	pe.Initialize() ;
 
-	for(int i = 0 ; i<5 ; ++ i )
+	for(int i = 0 ; i<1 ; ++ i )
 	{
 		unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-		pe.ExecuteScript( js_source2) ;
+		pe.ExecuteScript( js_ndviscript) ;
 		unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();			
 		cout<<"dura2 : "<<now1-now<<endl ;
 	}
-
-	for(int i = 0 ; i<5 ; ++ i )
-	{
-		unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-		pe.ExecuteScript( js_source) ;
-		unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();			
-		cout<<"dura : "<<now1-now<<endl ;
-	}
-
-
-	
 
 	 
 	return 0;
