@@ -1,0 +1,1 @@
+测试对象绑定方法和属性，测试PixelEngine全局对象实现方式，测试PixelEngine.Dataset实现方式。

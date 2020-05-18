@@ -18,6 +18,109 @@ using namespace std;
 
 const int PIXELENGINE_DATETIME_CURRENT = -1 ;
 vector<short> g_tempdata ;
+vector<unsigned char> g_outimage  ;
+
+struct PEDataset
+{
+	int dataType ;//1 - byte , 3 - short
+	int width ;
+	int height ;
+	int nband ;
+	vector<unsigned char> tiledata ;
+	Local<Value> Pack() ;
+
+	inline ~PEDataset() { printf("PEDataset destroyed.");};
+} ;
+
+Local<Value> PEDataset::Pack(Isolate* isolate) 
+{
+	HandleScope scope( isolate ) ;
+	Local<Context> context( isolate->GetCurrentContext() ) ;
+	
+
+}
+
+// PixelEngine.Dataset( strTableName, intDatetime, bandindices ) ;
+// e.g. PixelEngine.Dataset("fy3d" , 20190601 , [0,1,2,3] );
+// e.g. PixelEngine.Dataset("fy3d" , PixelEngine.Current() , [0,1,2,3] );
+// PixelEngine.Dataset( strTableName ) ;// get current datetime with all bands
+void DatasetCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
+	if (args.Length() == 1 || args.Length() == 3 )
+	{//ok
+		Isolate* isolate = args.GetIsolate();
+		HandleScope scope(isolate);
+		Local<Context> context( isolate->GetCurrentContext() );
+		//v8::Local<v8::Context> context = v8::Context::New(isolate, nullptr);
+		//Context::Scope context_scope(context);
+
+		Local<Value> arg = args[0];
+		String::Utf8Value value(isolate, arg);
+		//printf("V8Logged: PixelEngine.Dataset(%s) is called. \n", *value ) ;
+		//cout<<"tempdata ok"<<endl; 
+
+		//attach tiledata to Dataset
+		Local<ArrayBuffer> arrbuff = ArrayBuffer::New(isolate, g_tempdata.data() , g_tempdata.size() * sizeof(short));
+		Local<Int16Array>  shtarr  = Int16Array::New(arrbuff, 0, g_tempdata.size());
+		Local<Object> dsobj = Object::New( isolate ) ;
+		dsobj->CreateDataProperty( isolate->GetCurrentContext() ,
+			String::NewFromUtf8(isolate, "tiledata").ToLocalChecked() ,
+            shtarr);
+
+		//attach forEachPixel function object to Dataset
+		v8::Local<v8::Value> forPixelFuncObj = context->Global()->Get(context ,
+			 v8::String::NewFromUtf8( isolate, "forEachPixelFunction").ToLocalChecked()).ToLocalChecked();
+		Maybe<bool> attachPixelFuncOk = dsobj->Set( isolate->GetCurrentContext() ,
+			String::NewFromUtf8(isolate, "forEachPixel").ToLocalChecked(),
+			forPixelFuncObj  ) ;
+		if( attachPixelFuncOk.IsNothing() )
+		{
+			cout<<"failed to attach forEachPixel."<<endl;
+		}
+
+		//printf("set ok.\n") ;
+  		args.GetReturnValue().Set(dsobj);
+
+	}else
+	{
+		Isolate* isolate = args.GetIsolate();
+		HandleScope scope(isolate);
+		Local<Context> context( isolate->GetCurrentContext() );
+
+		//attach tiledata
+		Local<Object> dsobj = Object::New( isolate ) ;
+		dsobj->CreateDataProperty( isolate->GetCurrentContext() ,
+			String::NewFromUtf8(isolate, "tiledata").ToLocalChecked() ,
+            Null(isolate) );
+
+		//attach forEachPixel function object to Dataset
+		v8::Local<v8::Value> forPixelFuncObj = context->Global()->Get(context ,
+			 v8::String::NewFromUtf8( isolate, "forEachPixelFunction").ToLocalChecked()).ToLocalChecked();
+		Maybe<bool> attachPixelFuncOk = dsobj->Set( isolate->GetCurrentContext() ,
+			String::NewFromUtf8(isolate, "forEachPixel").ToLocalChecked(),
+			forPixelFuncObj  ) ;
+		if( attachPixelFuncOk.IsNothing() )
+		{
+			cout<<"failed to attach forEachPixel."<<endl;
+		}
+
+		//attach RenderGray function
+  		MaybeLocal<Function> renderGrayFunc = Function::New( context ,Dataset_RenderGray_Callback ) ;
+  		Maybe<bool> renderGrayOk = dsobj->Set( isolate->GetCurrentContext(),
+  				String::NewFromUtf8( isolate, "RenderGray").ToLocalChecked() , 
+  				renderGrayFunc.ToLocalChecked() );//  
+		if( renderGrayOk.IsNothing() )
+		{
+			cout<<"failed to attach RenderGray."<<endl;
+		}
+
+		//printf("set ok.\n") ;
+  		args.GetReturnValue().Set(dsobj);
+	}
+}
+
+
+
+
 
 
 void LogCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -31,7 +134,8 @@ void LogCallback(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 
-// iband , vmin , vmax , nodata , nodataColor[0,0,0,0]
+// render single band to gray image
+// params: iband , vmin , vmax , nodata , nodataColor[0,0,0,0]
 void Dataset_RenderGray_Callback(const v8::FunctionCallbackInfo<v8::Value>& args) {
   if (args.Length() != 5 ) return;
   Isolate* isolate = args.GetIsolate();
@@ -61,17 +165,61 @@ void Dataset_RenderGray_Callback(const v8::FunctionCallbackInfo<v8::Value>& args
   cout<<"nodata "<<nodata<<endl ;
   cout<<"ndcolor "<<nodataColor[0] << " "<<nodataColor[1]<<" "<<nodataColor[2]<<" "<<nodataColor[3]<<endl ;
 
+  Local<Object> thisobj =  args.This() ;
+  //get tiledata pointer
+  MaybeLocal<Value> tiledata0 = thisobj->Get( context , String::NewFromUtf8(isolate,"tiledata").ToLocalChecked() ) ;
+  if( tiledata0.IsEmpty() )
+  {
+  	cout<<"tiledata0 is empty."<<endl ; 
+  	return ;
+  }else
+  {
+  	//cout<<"tiledata0 is ok"<<endl ;
+  	Local<Value> tiledata1 = tiledata0.ToLocalChecked() ;
+  	bool isab = tiledata1->IsArrayBuffer() ;
+  	bool isi16array = tiledata1->IsInt16Array() ;
+  	//cout<<"is ab:"<<isab<<"  ,  is int16array "<<isi16array<<endl ;
+  	ArrayBufferView* tiledataABV = ArrayBufferView::Cast( *tiledata1 ) ;
+  	Local<ArrayBuffer> tiledataAB = tiledataABV->Buffer() ;
+  	std::shared_ptr< BackingStore > tiledataBackStore = tiledataAB->GetBackingStore() ;
+  	short* tiledataRawMem = (short*) tiledataBackStore->Data() ;
+  	int tiledataRawByteLen = tiledataBackStore->ByteLength() ;
+  	//cout<<"tiledata back store byte len:"<<tiledataRawByteLen<<endl ;
+  	int asize = 512*512 ;
+  	int bandoffset = asize * iband ;
+  	g_outimage.resize(asize) ;
+  	for(int it = 0 ; it < asize ; ++ it )
+  	{
+  		short pxval = tiledataRawMem[bandoffset+it];
+  		if( pxval  == nodata )
+  		{
+  			g_outimage[it+0] = nodataColor[0];
+  			g_outimage[it+1] = nodataColor[1]; 
+  			g_outimage[it+2] = nodataColor[2]; 
+  			g_outimage[it+3] = nodataColor[3]; 
+  		}else
+  		{
+  			if( pxval < vmin ) pxval = vmin ;
+  			else if( pxval > vmax ) pxval = vmax ;
+  			unsigned char c = (pxval - vmin)*255.0f/(vmax-vmin) ;
+  			g_outimage[it+0] = c;
+  			g_outimage[it+1] = c; 
+  			g_outimage[it+2] = c; 
+  			g_outimage[it+3] = c; 
+  		}
+  	}
+
+  }
+
 }
 
-struct PEDataset
-{
-	int dataType ;//1 - byte , 3 - short
-	int width ;
-	int height ;
-	vector<unsigned char> tiledata ;
 
 
-} ;
+
+
+
+
+
 
 // PixelEngine.Dataset( strTableName, intDatetime, bandindices ) ;
 // e.g. PixelEngine.Dataset("fy3d" , 20190601 , [0,1,2,3] );
@@ -187,7 +335,7 @@ bool PixelEngine::Initialize()
 	Context::Scope context_scope(context);//switch to this context do something.
 
 	//forEachPixel function
-	v8::Local<v8::String> sourceForEachPixel = v8::String::NewFromUtf8(GetIsolate(), "var forEachPixelFunction=function( pixelFunction ){log('inside forEachPixelFunction');var nband = 5 ;var width = 1024 ;var height = 1024 ;var asize = width*height ;var pxvalues = new Int16Array(nband) ;var outarr = new Int16Array(width*height) ;for(var i = 0 ; i<asize ; ++i  ){for(var ib = 0 ; ib <nband ; ++ib ){pxvalues[ib] = this.tiledata[i*nband+ib] ;}outarr[i] = pixelFunction( pxvalues , i );} var dsout = PixelEngine.Dataset() ; dsout.tiledata = outarr ; return dsout ;}").ToLocalChecked();
+	v8::Local<v8::String> sourceForEachPixel = v8::String::NewFromUtf8(GetIsolate(), "var forEachPixelFunction=function( pixelFunction ){log('inside forEachPixelFunction');var nband = 6 ;var width = 512 ;var height = 512 ;var asize = width*height ;var pxvalues = new Int16Array(nband) ;var outarr = new Int16Array(width*height) ;for(var i = 0 ; i<asize ; ++i  ){for(var ib = 0 ; ib <nband ; ++ib ){pxvalues[ib] = this.tiledata[i+ib*asize] ;}outarr[i] = pixelFunction( pxvalues , i );} var dsout = PixelEngine.Dataset() ; dsout.tiledata = outarr ; return dsout ;}").ToLocalChecked();
     v8::Local<v8::Script> scriptForEachPixel = v8::Script::Compile(context, sourceForEachPixel).ToLocalChecked();
     v8::TryCatch tryCatch(GetIsolate());
     v8::MaybeLocal<v8::Value> resultForEachPixel = scriptForEachPixel->Run(context);
