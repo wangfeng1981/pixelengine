@@ -1,2 +1,19 @@
-测试v8 ObjectTemplate里面Internal中封装c++指针是否可以随着js对象释放，或者需要
-c++自己负责该指针的释放操作。
+test for create PixelEngine API:
+
+//global
+PixelEngine = {} ; c++ Object::New , bind in js
+RawDatasetCallBack(dt,w,h,nband); c++ FunctionTemplate , bind in js
+RenderGrayCallBack() ;
+var PixelEngine_Dataset_ForEachPixelFunction=function(pxfunc){
+  
+  var rawds = RawDatasetCallBack() ;
+  rawds.renderGray = 
+};
+
+var dataset = PixelEngine.Dataset( tablename, datetime , bands) ; c++ bind in js
+var dataset = PixelEngine.Dataset( dt , w , h , nband ) ; c++ bind in js
+PixelEngine.Log(...) ; c++ bind in js
+
+
+Dataset = {} ; 
+
