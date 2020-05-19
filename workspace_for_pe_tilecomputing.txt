@@ -1,1 +1,3 @@
 A WorkSpace for tile computing
+
+ssh://git@git.piesat.cn:27022/QXYG/product/v/pixengine_bd/wangfeng_dq_projects/PixelEngine_TileCompute.git
