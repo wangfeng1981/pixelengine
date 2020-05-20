@@ -18,16 +18,16 @@
 using namespace v8;
 using namespace std;
 
-
- 
-Global<ObjectTemplate> PEDatasetTemplate ;
-Global<Value> PEDatasetForEachPixelFunction;
+//PixelEngine
+extern void GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ; 
+extern void GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 
 //Dataset methods:
 Global<Value> GlobalFunc_ForEachPixelCallBack ;
 extern void GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 extern void GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 extern void GlobalFunc_FillRangeCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+extern void GlobalFunc_RenderRGBCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 
 //global methods:
 extern void GlobalFunc_Log(const v8::FunctionCallbackInfo<v8::Value>& args) ;
@@ -44,7 +44,27 @@ struct PixelEngine
 
 	static vector<int> GetColorRamp(int colorid,int inverse=0) ;
 	static void Value2Color(int valx,float K,int nodata,int* nodataColor,int vmin,int interpol,vector<int>& colorRamp,int ncolor,unsigned char& rr,unsigned char& rg,unsigned char& rb,unsigned char& ra );
+	static void ColorReverse(vector<int>& colors) ;
 } ;
+
+void PixelEngine::ColorReverse(vector<int>& colors) 
+{
+	int nc = colors.size()/3 ;
+	int hnc = nc/2 ;
+	int r ,g , b ;
+	for(int i = 0 ; i<hnc ; ++ i )
+	{
+		r = colors[i*3] ;
+		g = colors[i*3+1] ;
+		b = colors[i*3+2] ;
+		colors[i*3] = colors[(nc-1-i)*3] ;
+		colors[i*3+1] = colors[(nc-1-i)*3+1] ;
+		colors[i*3+2] = colors[(nc-1-i)*3+2] ;
+		colors[(nc-1-i)*3]=r ;
+		colors[(nc-1-i)*3+1]=g;
+		colors[(nc-1-i)*3+2]=b ;
+	}
+}
 
 vector<int> PixelEngine::GetColorRamp(int colorid,int inverse) 
 {
@@ -55,7 +75,7 @@ vector<int> PixelEngine::GetColorRamp(int colorid,int inverse)
 		}else
 		{
 			vector<int> v = PixelEngine::ColorRainbow ;
-    		std::reverse(std::begin(v), std::end(v));
+    		PixelEngine::ColorReverse(v);
     		return v ;
 		}
 	}else if( colorid==2 )
@@ -66,7 +86,7 @@ vector<int> PixelEngine::GetColorRamp(int colorid,int inverse)
 		}else
 		{
 			vector<int> v = PixelEngine::ColorBlues ;
-    		std::reverse(std::begin(v), std::end(v));
+    		PixelEngine::ColorReverse(v);
     		return v ;
 		}
 	}else if( colorid==3 ){
@@ -76,7 +96,7 @@ vector<int> PixelEngine::GetColorRamp(int colorid,int inverse)
 		}else
 		{
 			vector<int> v = PixelEngine::ColorReds ;
-    		std::reverse(std::begin(v), std::end(v));
+    		PixelEngine::ColorReverse(v);
     		return v ;
 		}
 	}else if( colorid==4 ){
@@ -86,7 +106,7 @@ vector<int> PixelEngine::GetColorRamp(int colorid,int inverse)
 		}else
 		{
 			vector<int> v = PixelEngine::ColorGreens ;
-    		std::reverse(std::begin(v), std::end(v));
+    		PixelEngine::ColorReverse(v);
     		return v ;
 		}
 	}else
@@ -97,71 +117,74 @@ vector<int> PixelEngine::GetColorRamp(int colorid,int inverse)
 		}else
 		{
 			vector<int> v = PixelEngine::ColorGrays ;
-			std::reverse(std::begin(v), std::end(v));
+			PixelEngine::ColorReverse(v);
 			return v ;
 		}
 	}
 }
 
 vector<int> PixelEngine::ColorRainbow{
-215,25,28
-,232,91,58
-,249,158,89
-,254,201,128
-,255,237,170
-,237,248,185
-,199,233,173
-,157,211,167
-,100,171,176
-,43,131,186
+	215,25,28
+	,232,91,58
+	,249,158,89
+	,254,201,128
+	,255,237,170
+	,237,248,185
+	,199,233,173
+	,157,211,167
+	,100,171,176
+	,43,131,186
 } ;
-vector<int> PixelEngine::ColorBlues{
- 247,251,255
-,226,238,249
-,205,224,242
-,176,210,232
-,137,191,221
-,96,166,210
-,62,142,196
-,33,114,182
-,10,84,158
-,8,48,107
+
+vector<int> PixelEngine::ColorBlues
+{
+	 247,251,255
+	,226,238,249
+	,205,224,242
+	,176,210,232
+	,137,191,221
+	,96,166,210
+	,62,142,196
+	,33,114,182
+	,10,84,158
+	,8,48,107
 } ;
+
 vector<int> PixelEngine::ColorReds{
-255, 245, 240
-,254, 227, 214
-,253, 198, 175
-,252, 164, 134
-,252,146,114
-,251,106,74
-,239,59,44
-,203,24,29
-,165,15,21
-,103,0,13
+	255, 245, 240
+	,254, 227, 214
+	,253, 198, 175
+	,252, 164, 134
+	,252,146,114
+	,251,106,74
+	,239,59,44
+	,203,24,29
+	,165,15,21
+	,103,0,13
 } ;
 vector<int> PixelEngine::ColorGreens{
 	 247,252,245
-,232,246,227
-,208,237,202
-,178,224,171
-,142,209,140
-,102,189,111
-,61,167,90
-,35,140,69
-,3,112,46
-,0,68,27
+	,232,246,227
+	,208,237,202
+	,178,224,171
+	,142,209,140
+	,102,189,111
+	,61,167,90
+	,35,140,69
+	,3,112,46
+	,0,68,27
 } ;
 vector<int> PixelEngine::ColorGrays{
-250,250,250
-,223,223,223
-,196,196,196
-,168,168,168
-,141,141,141
-,114,114,114
-,87,87,87
-,59,59,59
-,32,32,32
-,5,5,5
+	250,250,250
+	,223,223,223
+	,196,196,196
+	,168,168,168
+	,141,141,141
+	,114,114,114
+	,87,87,87
+	,59,59,59
+	,32,32,32
+	,5,5,5
 
 } ;
 
@@ -203,7 +226,9 @@ Local<Object> CPP_NewDataset(Isolate* isolate,Local<Context>& context
 	ds->Set(context
 		,String::NewFromUtf8(isolate, "fillRange").ToLocalChecked(),
             FunctionTemplate::New(isolate, GlobalFunc_FillRangeCallBack)->GetFunction(context).ToLocalChecked() );
-
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "renderRGB").ToLocalChecked(),
+            FunctionTemplate::New(isolate, GlobalFunc_RenderRGBCallBack)->GetFunction(context).ToLocalChecked() );
 	
 
 	ds->Set(context
@@ -365,6 +390,109 @@ void GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& ar
 	//info.GetReturnValue().Set(i16arr);
 	args.GetReturnValue().Set(outds) ;
 }
+
+
+//ri,gi,bi,rmin,rmax,gmin,gmax,bmin,bmax
+void GlobalFunc_RenderRGBCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+{
+	cout<<"inside GlobalFunc_RenderRGBCallBack"<<endl; 
+	if (args.Length() != 9 ){
+		cout<<"Error: args.Length != 9 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	int ri = args[0]->ToInteger(context).ToLocalChecked()->Value();
+	int gi = args[1]->ToInteger(context).ToLocalChecked()->Value();
+	int bi = args[2]->ToInteger(context).ToLocalChecked()->Value();
+
+	int rmin = args[3]->ToInteger(context).ToLocalChecked()->Value();
+	int rmax = args[4]->ToInteger(context).ToLocalChecked()->Value();
+
+	int gmin = args[5]->ToInteger(context).ToLocalChecked()->Value();
+	int gmax = args[6]->ToInteger(context).ToLocalChecked()->Value();
+
+	int bmin = args[7]->ToInteger(context).ToLocalChecked()->Value();
+	int bmax = args[8]->ToInteger(context).ToLocalChecked()->Value();
+
+	Local<Object> thisobj =  args.This() ;
+	int thisDataType = thisobj->Get(context,
+		String::NewFromUtf8(isolate,"dataType").ToLocalChecked())
+		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+	//cout<<"thisDataType "<<thisDataType<<endl;
+
+	int width = thisobj->Get(context,
+		String::NewFromUtf8(isolate,"width").ToLocalChecked())
+		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+	//cout<<"thisDataType "<<thisDataType<<endl;
+
+	int height = thisobj->Get(context,
+		String::NewFromUtf8(isolate,"height").ToLocalChecked())
+		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+	//cout<<"thisDataType "<<thisDataType<<endl;
+
+	int nband = thisobj->Get(context,
+		String::NewFromUtf8(isolate,"nband").ToLocalChecked())
+		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+	//cout<<"thisDataType "<<thisDataType<<endl;
+
+	//output
+	Local<Object> outds = CPP_NewDataset(isolate,context
+		,1
+		,width
+		,height
+		,4 );
+	Local<Value> outDataValue = outds->Get(context,
+		String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
+		.ToLocalChecked() ;
+	Uint8Array* outU8Array = Uint8Array::Cast(*outDataValue) ;
+	unsigned char* outbackData = (unsigned char*) outU8Array->Buffer()->GetBackingStore()->Data() ;
+
+	Local<Value> tiledataValue = thisobj->Get(context,
+		String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
+		.ToLocalChecked() ;
+
+	int asize = width * height ;
+	float rK = 255.f/(rmax-rmin) ;
+	float gK = 255.f/(gmax-gmin) ;
+	float bK = 255.f/(bmax-bmin) ;
+	if( thisDataType==3 )
+	{//short
+		
+		Int16Array* i16Array = Int16Array::Cast(*tiledataValue) ;
+		short* backData = (short*) i16Array->Buffer()->GetBackingStore()->Data() ;
+		short* roffset = backData + ri * asize;
+		short* goffset = backData + gi * asize;
+		short* boffset = backData + bi * asize;
+		for(int it = 0 ; it < asize ; ++ it )
+		{
+			outbackData[it] = min( max( (roffset[it]-rmin) * rK,0.f) ,255.f)  ;
+			outbackData[asize+it] = min( max( (goffset[it]-gmin) * gK,0.f) ,255.f) ;  
+			outbackData[asize*2+it] = min( max( (boffset[it]-bmin) * bK,0.f) ,255.f) ; 
+			outbackData[asize*3+it] = 255 ;
+		}
+	}else
+	{//byte
+		Uint8Array* u8Array = Uint8Array::Cast(*tiledataValue) ;
+		unsigned char* backData = (unsigned char*) u8Array->Buffer()->GetBackingStore()->Data() ;
+		unsigned char* roffset = backData + ri * asize;
+		unsigned char* goffset = backData + gi * asize;
+		unsigned char* boffset = backData + bi * asize;
+		for(int it = 0 ; it < asize ; ++ it )
+		{
+			outbackData[it] = min( max( (roffset[it]-rmin) * rK,0.f) ,255.f)  ;
+			outbackData[asize+it] = min( max( (goffset[it]-gmin) * gK,0.f) ,255.f) ;  
+			outbackData[asize*2+it] = min( max( (boffset[it]-bmin) * bK,0.f) ,255.f) ; 
+			outbackData[asize*3+it] = 255 ;
+		}
+	}
+	
+	//info.GetReturnValue().Set(i16arr);
+	args.GetReturnValue().Set(outds) ;
+}
+
 
 //fill value in the same dataset , not create a new one , no return.
 //iband,vmin,vmax
@@ -602,7 +730,7 @@ void GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallbackInfo<v8::Valu
 	args.GetReturnValue().Set(outds) ;
 }
 
-
+//create an empty Dataset.
 void GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
 	cout<<"inside GlobalFunc_NewDatasetCallBack"<<endl; 
@@ -634,7 +762,83 @@ void GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& ar
 
 	//info.GetReturnValue().Set(i16arr);
 	args.GetReturnValue().Set(ds) ;
+}
 
+
+//create a dataset from name, datetime, bands
+void GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+{
+	cout<<"inside GlobalFunc_DatasetCallBack"<<endl; 
+	if (args.Length() != 3 ){
+		cout<<"Error: args.Length != 3 "<<endl ;
+		return;
+	}
+
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> v8name = args[0];
+	Local<Value> v8datetime = args[1] ;
+	Local<Value> v8bands = args[2] ;
+
+	String::Utf8Value nameutf8( isolate , v8name) ;
+	string name( *nameutf8 ) ;
+
+	String::Utf8Value dtutf8( isolate , v8datetime) ;
+	string datetime( *dtutf8 ) ;
+
+	cout<<name<<","<<datetime<<endl ;
+
+	if( v8bands->IsArray() )
+	{
+		cout<<"v8bands is array"<<endl ;
+	}
+	if( v8bands->IsObject() )
+	{
+		cout<<"v8bands is object"<<endl ;
+	}
+	Array* i32array = Array::Cast(*v8bands) ;
+	int nband = i32array->Length() ;
+
+	cout<<"nband "<<nband<<endl ;
+
+	int dt = 3;
+	int wid = 512 ;
+	int hei = 512 ;
+	int nb0 = 6 ;
+	vector<unsigned char> imgdata(wid*hei*nb0*2) ;
+	{
+		FILE* pf = fopen("/home/hadoop/tempdata/fy3d512bsp","rb") ;
+		fread( imgdata.data() , 1 , wid*hei*nb0*2 , pf) ;
+		fclose(pf) ;
+	}
+
+	Local<Object> ds = CPP_NewDataset( isolate
+		,context
+		,dt
+		,wid
+		,hei
+		,nband );
+	Local<Value> tiledataValue = ds->Get(context,
+		String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
+		.ToLocalChecked() ;
+	Int16Array* i16Array = Int16Array::Cast(*tiledataValue) ;
+	short* backData = (short*) i16Array->Buffer()->GetBackingStore()->Data() ;
+	int asize = wid * hei ;
+	short* indata = (short*) imgdata.data() ;
+	for(int ib = 0 ; ib<nband ; ++ ib )
+	{
+		int ib0 = i32array->Get(context,ib).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+		short* backDataOffset = backData + ib * asize;
+		cout<<"ib,ib0 "<<ib<<","<<ib0<<endl ;
+		for(int it = 0 ;it<asize ; ++ it )
+		{
+			backDataOffset[it] = indata[ib0*asize+it] ;
+		}
+	}
+	//info.GetReturnValue().Set(i16arr);
+	args.GetReturnValue().Set(ds) ;
 }
 
  
@@ -642,6 +846,7 @@ void GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& ar
 void Dataset2Png( Isolate* isolate, Local<Context>& context, Local<Value> dsValue
 	, vector<unsigned char>& retpngbinary )
 {
+	unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	Object* dsObj = Object::Cast(*dsValue) ;
 	int dt = dsObj->Get(context,
 		String::NewFromUtf8(isolate,"dataType").ToLocalChecked())
@@ -663,6 +868,9 @@ void Dataset2Png( Isolate* isolate, Local<Context>& context, Local<Value> dsValu
 	{
 		Uint8Array* u8arr = Uint8Array::Cast(*tiledataValue) ;
 		unsigned char* dataptr = (unsigned char*) u8arr->Buffer()->GetBackingStore()->Data() ;
+		unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	  	printf("get dataptr:%d ms \n", now1 - now);//1024*1024 use 340millisec
+
 		const int imgsize = width * height;
 		vector<unsigned char> rgbadata(imgsize * 4, 0);
 		if( nband==4 )
@@ -693,19 +901,27 @@ void Dataset2Png( Isolate* isolate, Local<Context>& context, Local<Value> dsValu
 				rgbadata[it * 4 + 3] = 255;
 			}
 		}
+		unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	  	printf("forloop png:%d ms \n", now2 - now1);//1024*1024 use 340millisec
+
 		retpngbinary.clear();
+		retpngbinary.reserve(1024*1024*4) ;
 		lodepng::State state; //optionally customize this one
 		state.encoder.filter_palette_zero = 0; //
 		state.encoder.add_id = false; //Don't add LodePNG version chunk to save more bytes
 		state.encoder.text_compression = 1; //
 		state.encoder.zlibsettings.nicematch = 258; //
 		state.encoder.zlibsettings.lazymatching = 1; //
-		state.encoder.zlibsettings.windowsize = 4096; //32768
+		state.encoder.zlibsettings.windowsize = 512; //32768
 		state.encoder.filter_strategy = LFS_ZERO;//{ LFS_ZERO, LFS_MINSUM, LFS_ENTROPY, LFS_BRUTE_FORCE };
 		state.encoder.zlibsettings.minmatch = 3;
 		state.encoder.zlibsettings.btype = 2;
 		state.encoder.auto_convert = 0;
 		unsigned error = lodepng::encode(retpngbinary, rgbadata, width, height, state);
+		
+		unsigned long now3 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	  	printf("encode png:%d ms \n", now3 - now2);//1024*1024 use 340millisec
+
 	}
 }
 
@@ -733,6 +949,10 @@ void initTemplate( Isolate* isolate, Local<Context>& context )
 	pe->Set(context
 		,String::NewFromUtf8(isolate, "NewDataset").ToLocalChecked(),
            FunctionTemplate::New(isolate, GlobalFunc_NewDatasetCallBack)->GetFunction(context).ToLocalChecked() );
+
+	pe->Set(context
+		,String::NewFromUtf8(isolate, "Dataset").ToLocalChecked(),
+           FunctionTemplate::New(isolate, GlobalFunc_DatasetCallBack)->GetFunction(context).ToLocalChecked() );
 
 	//normal/inverse
 	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampNormal").ToLocalChecked(),
@@ -852,11 +1072,8 @@ int main(int argc, char* argv[]) {
       // Create a string containing the JavaScript source code.
 
     	string source = R"(
-    		var ds0 = PixelEngine.NewDataset(3,256,256,6) ; // globalFunc_newDatasetCallBack(3,256,256,6) ;
-    		var ds1 = ds0.forEachPixel(function(pxvals,index){return [pxvals[0]+50,pxvals[1]+100,pxvals[2]+150];}) ;
-    		//ds1.renderGray(2,0,255,-1,[0,0,0,0]) ;
-    		ds1.fillRange(0,0,1000);
-    		ds1.renderPsuedColor(0,0,1000,-1,[0,0,0,0],PixelEngine.ColorRampGreens,PixelEngine.ColorRampNormal,PixelEngine.ColorRampInterpolate);
+    		var ds3 = PixelEngine.Dataset("fy3d","20190601" ,[0,1,2]) ;
+    		ds3.renderRGB(2,1,0,0,5000,0,5000,0,5000) ;
     	)";
        
 

@@ -1,0 +1,2 @@
+TileCompute:TileCompute.cpp
+	g++ -shared -I./ -I/usr/local/jdk1.8.0_192/include -I/usr/local/jdk1.8.0_192/include/linux lodepng.cpp TileCompute.cpp -o libTileCompute.so -fPIC -lpthread -ldl -std=c++0x -O2  

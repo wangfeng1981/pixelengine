@@ -1,0 +1,3 @@
+readme
+
+this program is used to test java call c++, and then c++ call java hbase api, and then return result to java.
