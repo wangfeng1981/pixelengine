@@ -61,3 +61,9 @@ int main()
 
 	return 0 ;	
 }
+
+//iband,vmin,vmax,nodata,nodataColor
+// function main(){
+//  var ds=PixelEngine.Dataset("fy3dtable",20190601,[0,1,2]);
+//  return ds.renderGray(0,0,7000,-9999,[0,0,0,0]);
+//   };

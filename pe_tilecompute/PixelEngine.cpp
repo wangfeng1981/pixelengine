@@ -2,6 +2,7 @@
 #include "PixelEngine.h"
 
 PixelEngine_GetDataFromExternal_FunctionPointer PixelEngine::GetExternalDatasetCallBack = 0 ;
+std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
 /// reverse color ramp
 void PixelEngine::ColorReverse(vector<int>& colors) 
@@ -526,7 +527,7 @@ void PixelEngine::GlobalFunc_FillRangeCallBack(const v8::FunctionCallbackInfo<v8
 /// interpolate RGB of value from ColorRamp
 void PixelEngine::Value2Color(int valx,float K
 	,int nodata,int* nodataColor
-	,int vmin , int interpol
+	,int vmin,int vmax , int interpol
 	,vector<int>& colorRamp , int ncolor
 	,unsigned char& rr 
 	,unsigned char& rg 
@@ -539,6 +540,8 @@ void PixelEngine::Value2Color(int valx,float K
 		ra = nodataColor[3] ;
 	}else
 	{
+		if( valx < vmin ) valx = vmin ;
+		else if( valx>vmax ) valx = vmax ;
 		int dn = (valx-vmin) * K ;
 		float weightHigh = (valx-vmin) * K - dn ;
 		if( dn < 0 )
@@ -664,11 +667,10 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 		Int16Array* i16Array = Int16Array::Cast(*tiledataValue) ;
 		short* backData = (short*) i16Array->Buffer()->GetBackingStore()->Data() ;
 		short* backDataOffset = backData + iband * asize;
-		int tcolor[3] ;
 		for(int it = 0 ; it < asize ; ++ it )
 		{
 			PixelEngine::Value2Color(backDataOffset[it],theK,nodata,nodataColor
-				,vmin,interpol,colorRamp,ncolor,outbackData[it],outbackData[it+asize]
+				,vmin,vmax,interpol,colorRamp,ncolor,outbackData[it],outbackData[it+asize]
 				,outbackData[it+asize*2],outbackData[it+asize*3]) ;
 
 		}
@@ -680,7 +682,7 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 		for(int it = 0 ; it < asize ; ++ it )
 		{
 			PixelEngine::Value2Color(backDataOffset[it],theK,nodata,nodataColor
-				,vmin,interpol,colorRamp,ncolor,outbackData[it],outbackData[it+asize]
+				,vmin,vmax,interpol,colorRamp,ncolor,outbackData[it],outbackData[it+asize]
 				,outbackData[it+asize*2],outbackData[it+asize*3]) ;
 		}
 	}
@@ -777,7 +779,18 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 	int hei = 0 ; 
 	int retnbands = 0 ;
 
-	bool externalOk = PixelEngine::GetExternalDatasetCallBack(name,datetime,wantBands,externalData,
+	Local<Object> global = context->Global() ;
+	Local<Value> peinfo = global->Get( context
+		,String::NewFromUtf8(isolate, "PixelEnginePointer").ToLocalChecked())
+		.ToLocalChecked() ;
+	Object* peinfoObj = Object::Cast( *peinfo ) ;
+	Local<Value> thisPePtrValue = peinfoObj->GetInternalField(0) ;
+	External* thisPePtrEx = External::Cast(*thisPePtrValue);
+
+
+	bool externalOk = PixelEngine::GetExternalDatasetCallBack(
+		thisPePtrEx->Value() ,// pointer to PixelEngine Object.
+		name,datetime,wantBands,externalData,
 		dt,
 		wid,
 		hei,
@@ -935,11 +948,27 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 }
 
 /// init global objects and functions 
-bool PixelEngine::initTemplate( PixelEngine& thePE,Isolate* isolate, Local<Context>& context )
+bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Context>& context )
 {
 	v8::HandleScope handle_scope(isolate);
 
+	//Add a template to hold thePE pointer
+	Local<ObjectTemplate> PixelEnginePointerTemplate=ObjectTemplate::New(isolate) ;
+	PixelEnginePointerTemplate->SetInternalFieldCount(1) ;
+	Local<Object> peinfo = PixelEnginePointerTemplate->NewInstance(context).ToLocalChecked() ;
+	Local<External> thisPePointer = External::New(isolate, thePE);
+	peinfo->SetInternalField( 0,thisPePointer) ;
+
 	Local<Object> global = context->Global() ;
+
+	Maybe<bool> okinfo = global->Set( context
+		,String::NewFromUtf8(isolate, "PixelEnginePointer").ToLocalChecked()
+		,peinfo ) ;// bind PixelEngine
+	if( okinfo.IsNothing() )
+	{
+		cout<<"Error: PixelEnginePointer is nothing."<<endl ;
+	}
+
 	//var PixelEngine = {} ;
 	Local<Object> pe = Object::New(isolate) ;
 
@@ -992,7 +1021,7 @@ bool PixelEngine::initTemplate( PixelEngine& thePE,Isolate* isolate, Local<Conte
 	//set globalFunc_forEachPixelCallBack in javascript
 	string sourceforEachPixelFunction = R"(
 		var globalFunc_forEachPixelCallBack = function(pxfunc){
-			log("inside globalFunc_forEachPixelCallBack") ;
+			
 			var outds = null ; 
 			var outtiledata = null ;
 			var width = this.width ;
@@ -1031,7 +1060,7 @@ bool PixelEngine::initTemplate( PixelEngine& thePE,Isolate* isolate, Local<Conte
     v8::Local<v8::Value> resultForEach = scriptForEach->Run(context).ToLocalChecked();
     Local<Value> forEachFuncInJs = global->Get(context 
     	,String::NewFromUtf8(isolate, "globalFunc_forEachPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;
-    thePE.GlobalFunc_ForEachPixelCallBack.Reset(isolate , forEachFuncInJs) ;
+    thePE->GlobalFunc_ForEachPixelCallBack.Reset(isolate , forEachFuncInJs) ;
 
     //set globalFunc_newDatasetCallBack, this will be called in javascript ForEachPixel.
     global->Set(context
@@ -1045,15 +1074,15 @@ bool PixelEngine::initTemplate( PixelEngine& thePE,Isolate* isolate, Local<Conte
 	return true ;
 }
 
-bool PixelEngine::RunScriptForTile( string& jsSource,int dt,int z,int y,int x, vector<unsigned char>& retbinary) 
+bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,int currentdt,int z,int y,int x, vector<unsigned char>& retbinary) 
 {
 	cout<<"in RunScriptForTile init v8"<<endl;
-	// Initialize V8.
-	v8::V8::InitializeICUDefaultLocation(".");
-	v8::V8::InitializeExternalStartupData(".");
-	std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
-	v8::V8::InitializePlatform(platform.get());
-	v8::V8::Initialize();
+	this->tileInfo.x = x ;
+	this->tileInfo.y = y ;
+	this->tileInfo.z = z ;
+	this->extraPointer = extra ;
+
+	bool allOk = true ;
 
   	// Create a new Isolate and make it the current one.
 	//v8::Isolate::CreateParams create_params;
@@ -1070,7 +1099,7 @@ bool PixelEngine::RunScriptForTile( string& jsSource,int dt,int z,int y,int x, v
 		v8::Local<v8::Context> context = v8::Context::New(this->isolate );
 		// Enter the context for compiling and running the hello world script.
 		v8::Context::Scope context_scope(context);// enter scope
-		PixelEngine::initTemplate( *this , this->isolate , context) ;
+		PixelEngine::initTemplate(  this , this->isolate , context) ;
 		this->m_context.Reset( this->isolate , context);
 		TryCatch try_catch(this->isolate);
 		string source = jsSource + "var PEMainResult=main();" ;
@@ -1082,39 +1111,42 @@ bool PixelEngine::RunScriptForTile( string& jsSource,int dt,int z,int y,int x, v
 			String::Utf8Value error(this->isolate, try_catch.Exception());
 			cout<<"v8 exception:"<<*error<<endl;
 			// The script failed to compile; bail out.
-			return false;
-		}
-
-		
-		unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-		// Run the script to get the result.
-		Local<v8::Value> result ;
-		if (!script->Run(context).ToLocal(&result)) {
-			String::Utf8Value error( this->isolate, try_catch.Exception());
-			cout<<"v8 exception:"<<*error<<endl;
-			// The script failed to compile; bail out.
-			getchar() ;
-			return false;
-		}
-
-		MaybeLocal<Value> peMainResult = context->Global()->Get(context 
-    		,String::NewFromUtf8(isolate, "PEMainResult").ToLocalChecked() ) ;
-		if( peMainResult.IsEmpty() ) //IsNullOrUndefined() )
-		{
-			cout<<"PEMainResult is null or undefined."<<endl ;
+			//return false;
+			allOk = false ;
 		}else
 		{
-			cout<<"in RunScriptForTile 4"<<endl;
-			unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-			printf("script run dura:%d ms \n", now1 - now);//
+			unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			// Run the script to get the result.
+			Local<v8::Value> result ;
+			if (!script->Run(context).ToLocal(&result)) {
+				String::Utf8Value error( this->isolate, try_catch.Exception());
+				cout<<"v8 exception:"<<*error<<endl;
+				// The script failed to compile; bail out.
+				//return false;
+				allOk = false ;
+			}else
+			{
+				MaybeLocal<Value> peMainResult = context->Global()->Get(context 
+		    		,String::NewFromUtf8(isolate, "PEMainResult").ToLocalChecked() ) ;
+				if( peMainResult.IsEmpty() ) //IsNullOrUndefined() )
+				{
+					cout<<"PEMainResult is null or undefined."<<endl ;
+					allOk = false ;
+				}else
+				{
+					cout<<"in RunScriptForTile 4"<<endl;
+					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					printf("script run dura:%d ms \n", now1 - now);//
 
-			//tiledata to png
-			PixelEngine::Dataset2Png( isolate, context, peMainResult.ToLocalChecked()
-				, retbinary );
+					//tiledata to png
+					PixelEngine::Dataset2Png( isolate, context, peMainResult.ToLocalChecked()
+						, retbinary );
 
-			unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-			printf("encode png:%d ms \n", now2 - now1);
-		}		
+					unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					printf("encode png:%d ms \n", now2 - now1);
+				}
+			}
+		}
 	}
 	
 
@@ -1123,17 +1155,20 @@ bool PixelEngine::RunScriptForTile( string& jsSource,int dt,int z,int y,int x, v
 
 	// Dispose the isolate and tear down V8.
 	this->isolate->Dispose();
-	v8::V8::Dispose();
-	v8::V8::ShutdownPlatform();
-	delete create_params.array_buffer_allocator;
+	// v8::V8::Dispose();
+	// v8::V8::ShutdownPlatform();
+	//delete create_params.array_buffer_allocator;
 
-	return true ;
+	return allOk ;
 }
 
 PixelEngine::PixelEngine() 
 {
 	cout<<"PixelEngine()"<<endl;
-	
+	extraPointer = 0 ;
+	this->tileInfo.x = 0 ;
+	this->tileInfo.y = 0 ;
+	this->tileInfo.z = 0 ;
 }
 
 
@@ -1141,4 +1176,16 @@ PixelEngine::~PixelEngine()
 {
 	cout<<"~PixelEngine()"<<endl;
 	
+}
+
+
+void PixelEngine::initV8() 
+{
+	// Initialize V8.
+	cout<<"init v8"<<endl ;
+	v8::V8::InitializeICUDefaultLocation(".");
+	v8::V8::InitializeExternalStartupData(".");
+	v8Platform = v8::platform::NewDefaultPlatform();
+	v8::V8::InitializePlatform(v8Platform.get());
+	v8::V8::Initialize();
 }

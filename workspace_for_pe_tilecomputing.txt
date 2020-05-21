@@ -1,3 +1,9 @@
 A WorkSpace for tile computing
 
-ssh://git@git.piesat.cn:27022/QXYG/product/v/pixengine_bd/wangfeng_dq_projects/PixelEngine_TileCompute.git
+git push ssh://git@git.piesat.cn:27022/QXYG/product/v/pixengine_bd/wangfeng_dq_projects/PixelEngine_TileCompute.git master
+
+
+java.library.path
+/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/build_JNI
+
+-Djava.library.path="/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/build_JNI"

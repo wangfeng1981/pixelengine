@@ -2,6 +2,9 @@
 
 #ifndef PIXEL_ENGINE_H
 
+//must put this before v8.h
+#define V8_COMPRESS_POINTERS  
+
 #include <v8.h>
 #include <libplatform/libplatform.h>
 #include <cstdio>
@@ -18,6 +21,7 @@ using namespace v8;
 using namespace std;
 
 typedef bool (*PixelEngine_GetDataFromExternal_FunctionPointer)(
+		void* pePtr,
 		string ,//name
 		string ,//datetime
 		vector<int>& ,//bands [0,1,2]
@@ -26,6 +30,11 @@ typedef bool (*PixelEngine_GetDataFromExternal_FunctionPointer)(
 		int& wid,//return width
 		int& hei,//return height 
 		int& nbands );//return nbands
+
+struct PixelEngineTileInfo
+{
+	int z,y,x ;
+} ;
 
 struct PixelEngine
 {
@@ -36,7 +45,7 @@ struct PixelEngine
 	static vector<int> ColorGrays  ;//0 and others
 
 	static vector<int> GetColorRamp(int colorid,int inverse=0) ;
-	static void Value2Color(int valx,float K,int nodata,int* nodataColor,int vmin,int interpol,vector<int>& colorRamp,int ncolor,unsigned char& rr,unsigned char& rg,unsigned char& rb,unsigned char& ra );
+	static void Value2Color(int valx,float K,int nodata,int* nodataColor,int vmin,int vmax,int interpol,vector<int>& colorRamp,int ncolor,unsigned char& rr,unsigned char& rg,unsigned char& rb,unsigned char& ra );
 	static void ColorReverse(vector<int>& colors) ;
 
 	//PixelEngine
@@ -55,8 +64,9 @@ struct PixelEngine
 	static void GlobalFunc_Log(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 	static void Dataset2Png( Isolate* isolate, Local<Context>& context, Local<Value> dsValue
 	, vector<unsigned char>& retpngbinary ) ;
-	static bool initTemplate(PixelEngine& thePE,Isolate* isolate, Local<Context>& context );// not static
-
+	static bool initTemplate(PixelEngine* thePE,Isolate* isolate, Local<Context>& context );// not static
+	static void initV8() ;
+	static std::unique_ptr<v8::Platform> v8Platform ;
 
 	//private method
 	static Local<Object> CPP_NewDataset(Isolate* isolate,Local<Context>& context
@@ -69,16 +79,16 @@ struct PixelEngine
 	v8::Isolate* isolate ;
 	v8::Isolate::CreateParams create_params;
 	Global<Context> m_context ;//need Reset
-
+	PixelEngineTileInfo tileInfo ;
+	void* extraPointer ;//do not release.
 
 	Global<Value> GlobalFunc_ForEachPixelCallBack ;//not static, need Reset
 	PixelEngine() ;//one
 	~PixelEngine() ;//three
-	bool RunScriptForTile( string& jsSource,int dt,int z,int y,int x, vector<unsigned char>& retbinary) ;//two
+	bool RunScriptForTile(void* extra,string& jsSource,int dt,int z,int y,int x, vector<unsigned char>& retbinary) ;//two
 
 
 	static PixelEngine_GetDataFromExternal_FunctionPointer GetExternalDatasetCallBack;
-
 
 } ;
 
