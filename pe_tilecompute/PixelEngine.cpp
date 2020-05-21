@@ -1032,6 +1032,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 			var ib = 0 ;
 			var intiledata = this.tiledata ;
 			var outband = 0 ;
+			var isResArray = false;
 			for(var it = 0 ; it<asize ; ++ it )
 			{
 				for(ib=0;ib<nband;++ib)
@@ -1041,14 +1042,31 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 				var res = pxfunc(pxvals,it) ;
 				if( outtiledata==null )
 				{
-					outband = res.length ;
-					outds = globalFunc_newDatasetCallBack(3,width,height,outband) ;
-					outtiledata = outds.tiledata ;
+					if( Array.isArray(res) )
+					{
+						isResArray = true ;
+						outband = res.length ;
+						outds = globalFunc_newDatasetCallBack(3,width,height,outband) ;
+						outtiledata = outds.tiledata ;
+					}else
+					{
+						isResArray = false ;
+						outband = 1 ;
+						outds = globalFunc_newDatasetCallBack(3,width,height,outband) ;
+						outtiledata = outds.tiledata ;
+					}
 				}
-				for(ib=0;ib<outband;++ib)
+				if( isResArray )
 				{
-					outtiledata[ib*asize+it]=res[ib] ;
+					for(ib=0;ib<outband;++ib)
+					{
+						outtiledata[ib*asize+it]=res[ib] ;
+					}
+				}else
+				{
+					outtiledata[it]=res ;				
 				}
+
 			}
 			return outds ;
 		} ;
