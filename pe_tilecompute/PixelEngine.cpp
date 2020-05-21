@@ -1,6 +1,8 @@
 //PixelEngine.cpp
 #include "PixelEngine.h"
 
+PixelEngine_GetDataFromExternal_FunctionPointer PixelEngine::GetExternalDatasetCallBack = 0 ;
+
 /// reverse color ramp
 void PixelEngine::ColorReverse(vector<int>& colors) 
 {
@@ -761,15 +763,29 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 
 	cout<<"nband "<<nband<<endl ;
 
-	int dt = 3;
-	int wid = 512 ;
-	int hei = 512 ;
-	int nb0 = 6 ;
-	vector<unsigned char> imgdata(wid*hei*nb0*2) ;
+	vector<int> wantBands ;
+	wantBands.reserve(32) ;
+	for(int ib = 0 ; ib<nband ; ++ ib )
 	{
-		FILE* pf = fopen("/home/hadoop/tempdata/fy3d512bsp","rb") ;
-		fread( imgdata.data() , 1 , wid*hei*nb0*2 , pf) ;
-		fclose(pf) ;
+		int wantib = i32array->Get(context,ib).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+		wantBands.push_back(wantib) ;
+	}
+
+	vector<unsigned char> externalData ;
+	int dt = 0 ;
+	int wid = 0 ;
+	int hei = 0 ; 
+	int retnbands = 0 ;
+
+	bool externalOk = PixelEngine::GetExternalDatasetCallBack(name,datetime,wantBands,externalData,
+		dt,
+		wid,
+		hei,
+		retnbands) ;
+	if( externalOk==false )
+	{
+		cout<<"Error: PixelEngine::GetDataFromExternal failed."<<endl;
+		return ;//return null in javascript.
 	}
 
 	Local<Object> ds = PixelEngine::CPP_NewDataset( isolate
@@ -777,23 +793,13 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 		,dt
 		,wid
 		,hei
-		,nband );
+		,retnbands );
 	Local<Value> tiledataValue = ds->Get(context,
 		String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
 		.ToLocalChecked() ;
 	Int16Array* i16Array = Int16Array::Cast(*tiledataValue) ;
 	short* backData = (short*) i16Array->Buffer()->GetBackingStore()->Data() ;
-	int asize = wid * hei ;
-	short* indata = (short*) imgdata.data() ;
-	for(int ib = 0 ; ib<nband ; ++ ib )
-	{
-		int ib0 = i32array->Get(context,ib).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-		short* backDataOffset = backData + ib * asize;
-		for(int it = 0 ;it<asize ; ++ it )
-		{
-			backDataOffset[it] = indata[ib0*asize+it] ;
-		}
-	}
+	memcpy(backData , externalData.data(), externalData.size() );
 	//info.GetReturnValue().Set(i16arr);
 	args.GetReturnValue().Set(ds) ;
 }
@@ -1068,7 +1074,7 @@ bool PixelEngine::RunScriptForTile( string& jsSource,int dt,int z,int y,int x, v
 		this->m_context.Reset( this->isolate , context);
 		TryCatch try_catch(this->isolate);
 		string source = jsSource + "var PEMainResult=main();" ;
-		cout<<source<<endl ;
+
 		// Compile the source code.
 		v8::Local<v8::Script> script ;
 		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,

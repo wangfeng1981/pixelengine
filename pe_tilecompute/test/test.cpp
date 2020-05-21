@@ -8,6 +8,28 @@
 
 using namespace std;
 
+bool testExternalFunc(
+		string name,//name
+		string datetime,//datetime
+		vector<int>& vec,//bands [0,1,2]
+		vector<unsigned char>& ret,//return binary
+		int& dt,//return datatype
+		int& wid,//return width
+		int& hei,//return height 
+		int& nbands )//return nbands
+{
+	wid = 256 ;
+	hei = 256 ;
+	nbands = 3 ;
+	dt = 3 ;
+	ret.resize(wid*hei*nbands*2) ;
+	short* data = (short*)ret.data() ;
+	for(int it = 0 ; it<wid*hei*nbands;++it )
+	{
+		data[it] = it%10000 ;
+	}
+	return true ;
+}
 
 
 int main()
@@ -16,10 +38,13 @@ int main()
 	string source = 
 		"function main(){"
 		"  var ds3 = PixelEngine.LocalDataset(\"/home/hadoop/tempdata/fy3d512bsp\",3,512,512,6) ;"
-		"  return ds3.renderRGB(2,1,0,0,5000,0,5000,0,5000) ;"
+		"  var dsf = PixelEngine.Dataset(\"fy3d\",\"20190601\",[0,1,2]);"
+		"  return dsf.renderRGB(2,1,0,0,5000,0,5000,0,5000) ;"
 		"}" ;
 
 	vector<unsigned char> retbinary ;
+
+	PixelEngine::GetExternalDatasetCallBack=testExternalFunc;
 
 	PixelEngine pe ;
 	pe.RunScriptForTile( source, 0,0,0,0, retbinary) ;

@@ -17,6 +17,16 @@
 using namespace v8;
 using namespace std;
 
+typedef bool (*PixelEngine_GetDataFromExternal_FunctionPointer)(
+		string ,//name
+		string ,//datetime
+		vector<int>& ,//bands [0,1,2]
+		vector<unsigned char>&,//return binary
+		int& dt,//return datatype
+		int& wid,//return width
+		int& hei,//return height 
+		int& nbands );//return nbands
+
 struct PixelEngine
 {
 	static vector<int> ColorRainbow  ;//1
@@ -65,6 +75,10 @@ struct PixelEngine
 	PixelEngine() ;//one
 	~PixelEngine() ;//three
 	bool RunScriptForTile( string& jsSource,int dt,int z,int y,int x, vector<unsigned char>& retbinary) ;//two
+
+
+	static PixelEngine_GetDataFromExternal_FunctionPointer GetExternalDatasetCallBack;
+
 
 } ;
 
