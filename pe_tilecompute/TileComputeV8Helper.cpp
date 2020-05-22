@@ -54,7 +54,8 @@ string int2cstr(int ival)
 	return string(buff) ;
 }
 
-//get external data
+//deprecated , use GetTileDataFromJava
+//get external data 
 bool GetDataFromJava(
 		void* pePtr,//PixelEngine instance pointer
 		string name,//name
@@ -108,9 +109,63 @@ bool GetDataFromJava(
     memcpy( retbinary.data(), (unsigned char*)pBytes , length ) ;
 
     env->ReleaseByteArrayElements(tileByteArray, pBytes, JNI_ABORT);
+	return true ;
+}
+
+
+//get external data
+bool GetTileDataFromJava(
+		void* pePtr,//PixelEngine instance pointer
+		string name,//name
+		string datetime,//datetime
+		vector<int>& bands,//bands [0,1,2] 
+		int tilez,
+		int tiley,
+		int tilex,
+		vector<unsigned char>& retbinary,//return binary
+		int& dt,//return datatype
+		int& wid,//return width
+		int& hei,//return height 
+		int& nbands )//return nbands
+{
+	cout<<"TileComputeV8Helper GetTileDataFromJava"<<endl; 
+
 	
+	PixelEngine* pixelEnginePointer = (PixelEngine*)pePtr ;
 
+	JNIEnv* env = (JNIEnv*)pixelEnginePointer->extraPointer ;//java environment
+	jclass	JavaV8HelperClass = (env)->FindClass("com/pixelengine/V8Helper");
+	jmethodID	methodidTile = (env)->GetMethodID(JavaV8HelperClass,"GetTileData"
+    	,"(Ljava/lang/String;Ljava/lang/String;III)[B");
+	jobject	javaV8Helper = env->AllocObject(JavaV8HelperClass);
+	
+    cout<<"jni 4"<<endl; 
+    jbyteArray tileByteArray = (jbyteArray) env->CallObjectMethod(
+    	javaV8Helper,methodidTile
+    	,cstring2jstring(env,name.c_str())
+    	,cstring2jstring(env,datetime.c_str()) 
+    	,tilez 
+    	,tiley
+    	,tilex
+    	) ;
+    if( tileByteArray== NULL ){
+    	cout<<"in c++ tilebytearray is null, return null."<<endl ;
+    	return false ;
+    }
+    cout<<"jni 5"<<endl; 
+    size_t length = (size_t) env->GetArrayLength(tileByteArray);
+    cout<<"len "<<length<<endl ;
+    jbyte* pBytes = env->GetByteArrayElements(tileByteArray, NULL);
 
+    dt = 3 ;
+    wid = 256 ;
+    hei = 256 ;
+    nbands = 6 ;
+
+    retbinary.resize(length) ;
+    memcpy( retbinary.data(), (unsigned char*)pBytes , length ) ;
+
+    env->ReleaseByteArrayElements(tileByteArray, pBytes, JNI_ABORT);
 	return true ;
 }
 
@@ -123,7 +178,8 @@ JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_V8Helper_CallTileCompute
 	string jsSource = jstring2string(env,script) ;
 	if( PixelEngine::GetExternalDatasetCallBack ==nullptr )
 	{
-		PixelEngine::GetExternalDatasetCallBack = GetDataFromJava ;
+		PixelEngine::GetExternalDatasetCallBack = GetDataFromJava ;//deprecated
+		PixelEngine::GetExternalTileDataCallBack = GetTileDataFromJava ;
 	}
 	vector<unsigned char> retbinary ;
 	PixelEngine pe ;
@@ -138,17 +194,6 @@ JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_V8Helper_CallTileCompute
 	{
 		return nullptr ;
 	}
-
-	
-
-
- //    vector<unsigned char> retbinary ;
- //    Dataset2Png( data.data() , 256 , 256 , retbinary) ;
-
-	// jbyteArray retval = env->NewByteArray(retbinary.size());
-	// const signed char* sptr = (signed char*)retbinary.data();
-	// env->SetByteArrayRegion(retval,0, retbinary.size() , sptr );
-
 	return nullptr ;
 }
 

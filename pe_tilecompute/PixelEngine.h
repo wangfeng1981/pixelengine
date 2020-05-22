@@ -20,16 +20,34 @@
 using namespace v8;
 using namespace std;
 
+//deprecated , use PixelEngine_GetDataFromExternal2_FunctionPointer
 typedef bool (*PixelEngine_GetDataFromExternal_FunctionPointer)(
 		void* pePtr,
 		string ,//name
 		string ,//datetime
-		vector<int>& ,//bands [0,1,2]
+		vector<int>& ,//bands [0,1,2] , not used actually
 		vector<unsigned char>&,//return binary
 		int& dt,//return datatype
 		int& wid,//return width
 		int& hei,//return height 
 		int& nbands );//return nbands
+
+//get data from external by z,y,x
+typedef bool (*PixelEngine_GetDataFromExternal2_FunctionPointer)(
+		void* pePtr,
+		string ,//name
+		string ,//datetime
+		vector<int>& ,//bands [0,1,2] , not used actually
+		int tilez, 
+		int tiley, 
+		int tilex,
+		vector<unsigned char>&,//return binary
+		int& dataType,//return datatype
+		int& wid,//return width
+		int& hei,//return height 
+		int& nbands);//return nbands
+
+
 
 struct PixelEngineTileInfo
 {
@@ -49,7 +67,9 @@ struct PixelEngine
 	static void ColorReverse(vector<int>& colors) ;
 
 	//PixelEngine
-	static void GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//from java
+	static void GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//from exteranl
+	static void GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//from exteranl
+	
 	static void GlobalFunc_LocalDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ; 
 	static void GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 
@@ -82,13 +102,16 @@ struct PixelEngine
 	PixelEngineTileInfo tileInfo ;
 	void* extraPointer ;//do not release.
 
+
 	Global<Value> GlobalFunc_ForEachPixelCallBack ;//not static, need Reset
+	Global<Value> GlobalFunc_GetPixelCallBack ;//not static , need reset
 	PixelEngine() ;//one
 	~PixelEngine() ;//three
 	bool RunScriptForTile(void* extra,string& jsSource,int dt,int z,int y,int x, vector<unsigned char>& retbinary) ;//two
 
 
 	static PixelEngine_GetDataFromExternal_FunctionPointer GetExternalDatasetCallBack;
+	static PixelEngine_GetDataFromExternal2_FunctionPointer GetExternalTileDataCallBack;
 
 } ;
 
