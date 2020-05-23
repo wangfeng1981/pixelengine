@@ -3,6 +3,7 @@
 
 PixelEngine_GetDataFromExternal_FunctionPointer PixelEngine::GetExternalDatasetCallBack = nullptr ;
 PixelEngine_GetDataFromExternal2_FunctionPointer PixelEngine::GetExternalTileDataCallBack = nullptr ;
+PixelEngine_GetDataFromExternal2Arr_FunctionPointer PixelEngine::GetExternalTileDataArrCallBack = nullptr ;
 std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
 /// reverse color ramp
@@ -257,6 +258,76 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 	}
 	return handle_scope.Escape(ds);
 }
+
+
+/// use c++ create a new empty DatasetArray object
+Local<Object> PixelEngine::CPP_NewDatasetArray(Isolate* isolate,Local<Context>& context
+	,const int datatype 
+	,const int width 
+	,const int height
+	,const int nband
+	,const int numds )
+{
+	cout<<"inside CPP_NewDatasetArray"<<endl; 
+	v8::EscapableHandleScope handle_scope(isolate);
+
+	Local<Object> global = context->Global() ;
+
+	Local<Value> forEachFuncInJs = global->Get(context 
+    	,String::NewFromUtf8(isolate, "globalFunc_DA_forEachPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;
+	Local<Object> ds = Object::New(isolate) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "forEachPixel").ToLocalChecked(),
+            forEachFuncInJs );
+
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "width").ToLocalChecked()
+		,Integer::New(isolate,width) ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "height").ToLocalChecked()
+		,Integer::New(isolate,height) ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "nband").ToLocalChecked()
+		,Integer::New(isolate,nband) ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "dataType").ToLocalChecked()
+		,Integer::New(isolate,datatype) ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "numds").ToLocalChecked()
+		,Integer::New(isolate,numds) ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "dsName").ToLocalChecked()
+		,String::Empty(isolate) ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "fromdt").ToLocalChecked()
+		,String::Empty(isolate) ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "todt").ToLocalChecked()
+		,String::Empty(isolate) ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
+		,Integer::New(isolate,0) ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "y").ToLocalChecked()
+		,Integer::New(isolate,0) ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
+		,Integer::New(isolate,0) ) ;
+
+
+	Local<ArrayBuffer> timeArrayAB = ArrayBuffer::New(isolate,numds*4) ;
+	Local<Int32Array> timeArrayInt32 = Int32Array::New(timeArrayAB,0,numds) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "timeArr").ToLocalChecked()
+		,timeArrayInt32 ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "dataArr").ToLocalChecked()
+		,Array::New(isolate,numds) ) ;// 4 is current always null.
+	
+	return handle_scope.Escape(ds);
+}
+
+
 
 /// dataset.renderGray() , return a new Dataset
 /// iband,vmin,vmax,nodata,nodataColor
@@ -883,6 +954,141 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 }
 
 
+
+
+
+/// create a DatasetArray from external.
+/// @params name
+/// @params fromDatetime included
+/// @params toDatetime not included
+/// @params bands [0,1,2,3] not used yet
+void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+{
+	cout<<"inside GlobalFunc_DatasetArrayCallBack"<<endl; 
+	if (args.Length() != 4 ){
+		cout<<"Error: args.Length != 4 "<<endl ;
+		return;
+	}
+
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> v8name = args[0];
+	Local<Value> v8from = args[1] ;
+	Local<Value> v8to = args[2] ;// not include
+	Local<Value> v8bands = args[3] ;// not used yet
+
+	String::Utf8Value nameutf8( isolate , v8name) ;
+	string name( *nameutf8 ) ;
+
+	String::Utf8Value dt0utf8( isolate , v8from) ;
+	string fromdatetime( *dt0utf8 ) ;
+
+	String::Utf8Value dt1utf8( isolate , v8to) ;
+	string todatetime( *dt1utf8 ) ;
+
+	cout<<"from to :"<<fromdatetime<<"-"<<todatetime<<endl ;
+
+	vector<int> wantBands(8,0) ;//not used yet.
+
+	vector<vector<unsigned char> > externalDataArr ;
+	vector<int> externalTimeArr ;
+	int dt = 0 ;
+	int wid = 0 ;
+	int hei = 0 ; 
+	int retnbands = 0 ;// return number of bands in one dataset
+	int retnumds = 0 ;// return number of datasets
+
+	Local<Object> global = context->Global() ;
+	Local<Value> peinfo = global->Get( context
+		,String::NewFromUtf8(isolate, "PixelEnginePointer").ToLocalChecked())
+		.ToLocalChecked() ;
+	Object* peinfoObj = Object::Cast( *peinfo ) ;
+	Local<Value> thisPePtrValue = peinfoObj->GetInternalField(0) ;
+	External* thisPePtrEx = External::Cast(*thisPePtrValue);
+	PixelEngine* thisPePtr = static_cast<PixelEngine*>(thisPePtrEx->Value() );
+
+	int tilez = thisPePtr->tileInfo.z  ;
+	int tiley = thisPePtr->tileInfo.y  ; 
+	int tilex = thisPePtr->tileInfo.x  ; 
+
+	bool externalOk = PixelEngine::GetExternalTileDataArrCallBack(
+		thisPePtrEx->Value() ,// pointer to PixelEngine Object.
+		name,fromdatetime,todatetime,wantBands,
+		tilez,
+		tiley,
+		tilex,
+		externalDataArr , 
+		externalTimeArr , 
+		dt ,
+		wid , 
+		hei , 
+		retnbands ,
+		retnumds ) ;
+	if( externalOk==false )
+	{
+		cout<<"Error: PixelEngine::GetExternalTileDataArrCallBack failed."<<endl;
+		return ;//return null in javascript.
+	}
+
+	Local<Object> ds = PixelEngine::CPP_NewDatasetArray( isolate
+		,context
+		,dt
+		,wid
+		,hei
+		,retnbands
+		,retnumds );
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "dsName").ToLocalChecked()
+		,v8name ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "fromdt").ToLocalChecked()
+		,v8from ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "todt").ToLocalChecked()
+		,v8to ) ;
+
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
+		,Integer::New(isolate,thisPePtr->tileInfo.x) ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "y").ToLocalChecked()
+		,Integer::New(isolate,thisPePtr->tileInfo.y) ) ;
+	ds->Set(context
+		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
+		,Integer::New(isolate,thisPePtr->tileInfo.z) ) ;
+
+
+	Local<Value> dataArrValue = ds->Get( context
+		,String::NewFromUtf8(isolate, "dataArr").ToLocalChecked())
+		.ToLocalChecked() ;
+	Array* dataArrArray = Array::Cast(*dataArrValue) ;
+
+	Local<Value> timeArrValue = ds->Get( context
+		,String::NewFromUtf8(isolate, "timeArr").ToLocalChecked())
+		.ToLocalChecked() ;
+	Int32Array* timeArrInt32 = Int32Array::Cast(*timeArrValue) ;
+
+
+	for(int ids = 0 ; ids < retnumds ; ++ ids )
+	{
+		//set time
+		timeArrInt32->Set(context,ids,Integer::New(isolate,externalTimeArr[ids]));
+
+		//set data
+		vector<unsigned char>& indatavec = externalDataArr[ids] ;
+		Local<ArrayBuffer> arrbuf = ArrayBuffer::New(isolate,indatavec.size()) ;
+		Local<Int16Array> i16arr = Int16Array::New(arrbuf,0,indatavec.size()/2) ;
+		short* backData = (short*) i16arr->Buffer()->GetBackingStore()->Data() ;
+		memcpy(backData , indatavec.data(), indatavec.size() );
+		dataArrArray->Set(context,ids,i16arr) ;
+	}
+	//info.GetReturnValue().Set(i16arr);
+	args.GetReturnValue().Set(ds) ;
+}
+
+
 /// get external tile data only, return data array not dataset.
 /// PixelEngine.GetTileData(name,datetime,z,y,x)
 void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
@@ -1130,6 +1336,21 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	   Integer::New(isolate,4));
 	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampGrays").ToLocalChecked(),
 	   Integer::New(isolate,0));
+	pe->Set(context,String::NewFromUtf8(isolate, "DatetimeCurrent").ToLocalChecked(),
+	   Integer::New(isolate,-1));
+
+	//normal/inverse
+	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampNormal").ToLocalChecked(),
+	Integer::New(isolate,0));
+	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampInverse").ToLocalChecked(),
+	Integer::New(isolate,1));
+	//discrete/interpol
+	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampDiscrete").ToLocalChecked(),
+	Integer::New(isolate,0));
+	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampInterpolate").ToLocalChecked(),
+	Integer::New(isolate,1));
+
+
 	pe->Set(context
 		,String::NewFromUtf8(isolate, "NewDataset").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_NewDatasetCallBack)->GetFunction(context).ToLocalChecked() );
@@ -1143,18 +1364,10 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	pe->Set(context
 	,String::NewFromUtf8(isolate, "LocalDataset").ToLocalChecked(),
        FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_LocalDatasetCallBack)->GetFunction(context).ToLocalChecked() );
+	pe->Set(context
+		,String::NewFromUtf8(isolate, "DatasetArray").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_DatasetArrayCallBack)->GetFunction(context).ToLocalChecked() );
 
-
-	//normal/inverse
-	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampNormal").ToLocalChecked(),
-	Integer::New(isolate,0));
-	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampInverse").ToLocalChecked(),
-	Integer::New(isolate,1));
-	//discrete/interpol
-	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampDiscrete").ToLocalChecked(),
-	Integer::New(isolate,0));
-	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampInterpolate").ToLocalChecked(),
-	Integer::New(isolate,1));
 
 
 	//pe function log
@@ -1214,7 +1427,62 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 			}
 			return outds ;
 		} ;
+		var globalFunc_DA_forEachPixelCallBack = function(pxfunc){
+			var outds = null ; 
+			var outtiledata = null ;
+			var width = this.width ;
+			var height = this.height ;
+			var asize = width*height ;
+			var nband = this.nband ;
+			var nds = this.numds ;
+			var tbvals = new Int16Array(nband*nds) ;
+			var ib = 0 ;var ids=0; var itb=0;var bit=0;
+			var tdarr = this.dataArr ;
+			var outband = 0 ;
+			var isResArray = false;
+			for(var it = 0 ; it<asize ; ++ it )
+			{
+				itb=0;
+				for(ib=0;ib<nband;++ib){    
+					bit=ib*asize+it;
+					for(ids=0;ids<nds;++ids)
+					{
+						tbvals[itb++]=tdarr[ids][bit] ;
+					}
+				}
+				var res = pxfunc(tbvals,it,nds,this) ;
+				if( outtiledata==null )
+				{
+					if( Array.isArray(res) )
+					{
+						isResArray = true ;
+						outband = res.length ;
+						outds = globalFunc_newDatasetCallBack(3,width,height,outband) ;
+						outtiledata = outds.tiledata ;
+					}else
+					{
+						isResArray = false ;
+						outband = 1 ;
+						outds = globalFunc_newDatasetCallBack(3,width,height,outband) ;
+						outtiledata = outds.tiledata ;
+					}
+				}
+				if( isResArray )
+				{
+					for(ib=0;ib<outband;++ib)
+					{
+						outtiledata[ib*asize+it]=res[ib] ;
+					}
+				}else
+				{
+					outtiledata[it]=res ;				
+				}
+
+			}
+			return outds ;
+		} ;
 		var globalFunc_getPixelCallBack=function(iband,isample,iline,nodata) {
+			if(this.dsName==null || this.dsName=="" ) return nodata ;
 			var gy = 0 ;
 			var gx = 0 ;
 			var newsample = isample ;

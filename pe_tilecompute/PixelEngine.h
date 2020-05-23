@@ -47,6 +47,24 @@ typedef bool (*PixelEngine_GetDataFromExternal2_FunctionPointer)(
 		int& hei,//return height 
 		int& nbands);//return nbands
 
+//get data array from external by z,y,x
+typedef bool (*PixelEngine_GetDataFromExternal2Arr_FunctionPointer)(
+		void* pePtr,
+		string ,//name
+		string ,//from datetime
+		string ,//to datetime
+		vector<int>& ,//bands [0,1,2] , not used actually
+		int tilez, 
+		int tiley, 
+		int tilex,
+		vector<vector<unsigned char> >&,//return binary
+		vector<int>& ,//return time array
+		int& dataType,//return datatype
+		int& wid,//return width
+		int& hei,//return height 
+		int& nbands,//return nbands
+		int& numds );//return number of dataset.
+
 
 
 struct PixelEngineTileInfo
@@ -68,10 +86,12 @@ struct PixelEngine
 
 	//PixelEngine
 	static void GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//from exteranl
+	static void GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//load a datetime range dataset.
 	static void GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//from exteranl
 	
 	static void GlobalFunc_LocalDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ; 
 	static void GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+
 
 	//Dataset methods:
 
@@ -94,6 +114,14 @@ struct PixelEngine
 		,const int width 
 		,const int height
 		,const int nband );
+	static Local<Object> CPP_NewDatasetArray(Isolate* isolate,Local<Context>& context
+		,const int datatype 
+		,const int width 
+		,const int height
+		,const int nband 
+		,const int numds );
+
+
 
 	//not static
 	v8::Isolate* isolate ;
@@ -110,8 +138,9 @@ struct PixelEngine
 	bool RunScriptForTile(void* extra,string& jsSource,int dt,int z,int y,int x, vector<unsigned char>& retbinary) ;//two
 
 
-	static PixelEngine_GetDataFromExternal_FunctionPointer GetExternalDatasetCallBack;
-	static PixelEngine_GetDataFromExternal2_FunctionPointer GetExternalTileDataCallBack;
+	static PixelEngine_GetDataFromExternal_FunctionPointer GetExternalDatasetCallBack;//will deprecated
+	static PixelEngine_GetDataFromExternal2_FunctionPointer GetExternalTileDataCallBack;//will deprecated
+	static PixelEngine_GetDataFromExternal2Arr_FunctionPointer GetExternalTileDataArrCallBack ;
 
 } ;
 
