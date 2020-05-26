@@ -136,36 +136,60 @@ bool GetTileDataFromJava(
 	JNIEnv* env = (JNIEnv*)pixelEnginePointer->extraPointer ;//java environment
 	jclass	JavaV8HelperClass = (env)->FindClass("com/pixelengine/V8Helper");
 	jmethodID	methodidTile = (env)->GetMethodID(JavaV8HelperClass,"GetTileData"
-    	,"(Ljava/lang/String;Ljava/lang/String;III)[B");
+    	,"(Ljava/lang/String;Ljava/lang/String;[IIII)Lcom/pixelengine/TileResult;");
 	jobject	javaV8Helper = env->AllocObject(JavaV8HelperClass);
 	
-    cout<<"jni 4"<<endl; 
-    jbyteArray tileByteArray = (jbyteArray) env->CallObjectMethod(
+	jintArray jbandarr = env->NewIntArray(bands.size()) ;
+	env->SetIntArrayRegion(jbandarr,0,bands.size(), (int*) bands.data() ) ;
+    
+    jobject resultobj = (jobject) env->CallObjectMethod(
     	javaV8Helper,methodidTile
     	,cstring2jstring(env,name.c_str())
     	,cstring2jstring(env,datetime.c_str()) 
+    	,jbandarr
     	,tilez 
     	,tiley
     	,tilex
     	) ;
-    if( tileByteArray== NULL ){
-    	cout<<"in c++ tilebytearray is null, return null."<<endl ;
+    if( resultobj== NULL ){
+    	cout<<"in c++ resultobj is null, return null."<<endl ;
     	return false ;
     }
     cout<<"jni 5"<<endl; 
-    size_t length = (size_t) env->GetArrayLength(tileByteArray);
-    cout<<"len "<<length<<endl ;
-    jbyte* pBytes = env->GetByteArrayElements(tileByteArray, NULL);
 
-    dt = 3 ;
+    jclass resultClass = env->FindClass("com/pixelengine/TileResult") ;
+
+    jfieldID dtypefid = env->GetFieldID(resultClass,"dataType","I");
+    jfieldID nbandfid = env->GetFieldID(resultClass,"nband","I");
+    jfieldID numdsfid = env->GetFieldID(resultClass,"numds","I");
+    jfieldID dtarrayfid = env->GetFieldID(resultClass,"datetimeArray","[J") ;//long for J
+    jfieldID dataarrayfid = env->GetFieldID(resultClass,"tiledataArray","[[B") ;
+
+    dt = env->GetIntField(resultobj, dtypefid) ;
+    nbands = env->GetIntField(resultobj, nbandfid) ;
+    //numds = env->GetIntField(resultobj, numdsfid) ;
     wid = 256 ;
     hei = 256 ;
-    nbands = 6 ;
+	printf("dt %d, nband %d, numds %d\n" , dt , nbands , 1 ) ;
 
-    retbinary.resize(length) ;
-    memcpy( retbinary.data(), (unsigned char*)pBytes , length ) ;
+    jobject dtarrayobj = env->GetObjectField(resultobj, dtarrayfid) ;
+    jobject dataarrayobj = env->GetObjectField(resultobj, dataarrayfid) ;
 
-    env->ReleaseByteArrayElements(tileByteArray, pBytes, JNI_ABORT);
+    jlongArray* dtarrayPtr = (jlongArray*)(&dtarrayobj) ;
+    jobjectArray* dataarrayPtr = (jobjectArray*)(&dataarrayobj) ;
+
+    //int* dtarrPtr = env->GetIntArrayElements(*dtarrayPtr,NULL);
+    //dtArr.resize(numds) ;
+    //retbinaryArr.resize(numds) ;
+
+	jobject jobj1 = env->GetObjectArrayElement(*dataarrayPtr, 0) ;
+	jbyteArray* jbarrPtr = (jbyteArray*)(&jobj1) ;
+	size_t length1 = env->GetArrayLength(*jbarrPtr) ;
+	jbyte* pbytes = env->GetByteArrayElements(*jbarrPtr,NULL) ;
+	retbinary.resize(length1) ;
+	memcpy( retbinary.data() , (unsigned char*)pbytes , length1 ) ;
+	env->ReleaseByteArrayElements(*jbarrPtr, pbytes, JNI_ABORT);
+
 	return true ;
 }
 
@@ -184,7 +208,7 @@ bool GetTileDataArrayFromJava(
 		int tiley,
 		int tilex,
 		vector<vector<unsigned char> >& retbinaryArr,//return binary
-		vector<int>& dtArr,
+		vector<long>& dtArr,
 		int& dt,//return datatype
 		int& wid,//return width
 		int& hei,//return height 
@@ -197,13 +221,17 @@ bool GetTileDataArrayFromJava(
 	JNIEnv* env = (JNIEnv*)pixelEnginePointer->extraPointer ;//java environment
 	jclass	JavaV8HelperClass = (env)->FindClass("com/pixelengine/V8Helper");
 	jmethodID	methodidTile = (env)->GetMethodID(JavaV8HelperClass,"GetTileDataArray"
-    	,"(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III)Lcom/pixelengine/TileScanResult;");
+    	,"(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[IIII)Lcom/pixelengine/TileResult;");
 	jobject	javaV8Helper = env->AllocObject(JavaV8HelperClass);
-    cout<<"jni 41"<<endl; 
+
+	jintArray jbandarr = env->NewIntArray(bands.size()) ;
+	env->SetIntArrayRegion(jbandarr,0,bands.size(), (int*) bands.data() ) ;
+
 	jobject resultobj = (jobject) env->CallObjectMethod(javaV8Helper,methodidTile
 		,cstring2jstring(env,name.c_str())
     	,cstring2jstring(env,from.c_str()) 
     	,cstring2jstring(env,to.c_str()) 
+    	,jbandarr
     	,tilez,tiley,tilex
 		) ;
 	
@@ -213,13 +241,13 @@ bool GetTileDataArrayFromJava(
     }
     cout<<"jni 51"<<endl; 
 
-    jclass resultClass = env->FindClass("com/pixelengine/TileScanResult") ;
+    jclass resultClass = env->FindClass("com/pixelengine/TileResult") ;
 
-    jfieldID dtypefid = env->GetFieldID(resultClass,"datatype","I");
+    jfieldID dtypefid = env->GetFieldID(resultClass,"dataType","I");
     jfieldID nbandfid = env->GetFieldID(resultClass,"nband","I");
     jfieldID numdsfid = env->GetFieldID(resultClass,"numds","I");
-    jfieldID dtarrayfid = env->GetFieldID(resultClass,"datetimeArray","[I") ;
-    jfieldID dataarrayfid = env->GetFieldID(resultClass,"dataArray","[[B") ;
+    jfieldID dtarrayfid = env->GetFieldID(resultClass,"datetimeArray","[J") ;
+    jfieldID dataarrayfid = env->GetFieldID(resultClass,"tiledataArray","[[B") ;
 
     dt = env->GetIntField(resultobj, dtypefid) ;
     nbands = env->GetIntField(resultobj, nbandfid) ;
@@ -232,10 +260,10 @@ bool GetTileDataArrayFromJava(
     jobject dtarrayobj = env->GetObjectField(resultobj, dtarrayfid) ;
     jobject dataarrayobj = env->GetObjectField(resultobj, dataarrayfid) ;
 
-    jintArray* dtarrayPtr = (jintArray*)(&dtarrayobj) ;
+    jlongArray* dtarrayPtr = (jlongArray*)(&dtarrayobj) ;
     jobjectArray* dataarrayPtr = (jobjectArray*)(&dataarrayobj) ;
 
-    int* dtarrPtr = env->GetIntArrayElements(*dtarrayPtr,NULL);
+    long* dtarrPtr = env->GetLongArrayElements(*dtarrayPtr,NULL);
     dtArr.resize(numds) ;
     retbinaryArr.resize(numds) ;
 
@@ -250,20 +278,21 @@ bool GetTileDataArrayFromJava(
 		memcpy( retbinaryArr[ids].data() , (unsigned char*)pbytes , length1 ) ;
 		env->ReleaseByteArrayElements(*jbarrPtr, pbytes, JNI_ABORT);
 	}
-    env->ReleaseIntArrayElements(*dtarrayPtr, dtarrPtr, JNI_ABORT);
+    env->ReleaseLongArrayElements(*dtarrayPtr, dtarrPtr, JNI_ABORT);
+    env->DeleteLocalRef(jbandarr) ;
 	return true ;
 }
 
 
  
 JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_V8Helper_CallTileCompute
-  (JNIEnv *env, jobject obj, jstring script, jint current, jint z, jint y, jint x)
+  (JNIEnv *env, jobject obj, jstring script, jlong current, jint z, jint y, jint x)
 {
  
 	string jsSource = jstring2string(env,script) ;
-	if( PixelEngine::GetExternalDatasetCallBack ==nullptr )
+	if( PixelEngine::GetExternalTileDataArrCallBack ==nullptr )
 	{
-		PixelEngine::GetExternalDatasetCallBack = GetDataFromJava ;//deprecated
+		//PixelEngine::GetExternalDatasetCallBack = GetDataFromJava ;//deprecated
 		PixelEngine::GetExternalTileDataCallBack = GetTileDataFromJava ;//will be deprecated 
 		PixelEngine::GetExternalTileDataArrCallBack = GetTileDataArrayFromJava ;
 	}
@@ -287,7 +316,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_V8Helper_CallTileCompute
 JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_Version
   (JNIEnv *env, jobject obj)
 {
-	return cstring2jstring( env , "1.0" ) ;
+	return cstring2jstring( env , "1.1" ) ;
 }
 
 
@@ -296,6 +325,21 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
     return;
 }
 
+
+JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_CheckScriptOK
+  (JNIEnv *env, jobject obj, jstring source)
+{
+	string jsSource = jstring2string(env,source) ;
+	if( jsSource.length() < 1 ){
+		return cstring2jstring( env , "Error: source is empty." ) ;
+	}else
+	{
+		PixelEngine pe ;
+		string errorinfo = pe.CheckScriptOk(jsSource) ;
+		return cstring2jstring( env , errorinfo.c_str() ) ;
+	}
+	
+}
 
 
 // debug function , it should be remove after debug

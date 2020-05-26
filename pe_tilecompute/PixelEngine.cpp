@@ -1,7 +1,7 @@
 //PixelEngine.cpp
 #include "PixelEngine.h"
 
-PixelEngine_GetDataFromExternal_FunctionPointer PixelEngine::GetExternalDatasetCallBack = nullptr ;
+//PixelEngine_GetDataFromExternal_FunctionPointer PixelEngine::GetExternalDatasetCallBack = nullptr ;
 PixelEngine_GetDataFromExternal2_FunctionPointer PixelEngine::GetExternalTileDataCallBack = nullptr ;
 PixelEngine_GetDataFromExternal2Arr_FunctionPointer PixelEngine::GetExternalTileDataArrCallBack = nullptr ;
 std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
@@ -315,11 +315,11 @@ Local<Object> PixelEngine::CPP_NewDatasetArray(Isolate* isolate,Local<Context>& 
 		,Integer::New(isolate,0) ) ;
 
 
-	Local<ArrayBuffer> timeArrayAB = ArrayBuffer::New(isolate,numds*4) ;
-	Local<Int32Array> timeArrayInt32 = Int32Array::New(timeArrayAB,0,numds) ;
+	Local<ArrayBuffer> timeArrayAB = ArrayBuffer::New(isolate,numds*8) ;
+	Local<BigInt64Array> timeArrayInt64 = BigInt64Array::New(timeArrayAB,0,numds) ;
 	ds->Set(context
 		,String::NewFromUtf8(isolate, "timeArr").ToLocalChecked()
-		,timeArrayInt32 ) ;
+		,timeArrayInt64 ) ;
 	ds->Set(context
 		,String::NewFromUtf8(isolate, "dataArr").ToLocalChecked()
 		,Array::New(isolate,numds) ) ;// 4 is current always null.
@@ -993,7 +993,7 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	vector<int> wantBands(8,0) ;//not used yet.
 
 	vector<vector<unsigned char> > externalDataArr ;
-	vector<int> externalTimeArr ;
+	vector<long> externalTimeArr ;
 	int dt = 0 ;
 	int wid = 0 ;
 	int hei = 0 ; 
@@ -1068,13 +1068,13 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	Local<Value> timeArrValue = ds->Get( context
 		,String::NewFromUtf8(isolate, "timeArr").ToLocalChecked())
 		.ToLocalChecked() ;
-	Int32Array* timeArrInt32 = Int32Array::Cast(*timeArrValue) ;
+	BigInt64Array* timeArrInt64 = BigInt64Array::Cast(*timeArrValue) ;
 
 
 	for(int ids = 0 ; ids < retnumds ; ++ ids )
 	{
 		//set time
-		timeArrInt32->Set(context,ids,Integer::New(isolate,externalTimeArr[ids]));
+		timeArrInt64->Set(context,ids,BigInt::New(isolate,externalTimeArr[ids]));
 
 		//set data
 		vector<unsigned char>& indatavec = externalDataArr[ids] ;
@@ -1566,7 +1566,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	return true ;
 }
 
-bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,int currentdt,int z,int y,int x, vector<unsigned char>& retbinary) 
+bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,int z,int y,int x, vector<unsigned char>& retbinary) 
 {
 	cout<<"in RunScriptForTile init v8"<<endl;
 	this->tileInfo.x = x ;
@@ -1654,6 +1654,49 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,int currentdt,i
 
 	return allOk ;
 }
+
+string PixelEngine::CheckScriptOk(string& scriptSource) 
+{
+	cout<<"in CheckScriptOk"<<endl;
+
+	string errorText = "" ;
+	this->create_params.array_buffer_allocator =
+	v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+	this->isolate = v8::Isolate::New(create_params);
+	{
+		v8::Isolate::Scope isolate_scope(this->isolate);
+		v8::HandleScope handle_scope(this->isolate);
+		v8::Local<v8::Context> context = v8::Context::New(this->isolate );
+		v8::Context::Scope context_scope(context);// enter scope
+		
+		v8::TryCatch try_catch(this->isolate);
+		v8::MaybeLocal<v8::String> source =
+			v8::String::NewFromUtf8( this->isolate, scriptSource.c_str() ,
+				v8::NewStringType::kNormal) ;
+		if (source.IsEmpty()) {
+			//compile error
+			v8::String::Utf8Value error( this->isolate, try_catch.Exception());
+			errorText = std::string(*error);
+			std::cout << "build source error:" << errorText << std::endl;
+		}else
+		{
+			v8::MaybeLocal<v8::Script> compiledScript =
+				v8::Script::Compile(context, source.ToLocalChecked() ) ;
+			if (compiledScript.IsEmpty()) {
+				//compile error
+				v8::String::Utf8Value error( this->isolate, try_catch.Exception());
+				errorText = std::string(*error);
+				std::cout << "compile error:" << errorText << std::endl;
+			}
+		}
+
+	}
+	this->isolate->Dispose();
+
+	return errorText ;
+}
+
+
 
 PixelEngine::PixelEngine() 
 {

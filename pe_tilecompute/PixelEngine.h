@@ -21,16 +21,16 @@ using namespace v8;
 using namespace std;
 
 //deprecated , use PixelEngine_GetDataFromExternal2_FunctionPointer
-typedef bool (*PixelEngine_GetDataFromExternal_FunctionPointer)(
-		void* pePtr,
-		string ,//name
-		string ,//datetime
-		vector<int>& ,//bands [0,1,2] , not used actually
-		vector<unsigned char>&,//return binary
-		int& dt,//return datatype
-		int& wid,//return width
-		int& hei,//return height 
-		int& nbands );//return nbands
+// typedef bool (*PixelEngine_GetDataFromExternal_FunctionPointer)(
+// 		void* pePtr,
+// 		string ,//name
+// 		string ,//datetime
+// 		vector<int>& ,//bands [0,1,2] , not used actually
+// 		vector<unsigned char>&,//return binary
+// 		int& dt,//return datatype
+// 		int& wid,//return width
+// 		int& hei,//return height 
+// 		int& nbands );//return nbands
 
 //get data from external by z,y,x
 typedef bool (*PixelEngine_GetDataFromExternal2_FunctionPointer)(
@@ -58,7 +58,7 @@ typedef bool (*PixelEngine_GetDataFromExternal2Arr_FunctionPointer)(
 		int tiley, 
 		int tilex,
 		vector<vector<unsigned char> >&,//return binary
-		vector<int>& ,//return time array
+		vector<long>& ,//return time array
 		int& dataType,//return datatype
 		int& wid,//return width
 		int& hei,//return height 
@@ -135,11 +135,11 @@ struct PixelEngine
 	Global<Value> GlobalFunc_GetPixelCallBack ;//not static , need reset
 	PixelEngine() ;//one
 	~PixelEngine() ;//three
-	bool RunScriptForTile(void* extra,string& jsSource,int dt,int z,int y,int x, vector<unsigned char>& retbinary) ;//two
+	bool RunScriptForTile(void* extra,string& jsSource,long dt,int z,int y,int x, vector<unsigned char>& retbinary) ;//two
+	string CheckScriptOk(string& scriptSource) ;
 
-
-	static PixelEngine_GetDataFromExternal_FunctionPointer GetExternalDatasetCallBack;//will deprecated
-	static PixelEngine_GetDataFromExternal2_FunctionPointer GetExternalTileDataCallBack;//will deprecated
+	//static PixelEngine_GetDataFromExternal_FunctionPointer GetExternalDatasetCallBack;//will deprecated
+	static PixelEngine_GetDataFromExternal2_FunctionPointer GetExternalTileDataCallBack; 
 	static PixelEngine_GetDataFromExternal2Arr_FunctionPointer GetExternalTileDataArrCallBack ;
 
 } ;

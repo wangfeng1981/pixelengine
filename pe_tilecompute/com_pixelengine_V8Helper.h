@@ -13,7 +13,7 @@ extern "C" {
  * Signature: (Ljava/lang/String;IIII)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_V8Helper_CallTileCompute
-  (JNIEnv *, jobject, jstring, jint, jint, jint, jint);
+  (JNIEnv *, jobject, jstring, jlong, jint, jint, jint);
 
 /*
  * Class:     com_pixelengine_V8Helper
@@ -22,6 +22,14 @@ JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_V8Helper_CallTileCompute
  */
 JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_Version
   (JNIEnv *, jobject);
+
+/*
+ * Class:     com_pixelengine_V8Helper
+ * Method:    CheckScriptOK
+ * Signature: (Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_CheckScriptOK
+  (JNIEnv *, jobject, jstring);
 
 #ifdef __cplusplus
 }

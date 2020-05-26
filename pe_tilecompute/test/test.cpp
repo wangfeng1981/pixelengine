@@ -76,7 +76,7 @@ bool testExteranlTileDataArrFunc(
 		int y, 
 		int x,
 		vector<vector<unsigned char> >& retdatavec,//return binary
-		vector<int>& rettimevec,
+		vector<long>& rettimevec,
 		int& dtype ,
 		int& wid,
 		int& hei,
