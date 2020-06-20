@@ -33,6 +33,7 @@ bool testExternalFunc(
 }
 
 
+
 bool testExteranlTileDataFunc(
 		void* pePtr,//PixelEngine
 		string name,//name
@@ -57,13 +58,10 @@ bool testExteranlTileDataFunc(
 	short* data = (short*)ret.data() ;
 	for(int it = 0 ; it<wid*hei;++it )
 	{
-		int ix = it%wid ;
-		int iy = it/wid ;
-		data[it] = x*2+y*2;
+		data[it] = it%256;
 	}
 	return true ;
 }
-
 
 
 bool testExteranlTileDataArrFunc(
@@ -75,6 +73,11 @@ bool testExteranlTileDataArrFunc(
 		int z, 
 		int y, 
 		int x,
+		int filterMonth , //-1 ignored , 1-12
+		int filterDay ,   //-1 ignored , 1-31
+		int filterHour,  //-1 ignored , 0-23
+		int filterMinu , //-1 ignored , 0-59
+		int filterSec ,  //-1 ignored, 0-59
 		vector<vector<unsigned char> >& retdatavec,//return binary
 		vector<long>& rettimevec,
 		int& dtype ,
@@ -100,7 +103,7 @@ bool testExteranlTileDataArrFunc(
 		short* data = (short*)ret.data() ;
 		for(int it = 0 ; it<wid*hei;++it )
 		{
-			data[it] = it*100.f/wid/hei ;
+			data[it] = it%256;
 		}
 		rettimevec[ids] = ids ;
 	}
@@ -123,15 +126,19 @@ int main()
 	string source = 
 	"function main(){"
 	"  function convfunc(r,n,th){for(var t=n%256,e=parseInt(n/256),f=0,o=-10;o<=10;++o)for(var a=-10;a<=10;++a)f+=th.getPixel(0,t+o,e+a,-1);return f/441;};"
-	"  function pxfunc2(n,r,f,u){for(var c=0,o=0;o<f;++o)c+=n[o];return c};"
+	"  function pxfunc2(n,r,f,u){return n[0];};"
 	"  var dsarr = PixelEngine.DatasetArray(\"fy3d\",\"20190601\", \"20190610\",[0,1,2]);"
 	"  var ds2 = dsarr.forEachPixel(pxfunc2) ;"
-	"  return ds2.renderPsuedColor(0,0,1000,-99,[0,0,0,0],1,1,1) ;"
+	"  var cr = PixelEngine.ColorRamp() ;"
+	"  cr.add(0,32,255,32,255,'') ;"
+    "  cr.add(128,128,128,128,255,'') ;"
+	"  cr.add(256,255,255,255,255,'') ; cr.Nodata=-99;"
+	"  return ds2.renderPsuedColor(0,cr,1) ;"
 	"}" ;
 
 	vector<unsigned char> retbinary ;
 	PixelEngine::initV8() ;
-	PixelEngine::GetExternalDatasetCallBack=testExternalFunc;
+
 	PixelEngine::GetExternalTileDataCallBack=testExteranlTileDataFunc ;
 	PixelEngine::GetExternalTileDataArrCallBack=testExteranlTileDataArrFunc ;
 
@@ -140,7 +147,7 @@ int main()
 
 	if( retbinary.size() > 1 )
 	{
-		FILE* pf = fopen("test.png" , "wb") ;
+		FILE* pf = fopen("test-cr1.png" , "wb") ;
 		fwrite(retbinary.data() , 1 , retbinary.size() , pf) ;
 		fclose(pf) ;
 	}else

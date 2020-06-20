@@ -207,6 +207,11 @@ bool GetTileDataArrayFromJava(
 		int tilez,
 		int tiley,
 		int tilex,
+		int filtermon , 
+		int filterday , 
+		int filterhour , 
+		int filterminu , 
+		int filtersec , 
 		vector<vector<unsigned char> >& retbinaryArr,//return binary
 		vector<long>& dtArr,
 		int& dt,//return datatype
@@ -221,7 +226,7 @@ bool GetTileDataArrayFromJava(
 	JNIEnv* env = (JNIEnv*)pixelEnginePointer->extraPointer ;//java environment
 	jclass	JavaV8HelperClass = (env)->FindClass("com/pixelengine/V8Helper");
 	jmethodID	methodidTile = (env)->GetMethodID(JavaV8HelperClass,"GetTileDataArray"
-    	,"(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[IIII)Lcom/pixelengine/TileResult;");
+    	,"(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[IIIIIIIII)Lcom/pixelengine/TileResult;");
 	jobject	javaV8Helper = env->AllocObject(JavaV8HelperClass);
 
 	jintArray jbandarr = env->NewIntArray(bands.size()) ;
@@ -233,6 +238,7 @@ bool GetTileDataArrayFromJava(
     	,cstring2jstring(env,to.c_str()) 
     	,jbandarr
     	,tilez,tiley,tilex
+    	,filtermon,filterday,filterhour,filterminu,filtersec
 		) ;
 	
     if( resultobj== NULL ){

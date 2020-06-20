@@ -1,4 +1,5 @@
 //PixelEngine.h
+//add Custom ColorRamp 2020-6-20
 
 #ifndef PIXEL_ENGINE_H
 
@@ -57,6 +58,11 @@ typedef bool (*PixelEngine_GetDataFromExternal2Arr_FunctionPointer)(
 		int tilez, 
 		int tiley, 
 		int tilex,
+		int filterMonth , //-1 ignored , 1-12
+		int filterDay ,   //-1 ignored , 1-31
+		int filterHour,  //-1 ignored , 0-23
+		int filterMinu , //-1 ignored , 0-59
+		int filterSec ,  //-1 ignored, 0-59
 		vector<vector<unsigned char> >&,//return binary
 		vector<long>& ,//return time array
 		int& dataType,//return datatype
@@ -72,6 +78,29 @@ struct PixelEngineTileInfo
 	int z,y,x ;
 } ;
 
+
+struct PixelEngineColorRamp
+{
+	inline PixelEngineColorRamp():numColors(0){Nodata=0;NodataColor[0]=NodataColor[1]=NodataColor[2]=NodataColor[3]=0;} ;
+	static const int MAXNUM_COLORS = 50 ;
+	bool useInteger  ;
+	int numColors ;
+	int ivalues[MAXNUM_COLORS] ;
+	float fvalues[MAXNUM_COLORS] ;
+	unsigned char r[MAXNUM_COLORS] ;
+	unsigned char g[MAXNUM_COLORS] ;
+	unsigned char b[MAXNUM_COLORS] ;
+	unsigned char a[MAXNUM_COLORS] ;
+	std::string labels[MAXNUM_COLORS] ;
+	double Nodata; 
+	unsigned char NodataColor[4] ;
+	std::string NodataLabel ;
+	bool unwrap( Isolate* isolate , Local<v8::Value> obj) ;//no labels
+	bool unwrapWithLabels( Isolate* isolate , Local<v8::Value> obj) ;//unwrap labels.
+	int upper_bound(int val) ;
+	int binary_equal(int val) ;
+} ;
+
 struct PixelEngine
 {
 	static vector<int> ColorRainbow  ;//1
@@ -82,6 +111,7 @@ struct PixelEngine
 
 	static vector<int> GetColorRamp(int colorid,int inverse=0) ;
 	static void Value2Color(int valx,float K,int nodata,int* nodataColor,int vmin,int vmax,int interpol,vector<int>& colorRamp,int ncolor,unsigned char& rr,unsigned char& rg,unsigned char& rb,unsigned char& ra );
+	static void Value2Color(int valx,PixelEngineColorRamp& cr,int interpol,unsigned char& rr,unsigned char& rg,unsigned char& rb,unsigned char& ra );
 	static void ColorReverse(vector<int>& colors) ;
 
 	//PixelEngine
@@ -120,6 +150,7 @@ struct PixelEngine
 		,const int height
 		,const int nband 
 		,const int numds );
+	static string long2str(long val) ;
 
 
 
@@ -128,6 +159,7 @@ struct PixelEngine
 	v8::Isolate::CreateParams create_params;
 	Global<Context> m_context ;//need Reset
 	PixelEngineTileInfo tileInfo ;
+	long currentDateTime ;
 	void* extraPointer ;//do not release.
 
 

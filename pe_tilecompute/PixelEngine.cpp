@@ -6,6 +6,179 @@ PixelEngine_GetDataFromExternal2_FunctionPointer PixelEngine::GetExternalTileDat
 PixelEngine_GetDataFromExternal2Arr_FunctionPointer PixelEngine::GetExternalTileDataArrCallBack = nullptr ;
 std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
+int PixelEngineColorRamp::upper_bound(int val) 
+{
+	if( this->numColors<2 )
+	{
+		return 0 ;
+	}
+	int i0 = 0 ;
+	int i1 = this->numColors-1 ;
+	while(i0<i1)
+	{
+		if(i0==i1-1)
+		{
+			if( val == this->ivalues[i0] ) return i0 ;
+			else return i1 ;
+		} 
+		int ic = (i1+i0)/2 ;
+		if(val==this->ivalues[ic])
+		{
+			return ic ;
+		}else if( val>this->ivalues[ic] )
+		{
+			i0 = ic ;
+		}else{
+			i1 = ic ;
+		}
+	}
+	if( val==this->ivalues[i0] )
+	{
+		return i0 ;
+	}else
+	{
+		return i1 ;
+	}
+}
+
+int PixelEngineColorRamp::binary_equal(int val) 
+{
+	if( this->numColors<1 )
+	{
+		return -1 ;
+	}else if( this->numColors == 1 )
+	{
+		if( val == this->ivalues[0] )
+		{
+			return 0 ;
+		}else
+		{
+			return -1 ;
+		}
+	}else
+	{
+		int i0 = 0 ;
+		int i1 = this->numColors-1 ;
+		while(i0<i1)
+		{
+			if(i0==i1-1)
+			{
+				if( val == this->ivalues[i0] ) return i0 ;
+				else if( val==this->ivalues[i1] ) return i1 ;
+				else return -1 ;
+			} 
+			int ic = (i1+i0)/2 ;
+			if(val==this->ivalues[ic])
+			{
+				return ic ;
+			}else if( val>this->ivalues[ic] )
+			{
+				i0 = ic ;
+			}else{
+				i1 = ic ;
+			}
+		}
+		if( val==this->ivalues[i0] )
+		{
+			return i0 ;
+		}else if( val==this->ivalues[i1] )
+		{
+			return i1 ;
+		}else
+		{
+			return -1 ;
+		}
+	}
+}
+
+bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
+{
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Object> crobj = obj->ToObject(context).ToLocalChecked() ;
+	this->useInteger = crobj->Get(context,
+		String::NewFromUtf8(isolate,"useInteger").ToLocalChecked())
+		.ToLocalChecked()->ToBoolean(isolate)->Value() ;
+	this->numColors = crobj->Get(context,
+		String::NewFromUtf8(isolate,"numColors").ToLocalChecked())
+		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+	this->Nodata = crobj->Get(context,
+		String::NewFromUtf8(isolate,"Nodata").ToLocalChecked())
+		.ToLocalChecked()->ToNumber(context).ToLocalChecked()->Value() ;
+
+	//nodatacolor
+	Uint8Array* nodatacolorArray = Uint8Array::Cast(
+			* crobj->Get(context,String::NewFromUtf8(isolate,"NodataColor").ToLocalChecked()).ToLocalChecked()
+			) ; 
+	nodatacolorArray->CopyContents( this->NodataColor , 4) ;
+
+	//ivalues
+	Int32Array* ivaluesArray = Int32Array::Cast(
+			* crobj->Get(context,String::NewFromUtf8(isolate,"ivalues").ToLocalChecked()).ToLocalChecked()
+			) ; 
+	ivaluesArray->CopyContents( this->ivalues , PixelEngineColorRamp::MAXNUM_COLORS*4 ) ;
+
+	//fvalues
+	Float32Array* fvaluesArray = Float32Array::Cast(
+			* crobj->Get(context,String::NewFromUtf8(isolate,"fvalues").ToLocalChecked()).ToLocalChecked()
+			) ; 
+	fvaluesArray->CopyContents( this->fvalues , PixelEngineColorRamp::MAXNUM_COLORS*4 ) ;
+
+	//red
+	Uint8Array* rArray = Uint8Array::Cast(
+			* crobj->Get(context,String::NewFromUtf8(isolate,"r").ToLocalChecked()).ToLocalChecked()
+			) ; 
+	rArray->CopyContents( this->r , PixelEngineColorRamp::MAXNUM_COLORS) ;
+
+	//green
+	Uint8Array* gArray = Uint8Array::Cast(
+			* crobj->Get(context,String::NewFromUtf8(isolate,"g").ToLocalChecked()).ToLocalChecked()
+			) ; 
+	gArray->CopyContents( this->g , PixelEngineColorRamp::MAXNUM_COLORS) ;
+
+	//blue
+	Uint8Array* bArray = Uint8Array::Cast(
+			* crobj->Get(context,String::NewFromUtf8(isolate,"b").ToLocalChecked()).ToLocalChecked()
+			) ; 
+	bArray->CopyContents( this->b , PixelEngineColorRamp::MAXNUM_COLORS) ;
+
+	//alpha
+	Uint8Array* aArray = Uint8Array::Cast(
+			* crobj->Get(context,String::NewFromUtf8(isolate,"a").ToLocalChecked()).ToLocalChecked()
+			) ; 
+	aArray->CopyContents( this->a , PixelEngineColorRamp::MAXNUM_COLORS) ;
+	return true ;
+}
+
+bool PixelEngineColorRamp::unwrapWithLabels( Isolate* isolate , Local<v8::Value> obj)
+{
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+	bool isok = this->unwrap(isolate , obj) ;
+	if( isok )
+	{
+		Local<Object> crobj = obj->ToObject(context).ToLocalChecked() ;
+
+		String::Utf8Value nodataLabelUtf8Value(isolate, crobj->Get(context,
+			String::NewFromUtf8(isolate,"NodataLabel").ToLocalChecked())
+			.ToLocalChecked() );
+		this->NodataLabel = string(*nodataLabelUtf8Value) ;
+
+		Array* labelarray = Array::Cast(
+				*crobj->Get(context,String::NewFromUtf8(isolate,"labels").ToLocalChecked()).ToLocalChecked()
+			) ;
+		for(int i = 0 ; i<this->numColors ; ++ i )
+		{
+			String::Utf8Value utf8val(isolate, labelarray->Get(context,i).ToLocalChecked() ) ;
+			this->labels[i] = string(*utf8val) ;
+		}
+		return true ;
+	}else{
+		return false ;
+	}
+}
+
 /// reverse color ramp
 void PixelEngine::ColorReverse(vector<int>& colors) 
 {
@@ -26,6 +199,12 @@ void PixelEngine::ColorReverse(vector<int>& colors)
 	}
 }
 
+string PixelEngine::long2str(long val) 
+{
+	char buff[32] ;
+	sprintf(buff,"%ld" , val ) ;
+	return string(buff) ;
+}
 
 /// get predefined color ramp
 vector<int> PixelEngine::GetColorRamp(int colorid,int inverse) 
@@ -628,7 +807,7 @@ void PixelEngine::GlobalFunc_FillRangeCallBack(const v8::FunctionCallbackInfo<v8
 	}
 }
 
-/// interpolate RGB of value from ColorRamp
+/// interpolate RGB of value from predefined colors
 void PixelEngine::Value2Color(int valx,float K
 	,int nodata,int* nodataColor
 	,int vmin,int vmax , int interpol
@@ -685,45 +864,174 @@ void PixelEngine::Value2Color(int valx,float K
 	}
 }
 
+
+//convert value to color by colorRamp
+void PixelEngine::Value2Color(int valx,
+	PixelEngineColorRamp& cr,
+	int interpol, //0-discrete,1-linear,2-exact
+	unsigned char& rr,unsigned char& rg,unsigned char& rb,unsigned char& ra )
+{
+	if( valx == cr.Nodata ){
+		rr = cr.NodataColor[0] ;
+		rg = cr.NodataColor[1] ;
+		rb = cr.NodataColor[2] ;
+		ra = cr.NodataColor[3] ;
+	}else
+	{
+		if( interpol==0 )
+		{//discrete
+			if( cr.numColors<=0 )
+			{
+				rr = cr.NodataColor[0] ;
+				rg = cr.NodataColor[1] ;
+				rb = cr.NodataColor[2] ;
+				ra = cr.NodataColor[3] ;
+			}else
+			{
+				if(valx <= cr.ivalues[0])
+				{
+					rr = cr.r[0] ; rg = cr.g[0] ; rb = cr.b[0] ; ra = cr.a[0] ;
+				}else if( valx >= cr.ivalues[cr.numColors-1] )
+				{
+					int ii = cr.numColors-1 ;
+					rr = cr.r[ii] ; rg = cr.g[ii] ; rb = cr.b[ii] ; ra = cr.a[ii] ;
+				}else
+				{
+					int ii = cr.upper_bound(valx) ;
+					rr = cr.r[ii] ; rg = cr.g[ii] ; rb = cr.b[ii] ; ra = cr.a[ii] ;
+				}
+			}
+		}else if( interpol==1 )
+		{//linear
+			if( cr.numColors<=0 )
+			{
+				rr = cr.NodataColor[0] ;
+				rg = cr.NodataColor[1] ;
+				rb = cr.NodataColor[2] ;
+				ra = cr.NodataColor[3] ;
+			}else
+			{
+				if(valx <= cr.ivalues[0])
+				{
+					rr = cr.r[0] ; rg = cr.g[0] ; rb = cr.b[0] ; ra = cr.a[0] ;
+				}else if( valx >= cr.ivalues[cr.numColors-1] )
+				{
+					int ii = cr.numColors-1 ;
+					rr = cr.r[ii] ; rg = cr.g[ii] ; rb = cr.b[ii] ; ra = cr.a[ii] ;
+				}else
+				{
+					int ii = cr.upper_bound(valx) ;
+					int ii0 = ii-1 ;
+					if( ii0>=0 )
+					{
+						float wup = (valx-cr.ivalues[ii0])*1.f/(cr.ivalues[ii]-cr.ivalues[ii0]) ;
+						float wl = 1.f - wup ;
+						rr = cr.r[ii0]*wl+ cr.r[ii]*wup ;
+						rg = cr.g[ii0]*wl+ cr.g[ii]*wup ;
+						rb = cr.b[ii0]*wl+ cr.b[ii]*wup ; 
+						ra = cr.a[ii0]*wl+ cr.a[ii]*wup ;
+
+					}else
+					{
+						rr = cr.r[ii] ; rg = cr.g[ii] ; rb = cr.b[ii] ; ra = cr.a[ii] ;
+					}
+				}
+			}
+		}else
+		{//exact
+			if( cr.numColors<=0 )
+			{
+				rr = cr.NodataColor[0] ;
+				rg = cr.NodataColor[1] ;
+				rb = cr.NodataColor[2] ;
+				ra = cr.NodataColor[3] ;
+			}else
+			{
+				int ii = cr.binary_equal(valx) ;
+				if( ii<0 )
+				{
+					rr = cr.NodataColor[0] ;
+					rg = cr.NodataColor[1] ;
+					rb = cr.NodataColor[2] ;
+					ra = cr.NodataColor[3] ;
+				}else
+				{
+					rr = cr.r[ii] ; rg = cr.g[ii] ; rb = cr.b[ii] ; ra = cr.a[ii] ;
+				}
+			}
+		}
+	}
+}
+	
+
+
+
 /// dataset.renderPsuedColor(...), return a new Dataset
-//iband,vmin,vmax,nodata,nodataColor,colorid,noraml/inverse(0/1),discrete/interpol(0/1)
+//args1: iband,vmin,vmax,nodata,nodataColor,colorid,noraml/inverse(0/1),discrete/interpol(0/1)
+//args2: iband,colorRamp,method(discrete 0/linear 1/exact 2)
 void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
 	cout<<"inside GlobalFunc_RenderPsuedColorCallBack"<<endl; 
-	if (args.Length() != 8 ){
-		cout<<"Error: args.Length != 8 "<<endl ;
+	if (args.Length() != 8 && args.Length() != 3){
+		cout<<"Error: args.Length != 8 and != 3 "<<endl ;
 		return;
 	}
 	Isolate* isolate = args.GetIsolate() ;
 	v8::HandleScope handle_scope(isolate);
 	Local<Context> context(isolate->GetCurrentContext()) ;
 
-	Local<Value> v8_iband = args[0];
-	Local<Value> v8_vmin = args[1] ;
-	Local<Value> v8_vmax = args[2] ;
-	Local<Value> v8_nodata = args[3] ;
-	Local<Value> v8_nodatacolor = args[4] ;
-	Local<Value> v8_colorid = args[5] ;
-	Local<Value> v8_inverse = args[6] ;
-	Local<Value> v8_interpol = args[7] ;
+	int iband = 0 ;
+	int colormethod = 0 ;//0-discrete,1-interpol linear,2-exact.
+	PixelEngineColorRamp colorRamp ;
 
-	int iband = v8_iband->ToInteger(context).ToLocalChecked()->Value() ;
-	int vmin = v8_vmin->ToInteger(context).ToLocalChecked()->Value() ;
-	int vmax = v8_vmax->ToInteger(context).ToLocalChecked()->Value() ;
-	int nodata = v8_nodata->ToInteger(context).ToLocalChecked()->Value() ;
-	Local<Object> nodataColorObj = v8_nodatacolor->ToObject(context).ToLocalChecked() ;
-	int nodataColor[] = {0,0,0,0} ;
-	nodataColor[0] = nodataColorObj->Get(context,0).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	nodataColor[1] = nodataColorObj->Get(context,1).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	nodataColor[2] = nodataColorObj->Get(context,2).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	nodataColor[3] = nodataColorObj->Get(context,3).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+	if( args.Length() == 8 )
+	{
+		Local<Value> v8_iband = args[0];
+		Local<Value> v8_vmin = args[1] ;
+		Local<Value> v8_vmax = args[2] ;
+		Local<Value> v8_nodata = args[3] ;
+		Local<Value> v8_nodatacolor = args[4] ;
+		Local<Value> v8_colorid = args[5] ;
+		Local<Value> v8_inverse = args[6] ;
+		Local<Value> v8_interpol = args[7] ;
 
-	int colorid = v8_colorid->ToInteger(context).ToLocalChecked()->Value() ;
-	int inverse = v8_inverse->ToInteger(context).ToLocalChecked()->Value() ;
-	int interpol = v8_interpol->ToInteger(context).ToLocalChecked()->Value() ;
+		iband = v8_iband->ToInteger(context).ToLocalChecked()->Value() ;
+		int vmin = v8_vmin->ToInteger(context).ToLocalChecked()->Value() ;
+		int vmax = v8_vmax->ToInteger(context).ToLocalChecked()->Value() ;
+		colorRamp.Nodata = v8_nodata->ToInteger(context).ToLocalChecked()->Value() ;
+		Local<Object> nodataColorObj = v8_nodatacolor->ToObject(context).ToLocalChecked() ;
+		colorRamp.NodataColor[0] = nodataColorObj->Get(context,0).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+		colorRamp.NodataColor[1] = nodataColorObj->Get(context,1).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+		colorRamp.NodataColor[2] = nodataColorObj->Get(context,2).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+		colorRamp.NodataColor[3] = nodataColorObj->Get(context,3).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
 
-	vector<int> colorRamp = PixelEngine::GetColorRamp(colorid,inverse) ;
-	int ncolor = colorRamp.size()/3 ;
+		int colorid = v8_colorid->ToInteger(context).ToLocalChecked()->Value() ;
+		int inverse = v8_inverse->ToInteger(context).ToLocalChecked()->Value() ;
+		colormethod = v8_interpol->ToInteger(context).ToLocalChecked()->Value() ;
+
+		vector<int> rgbvec = PixelEngine::GetColorRamp(colorid,inverse) ;
+		int ncolor = rgbvec.size()/3 ;
+		float stepf = (vmax-vmin) / (ncolor-1.f) ;
+		colorRamp.useInteger=true ;
+		for( int i = 0 ; i<ncolor ; ++ i )
+		{
+			colorRamp.ivalues[i] = vmin + i*stepf ;
+			colorRamp.r[i] = rgbvec[i*3+0] ;
+			colorRamp.g[i] = rgbvec[i*3+1] ;
+			colorRamp.b[i] = rgbvec[i*3+2] ;
+			colorRamp.a[i] = 255 ;
+			++ colorRamp.numColors ;
+		}
+	}else if( args.Length() == 3 )
+	{//use colorramp
+
+		Local<Value> v8_iband = args[0];
+		Local<Value> v8_colorramp = args[1] ;
+		Local<Value> v8_interpol = args[2] ;
+		iband = v8_iband->ToInteger(context).ToLocalChecked()->Value() ;
+		colormethod = v8_interpol->ToInteger(context).ToLocalChecked()->Value() ;
+		colorRamp.unwrap(isolate , v8_colorramp ) ;
+	}
 
 	Local<Object> thisobj =  args.This() ;
 	int thisDataType = thisobj->Get(context,
@@ -757,26 +1065,30 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 		.ToLocalChecked() ;
 	Uint8Array* outU8Array = Uint8Array::Cast(*outDataValue) ;
 	unsigned char* outbackData = (unsigned char*) outU8Array->Buffer()->GetBackingStore()->Data() ;
-
+ 
 
 	Local<Value> tiledataValue = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
 		.ToLocalChecked() ;
+ 
 
 	int asize = width * height ;
-	float theK = (ncolor-1.f)/(vmax-vmin) ;
+	int asize2 = asize*2 ;
+	int asize3 = asize*3 ;
 	if( thisDataType==3 )
 	{//short
-		
 		Int16Array* i16Array = Int16Array::Cast(*tiledataValue) ;
 		short* backData = (short*) i16Array->Buffer()->GetBackingStore()->Data() ;
 		short* backDataOffset = backData + iband * asize;
 		for(int it = 0 ; it < asize ; ++ it )
 		{
-			PixelEngine::Value2Color(backDataOffset[it],theK,nodata,nodataColor
-				,vmin,vmax,interpol,colorRamp,ncolor,outbackData[it],outbackData[it+asize]
-				,outbackData[it+asize*2],outbackData[it+asize*3]) ;
-
+			PixelEngine::Value2Color(backDataOffset[it], 
+				colorRamp , 
+				colormethod , 
+				outbackData[it],
+				outbackData[it+asize],
+				outbackData[it+asize2],
+				outbackData[it+asize3]) ;
 		}
 	}else
 	{//byte
@@ -785,12 +1097,15 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 		unsigned char* backDataOffset = backData + iband * asize;
 		for(int it = 0 ; it < asize ; ++ it )
 		{
-			PixelEngine::Value2Color(backDataOffset[it],theK,nodata,nodataColor
-				,vmin,vmax,interpol,colorRamp,ncolor,outbackData[it],outbackData[it+asize]
-				,outbackData[it+asize*2],outbackData[it+asize*3]) ;
+			PixelEngine::Value2Color(backDataOffset[it], 
+				colorRamp , 
+				colormethod , 
+				outbackData[it],
+				outbackData[it+asize],
+				outbackData[it+asize2],
+				outbackData[it+asize3]) ;
 		}
 	}
-	
 	//info.GetReturnValue().Set(i16arr);
 	args.GetReturnValue().Set(outds) ;
 }
@@ -903,6 +1218,12 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 	int tiley = thisPePtr->tileInfo.y  ; 
 	int tilex = thisPePtr->tileInfo.x  ; 
 
+	if( datetime == "-1" )
+	{
+		cout<<"use current "<<thisPePtr->currentDateTime<<endl ;
+		datetime = PixelEngine::long2str(thisPePtr->currentDateTime) ;
+	}
+
 	bool externalOk = PixelEngine::GetExternalTileDataCallBack(
 		thisPePtrEx->Value() ,// pointer to PixelEngine Object.
 		name,datetime,wantBands,
@@ -962,11 +1283,16 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 /// @params fromDatetime included
 /// @params toDatetime not included
 /// @params bands [0,1,2,3] not used yet
+/// @params filterMon optional
+/// @params filterDay optional
+/// @params filterHour optional
+/// @params filterMinu optional
+/// @params filterSec optional    PixelEngine.Ignore
 void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
 	cout<<"inside GlobalFunc_DatasetArrayCallBack"<<endl; 
-	if (args.Length() != 4 ){
-		cout<<"Error: args.Length != 4 "<<endl ;
+	if (args.Length() < 4 ){
+		cout<<"Error: args.Length < 4 "<<endl ;
 		return;
 	}
 
@@ -979,6 +1305,33 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	Local<Value> v8to = args[2] ;// not include
 	Local<Value> v8bands = args[3] ;// not used yet
 
+	int filtermon = -1 ;
+	int filterday = -1 ;
+	int filterhour = -1 ;
+	int filterminu = -1 ;
+	int filtersec = -1 ;
+	if( args.Length() > 4 )
+	{
+		filtermon = Integer::Cast(*args[4])->Value() ;
+	}
+	if( args.Length()> 5)
+	{
+		filterday = Integer::Cast(*args[5])->Value() ;
+	}
+	if( args.Length()> 6)
+	{
+		filterhour = Integer::Cast(*args[6])->Value() ;
+	}
+	if( args.Length()> 7)
+	{
+		filterminu = Integer::Cast(*args[7])->Value() ;
+	}
+	if( args.Length()> 8)
+	{
+		filtersec = Integer::Cast(*args[8])->Value() ;
+	}
+
+
 	String::Utf8Value nameutf8( isolate , v8name) ;
 	string name( *nameutf8 ) ;
 
@@ -990,7 +1343,15 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 
 	cout<<"from to :"<<fromdatetime<<"-"<<todatetime<<endl ;
 
-	vector<int> wantBands(8,0) ;//not used yet.
+	Array* i32array = Array::Cast(*v8bands) ;
+	int nband = i32array->Length() ;
+	vector<int> wantBands ;
+	wantBands.reserve(32) ;
+	for(int ib = 0 ; ib<nband ; ++ ib )
+	{
+		int wantib = i32array->Get(context,ib).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+		wantBands.push_back(wantib) ;
+	}
 
 	vector<vector<unsigned char> > externalDataArr ;
 	vector<long> externalTimeArr ;
@@ -1012,6 +1373,18 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	int tilez = thisPePtr->tileInfo.z  ;
 	int tiley = thisPePtr->tileInfo.y  ; 
 	int tilex = thisPePtr->tileInfo.x  ; 
+	if( fromdatetime == "-1" )
+	{
+		cout<<"fromdatetime use current "<<thisPePtr->currentDateTime<<endl ;
+		fromdatetime = PixelEngine::long2str(thisPePtr->currentDateTime) ;
+	}
+
+	if( todatetime == "-1" )
+	{
+		cout<<"todatetime use current "<<thisPePtr->currentDateTime<<endl ;
+		todatetime = PixelEngine::long2str(thisPePtr->currentDateTime) ;
+	}
+
 
 	bool externalOk = PixelEngine::GetExternalTileDataArrCallBack(
 		thisPePtrEx->Value() ,// pointer to PixelEngine Object.
@@ -1019,6 +1392,11 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 		tilez,
 		tiley,
 		tilex,
+		filtermon,
+		filterday,
+		filterhour,
+		filterminu,
+		filtersec ,
 		externalDataArr , 
 		externalTimeArr , 
 		dt ,
@@ -1131,6 +1509,13 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 	Object* peinfoObj = Object::Cast( *peinfo ) ;
 	Local<Value> thisPePtrValue = peinfoObj->GetInternalField(0) ;
 	External* thisPePtrEx = External::Cast(*thisPePtrValue);
+	PixelEngine* thisPePtr = (PixelEngine*) thisPePtrEx->Value() ;
+
+	if( datetime == "-1" )
+	{
+		cout<<"use current "<<thisPePtr->currentDateTime<<endl ;
+		datetime = PixelEngine::long2str(thisPePtr->currentDateTime) ;
+	}
 
 
 	bool externalOk = PixelEngine::GetExternalTileDataCallBack(
@@ -1337,6 +1722,8 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampGrays").ToLocalChecked(),
 	   Integer::New(isolate,0));
 	pe->Set(context,String::NewFromUtf8(isolate, "DatetimeCurrent").ToLocalChecked(),
+	   Integer::New(isolate,0));//modified 2020-6-20
+	pe->Set(context,String::NewFromUtf8(isolate, "Ignore").ToLocalChecked(),
 	   Integer::New(isolate,-1));
 
 	//normal/inverse
@@ -1349,6 +1736,8 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	Integer::New(isolate,0));
 	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampInterpolate").ToLocalChecked(),
 	Integer::New(isolate,1));
+	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampExact").ToLocalChecked(),
+	Integer::New(isolate,2));//add 2020-6-20
 
 
 	pe->Set(context
@@ -1374,7 +1763,6 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	pe->Set(context
 		,String::NewFromUtf8(isolate, "log").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_Log)->GetFunction(context).ToLocalChecked() );
-	cout<<"debug 2001"<<endl ;
 
 	//set globalFunc_forEachPixelCallBack in javascript
 	string sourceforEachPixelFunction = R"(
@@ -1533,25 +1921,54 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 				}
 			} 
 		};
-		
+		PixelEngine.ColorRamp = function(){
+			var cr = new Object() ;
+			cr.useInteger = true ;
+			cr.numColors = 0 ;
+			cr.ivalues = new Int32Array(50) ;
+			cr.fvalues = new Float32Array(50) ;
+			cr.r = new Uint8Array(50) ;
+			cr.g = new Uint8Array(50) ;
+			cr.b = new Uint8Array(50) ;
+			cr.a = new Uint8Array(50) ;
+			cr.labels = new Array(50) ;
+			cr.Nodata = 0 ;
+			cr.NodataColor = new Uint8Array(4) ;
+			cr.NodataLabel = "Nan" ;
+			cr.add = function(v,r,g,b,a,l){
+				if(this.numColors>50) return ;
+				let i = this.numColors ;
+				this.ivalues[i] = v ;
+				this.fvalues[i] = v ;
+				this.r[i] = r ;
+				this.g[i] = g ;
+				this.b[i] = b ;
+				this.a[i] = a ;
+				this.labels[i] = l ;
+				++this.numColors ;
+				if( this.useInteger==true )
+				{
+					if( Number.isInteger(v) == false ) this.useInteger=false ;
+				}
+				return this.numColors ;
+			} ;
+			return cr ;
+		};	
 	)" ;
 	v8::Local<v8::Script> scriptForEach =
           v8::Script::Compile(context
           	, String::NewFromUtf8(isolate,sourceforEachPixelFunction.c_str()).ToLocalChecked()
           	).ToLocalChecked();
-    cout<<"debug 2002"<<endl ;
+    
     v8::Local<v8::Value> resultForEach = scriptForEach->Run(context).ToLocalChecked();
 
-    cout<<"debug 2003"<<endl ;
     Local<Value> forEachFuncInJs = global->Get(context 
     	,String::NewFromUtf8(isolate, "globalFunc_forEachPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;
     thePE->GlobalFunc_ForEachPixelCallBack.Reset(isolate , forEachFuncInJs) ;
-    cout<<"debug 2004"<<endl ;
 
     Local<Value> getPixelFuncInJs = global->Get(context 
     	,String::NewFromUtf8(isolate, "globalFunc_getPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;
     thePE->GlobalFunc_GetPixelCallBack.Reset(isolate , getPixelFuncInJs) ;
-    cout<<"debug 2005"<<endl ;
 
 
     //set globalFunc_newDatasetCallBack, this will be called in javascript ForEachPixel.
@@ -1573,6 +1990,7 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 	this->tileInfo.y = y ;
 	this->tileInfo.z = z ;
 	this->extraPointer = extra ;
+	this->currentDateTime = currentdt ;
 
 	bool allOk = true ;
 
