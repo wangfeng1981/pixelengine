@@ -4,6 +4,7 @@
 //PixelEngine_GetDataFromExternal_FunctionPointer PixelEngine::GetExternalDatasetCallBack = nullptr ;
 PixelEngine_GetDataFromExternal2_FunctionPointer PixelEngine::GetExternalTileDataCallBack = nullptr ;
 PixelEngine_GetDataFromExternal2Arr_FunctionPointer PixelEngine::GetExternalTileDataArrCallBack = nullptr ;
+PixelEngine_GetColorRampFromExternal_FunctionPointer PixelEngine::GetExternalColorRampCallBack = nullptr ;
 std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
 int PixelEngineColorRamp::upper_bound(int val) 
@@ -178,6 +179,82 @@ bool PixelEngineColorRamp::unwrapWithLabels( Isolate* isolate , Local<v8::Value>
 		return false ;
 	}
 }
+
+void PixelEngineColorRamp::copy2v8(Isolate* isolate , Local<v8::Value> obj) 
+{
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Object> crobj = obj->ToObject(context).ToLocalChecked() ;
+
+	//set use integer
+	crobj->Set(context , 
+		String::NewFromUtf8(isolate,"useInteger").ToLocalChecked() , 
+		Boolean::New(isolate,true)
+		) ;
+
+	//set color number
+	crobj->Set(context , 
+		String::NewFromUtf8(isolate,"numColors").ToLocalChecked() , 
+		Integer::New(isolate,this->numColors)
+		) ;
+	//set nodata
+	crobj->Set(context,
+		String::NewFromUtf8(isolate,"Nodata").ToLocalChecked() , 
+		Number::New(isolate,this->Nodata)
+		) ;
+	//nodatacolor
+	Uint8Array* nodatacolorArray = Uint8Array::Cast(
+			* crobj->Get(context,String::NewFromUtf8(isolate,"NodataColor").ToLocalChecked()).ToLocalChecked()
+			) ; 
+	unsigned char* nodatacolorBackPtr = (unsigned char*)( nodatacolorArray->Buffer()->GetBackingStore().get()->Data() );
+	nodatacolorBackPtr[0] = this->NodataColor[0] ;
+	nodatacolorBackPtr[1] = this->NodataColor[1] ;
+	nodatacolorBackPtr[2] = this->NodataColor[2] ;
+	nodatacolorBackPtr[3] = this->NodataColor[3] ;
+
+	//set ivalues
+	Int32Array* ivaluesArray = Int32Array::Cast(
+			* crobj->Get(context,String::NewFromUtf8(isolate,"ivalues").ToLocalChecked()).ToLocalChecked()
+			) ; 
+	int* ivaluesBackPtr = (int*)( ivaluesArray->Buffer()->GetBackingStore().get()->Data() );
+
+
+	//red
+	Uint8Array* rArray = Uint8Array::Cast(
+			* crobj->Get(context,String::NewFromUtf8(isolate,"r").ToLocalChecked()).ToLocalChecked()
+			) ; 
+	unsigned char* rBackPtr = (unsigned char*)( rArray->Buffer()->GetBackingStore().get()->Data() );
+
+	//green
+	Uint8Array* gArray = Uint8Array::Cast(
+			* crobj->Get(context,String::NewFromUtf8(isolate,"g").ToLocalChecked()).ToLocalChecked()
+			) ; 
+	unsigned char* gBackPtr = (unsigned char*)( gArray->Buffer()->GetBackingStore().get()->Data() );
+
+	//blue
+	Uint8Array* bArray = Uint8Array::Cast(
+			* crobj->Get(context,String::NewFromUtf8(isolate,"b").ToLocalChecked()).ToLocalChecked()
+			) ; 
+	unsigned char* bBackPtr = (unsigned char*)( bArray->Buffer()->GetBackingStore().get()->Data() );
+
+	//alpha
+	Uint8Array* aArray = Uint8Array::Cast(
+			* crobj->Get(context,String::NewFromUtf8(isolate,"a").ToLocalChecked()).ToLocalChecked()
+			) ; 
+	unsigned char* aBackPtr = (unsigned char*)( aArray->Buffer()->GetBackingStore().get()->Data() );
+
+	for(int ic = 0 ; ic < this->numColors ; ++ ic )
+	{
+		ivaluesBackPtr[ic] = this->ivalues[ic] ;
+		rBackPtr[ic] = this->r[ic] ;
+		gBackPtr[ic] = this->g[ic] ;
+		bBackPtr[ic] = this->b[ic] ;
+		aBackPtr[ic] = this->a[ic] ;
+	}
+
+}
+
 
 /// reverse color ramp
 void PixelEngine::ColorReverse(vector<int>& colors) 
@@ -1549,6 +1626,38 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 	}
 }
 
+/// get external colorramp.
+/// PixelEngine.ColorRamp(colorid,colorRampObj)
+void PixelEngine::GlobalFunc_ColorRampCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+{
+	cout<<"inside GlobalFunc_ColorRampCallBack"<<endl; 
+	if (args.Length() != 2 ){
+		cout<<"Error: args.Length != 2 "<<endl ;
+		return;
+	}
+
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> colorid0 = args[0];
+	String::Utf8Value colorid1( isolate , colorid0) ;
+	string strColorid( *colorid1 ) ;
+
+	Local<Value> v8_crObj = args[1] ;
+
+	if( PixelEngine::GetExternalColorRampCallBack != nullptr )
+	{
+		PixelEngineColorRamp cr = PixelEngine::GetExternalColorRampCallBack(strColorid) ;
+		cr.copy2v8( isolate , v8_crObj) ;
+		args.GetReturnValue().Set(v8_crObj) ;
+	}else
+	{
+		cout<<"Error: PixelEngine::GetExternalColorRampCallBack is nullptr."<<endl;
+		args.GetReturnValue().Set(v8_crObj) ;
+	}
+}
+
 
 /// create a Dataset from localfile. only for testing.
 /// filepath,dt,width,hight,nband
@@ -1921,7 +2030,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 				}
 			} 
 		};
-		PixelEngine.ColorRamp = function(){
+		PixelEngine.ColorRamp = function(colorRampId){
 			var cr = new Object() ;
 			cr.useInteger = true ;
 			cr.numColors = 0 ;
@@ -1952,6 +2061,9 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 				}
 				return this.numColors ;
 			} ;
+			if(colorRampId!==undefined){
+				globalFunc_ColorRampCallBack(colorRampId,cr) ;
+			}
 			return cr ;
 		};	
 	)" ;
@@ -1975,6 +2087,12 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
     global->Set(context
 		,String::NewFromUtf8(isolate, "globalFunc_newDatasetCallBack").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_NewDatasetCallBack)->GetFunction(context).ToLocalChecked() );
+
+    //set globalFunc_ColorRampCallBack, this will be c++ codes.
+    global->Set(context
+		,String::NewFromUtf8(isolate, "globalFunc_ColorRampCallBack").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_ColorRampCallBack)->GetFunction(context).ToLocalChecked() );
+
 
 	// //global function globalFunc_renderGrayCallBack
 	// global->Set(context

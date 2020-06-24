@@ -111,6 +111,30 @@ bool testExteranlTileDataArrFunc(
 }
 
 
+PixelEngineColorRamp testExteranlColorRampFunc(string colorid) 
+{
+	cout<<"testExteranlColorRampFunc colorid "<<colorid<<endl ;
+
+	PixelEngineColorRamp cr ;
+
+	for(int ic = 0 ; ic<10 ; ++ ic )
+	{
+		cr.ivalues[ic] = ic*25 ;
+		cr.r[ic] = 0 ;
+		cr.g[ic] = ic*25 ;
+		cr.b[ic] = ic*25 ;
+		cr.a[ic] = 255 ;
+		cr.numColors++ ;
+	}
+	cr.Nodata = -1 ;
+	cr.NodataColor[0] = 0 ;
+	cr.NodataColor[1] = 0 ;
+	cr.NodataColor[2] = 0 ;
+	cr.NodataColor[3] = 0 ;
+	return cr ;
+}
+
+
 
 int main()
 {
@@ -133,7 +157,8 @@ int main()
 	"  cr.add(0,32,255,32,255,'') ;"
     "  cr.add(128,128,128,128,255,'') ;"
 	"  cr.add(256,255,255,255,255,'') ; cr.Nodata=-99;"
-	"  return ds2.renderPsuedColor(0,cr,1) ;"
+	"  var cr2=PixelEngine.ColorRamp('some_color_id') ;"
+	"  return ds2.renderPsuedColor(0,cr2,0) ;"
 	"}" ;
 
 	vector<unsigned char> retbinary ;
@@ -141,13 +166,14 @@ int main()
 
 	PixelEngine::GetExternalTileDataCallBack=testExteranlTileDataFunc ;
 	PixelEngine::GetExternalTileDataArrCallBack=testExteranlTileDataArrFunc ;
+	PixelEngine::GetExternalColorRampCallBack=testExteranlColorRampFunc;
 
 	PixelEngine pe ;
 	pe.RunScriptForTile( nullptr, source, 0,0,0,0, retbinary) ;
 
 	if( retbinary.size() > 1 )
 	{
-		FILE* pf = fopen("test-cr1.png" , "wb") ;
+		FILE* pf = fopen("test-clrid.png" , "wb") ;
 		fwrite(retbinary.data() , 1 , retbinary.size() , pf) ;
 		fclose(pf) ;
 	}else

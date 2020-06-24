@@ -72,6 +72,12 @@ typedef bool (*PixelEngine_GetDataFromExternal2Arr_FunctionPointer)(
 		int& numds );//return number of dataset.
 
 
+struct PixelEngineColorRamp ;
+//get ColorRamp from external by StringID
+typedef PixelEngineColorRamp (*PixelEngine_GetColorRampFromExternal_FunctionPointer)(
+		string );
+
+
 
 struct PixelEngineTileInfo
 {
@@ -97,6 +103,7 @@ struct PixelEngineColorRamp
 	std::string NodataLabel ;
 	bool unwrap( Isolate* isolate , Local<v8::Value> obj) ;//no labels
 	bool unwrapWithLabels( Isolate* isolate , Local<v8::Value> obj) ;//unwrap labels.
+	void copy2v8(Isolate* isolate , Local<v8::Value> obj) ;
 	int upper_bound(int val) ;
 	int binary_equal(int val) ;
 } ;
@@ -129,6 +136,7 @@ struct PixelEngine
 	static void GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 	static void GlobalFunc_FillRangeCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 	static void GlobalFunc_RenderRGBCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+	static void GlobalFunc_ColorRampCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 
 	//global methods:
 	static void GlobalFunc_Log(const v8::FunctionCallbackInfo<v8::Value>& args) ;
@@ -173,6 +181,7 @@ struct PixelEngine
 	//static PixelEngine_GetDataFromExternal_FunctionPointer GetExternalDatasetCallBack;//will deprecated
 	static PixelEngine_GetDataFromExternal2_FunctionPointer GetExternalTileDataCallBack; 
 	static PixelEngine_GetDataFromExternal2Arr_FunctionPointer GetExternalTileDataArrCallBack ;
+	static PixelEngine_GetColorRampFromExternal_FunctionPointer GetExternalColorRampCallBack ;
 
 } ;
 
