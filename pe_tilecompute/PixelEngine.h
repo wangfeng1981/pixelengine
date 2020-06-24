@@ -75,7 +75,7 @@ typedef bool (*PixelEngine_GetDataFromExternal2Arr_FunctionPointer)(
 struct PixelEngineColorRamp ;
 //get ColorRamp from external by StringID
 typedef PixelEngineColorRamp (*PixelEngine_GetColorRampFromExternal_FunctionPointer)(
-		string );
+		void* pePtr, string );
 
 
 

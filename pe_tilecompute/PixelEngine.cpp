@@ -1648,7 +1648,16 @@ void PixelEngine::GlobalFunc_ColorRampCallBack(const v8::FunctionCallbackInfo<v8
 
 	if( PixelEngine::GetExternalColorRampCallBack != nullptr )
 	{
-		PixelEngineColorRamp cr = PixelEngine::GetExternalColorRampCallBack(strColorid) ;
+		Local<Object> global = context->Global() ;
+		Local<Value> peinfo = global->Get( context
+			,String::NewFromUtf8(isolate, "PixelEnginePointer").ToLocalChecked())
+			.ToLocalChecked() ;
+		Object* peinfoObj = Object::Cast( *peinfo ) ;
+		Local<Value> thisPePtrValue = peinfoObj->GetInternalField(0) ;
+		External* thisPePtrEx = External::Cast(*thisPePtrValue);
+		PixelEngine* thisPePtr = static_cast<PixelEngine*>(thisPePtrEx->Value() );
+
+		PixelEngineColorRamp cr = PixelEngine::GetExternalColorRampCallBack(thisPePtrEx->Value(),strColorid) ;
 		cr.copy2v8( isolate , v8_crObj) ;
 		args.GetReturnValue().Set(v8_crObj) ;
 	}else

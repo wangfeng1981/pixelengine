@@ -290,6 +290,93 @@ bool GetTileDataArrayFromJava(
 }
 
 
+
+
+//get external color ramp
+PixelEngineColorRamp GetColorRampFromJava(void* pePtr,string colorid )
+{
+	cout<<"in c++ TileComputeV8Helper GetColorRampFromJava"<<endl; 
+
+	PixelEngine* pixelEnginePointer = (PixelEngine*)pePtr ;
+	JNIEnv* env = (JNIEnv*)pixelEnginePointer->extraPointer ;//java environment
+	jclass	JavaV8HelperClass = (env)->FindClass("com/pixelengine/V8Helper");
+	jmethodID	methodidColorRamp = (env)->GetMethodID(JavaV8HelperClass,"GetColorRamp"
+    	,"(Ljava/lang/String;)Lcom/pixelengine/ColorRamp;");
+	jobject	javaV8Helper = env->AllocObject(JavaV8HelperClass);
+
+	PixelEngineColorRamp cr; 
+    
+    jobject resultobj = (jobject) env->CallObjectMethod(
+    	javaV8Helper,methodidColorRamp
+    	,cstring2jstring(env,colorid.c_str())
+    	) ;
+    if( resultobj== NULL ){
+    	cout<<"Error: in c++ returned colorRamp from java is null, return empty cr."<<endl ;
+    	
+    	return cr ;
+    }
+
+    jclass resultClass = env->FindClass("com/pixelengine/ColorRamp") ;
+
+    jfieldID ivaluesid = env->GetFieldID(resultClass,"ivalues","[I") ;//long for J
+    jfieldID rid = env->GetFieldID(resultClass,"r","[B") ;
+    jfieldID gid = env->GetFieldID(resultClass,"g","[B") ;
+    jfieldID bid = env->GetFieldID(resultClass,"b","[B") ;
+    jfieldID aid = env->GetFieldID(resultClass,"a","[B") ;
+
+    jfieldID nodataid = env->GetFieldID(resultClass,"Nodata","D") ;
+    jfieldID nodatacolorid = env->GetFieldID(resultClass,"NodataColor","[B") ;
+
+    cr.Nodata = env->GetDoubleField(resultobj, nodataid) ;
+    
+    jobject ivalobj = env->GetObjectField(resultobj, ivaluesid) ;
+    jobject robj = env->GetObjectField(resultobj, rid) ;
+    jobject gobj = env->GetObjectField(resultobj, gid) ;
+    jobject bobj = env->GetObjectField(resultobj, bid) ;
+    jobject aobj = env->GetObjectField(resultobj, aid) ;
+    jobject ndcolorobj = env->GetObjectField(resultobj, nodatacolorid) ;
+
+    jintArray* ivalptr = (jintArray*)(&ivalobj) ;
+    jbyteArray* rptr = (jbyteArray*)(&robj) ;
+    jbyteArray* gptr = (jbyteArray*)(&gobj) ;
+    jbyteArray* bptr = (jbyteArray*)(&bobj) ;
+    jbyteArray* aptr = (jbyteArray*)(&aobj) ;
+    jbyteArray* ndcolorptr = (jbyteArray*)(&ndcolorobj) ;
+
+    cr.numColors = env->GetArrayLength(*ivalptr) ;
+
+    int* ivalptr2 = env->GetIntArrayElements(*ivalptr,NULL);
+    jbyte* rptr2 = env->GetByteArrayElements(*rptr,NULL) ;
+    jbyte* gptr2 = env->GetByteArrayElements(*gptr,NULL) ;
+    jbyte* bptr2 = env->GetByteArrayElements(*bptr,NULL) ;
+    jbyte* aptr2 = env->GetByteArrayElements(*aptr,NULL) ;
+    jbyte* ndcolorptr2 = env->GetByteArrayElements(*ndcolorptr,NULL) ;
+
+    for(int ic = 0 ; ic < cr.numColors ; ++ ic )
+    {
+    	cr.ivalues[ic] = ivalptr2[ic] ;
+    	cr.r[ic] = (unsigned char)(rptr2[ic]) ;
+    	cr.g[ic] = (unsigned char)(gptr2[ic]) ;
+    	cr.b[ic] = (unsigned char)(bptr2[ic]) ;
+    	cr.a[ic] = (unsigned char)(aptr2[ic]) ;
+    }
+
+    cr.NodataColor[0]=(unsigned char)(ndcolorptr2[0]) ;
+    cr.NodataColor[1]=(unsigned char)(ndcolorptr2[1]) ;
+    cr.NodataColor[2]=(unsigned char)(ndcolorptr2[2]) ;
+    cr.NodataColor[3]=(unsigned char)(ndcolorptr2[3]) ;
+
+    env->ReleaseIntArrayElements(*ivalptr, ivalptr2, JNI_ABORT);
+    env->ReleaseByteArrayElements(*rptr, rptr2, JNI_ABORT);
+    env->ReleaseByteArrayElements(*gptr, gptr2, JNI_ABORT);
+    env->ReleaseByteArrayElements(*bptr, bptr2, JNI_ABORT);
+    env->ReleaseByteArrayElements(*aptr, aptr2, JNI_ABORT);
+    env->ReleaseByteArrayElements(*ndcolorptr, ndcolorptr2, JNI_ABORT);
+
+	return cr ;
+}
+
+
  
 JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_V8Helper_CallTileCompute
   (JNIEnv *env, jobject obj, jstring script, jlong current, jint z, jint y, jint x)
@@ -301,6 +388,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_V8Helper_CallTileCompute
 		//PixelEngine::GetExternalDatasetCallBack = GetDataFromJava ;//deprecated
 		PixelEngine::GetExternalTileDataCallBack = GetTileDataFromJava ;//will be deprecated 
 		PixelEngine::GetExternalTileDataArrCallBack = GetTileDataArrayFromJava ;
+		PixelEngine::GetExternalColorRampCallBack = GetColorRampFromJava ;
 	}
 	vector<unsigned char> retbinary ;
 	PixelEngine pe ;
@@ -322,7 +410,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_V8Helper_CallTileCompute
 JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_Version
   (JNIEnv *env, jobject obj)
 {
-	return cstring2jstring( env , "1.1" ) ;
+	return cstring2jstring( env , "1.2" ) ;
 }
 
 

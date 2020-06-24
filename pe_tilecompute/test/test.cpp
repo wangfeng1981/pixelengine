@@ -111,7 +111,9 @@ bool testExteranlTileDataArrFunc(
 }
 
 
-PixelEngineColorRamp testExteranlColorRampFunc(string colorid) 
+PixelEngineColorRamp testExteranlColorRampFunc(
+	void* pePtr,//PixelEngine
+	string colorid) 
 {
 	cout<<"testExteranlColorRampFunc colorid "<<colorid<<endl ;
 
