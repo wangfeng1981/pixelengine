@@ -31,6 +31,15 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_Version
 JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_CheckScriptOK
   (JNIEnv *, jobject, jstring);
 
+
+/*
+ * Class:     com_pixelengine_V8Helper
+ * Method:    CallTileComputeV2
+ * Signature: (Ljava/lang/String;JIII)Lcom/pixelengine/V8HelperResult;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_V8Helper_CallTileComputeV2
+  (JNIEnv *, jobject, jstring, jlong, jint, jint, jint);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,5 +1,8 @@
 //PixelEngine.cpp
 #include "PixelEngine.h"
+#include <time.h>
+
+const double PE_CURRENTDATETIME = 0L; 
 
 //PixelEngine_GetDataFromExternal_FunctionPointer PixelEngine::GetExternalDatasetCallBack = nullptr ;
 PixelEngine_GetDataFromExternal2_FunctionPointer PixelEngine::GetExternalTileDataCallBack = nullptr ;
@@ -283,6 +286,56 @@ string PixelEngine::long2str(long val)
 	return string(buff) ;
 }
 
+bool PixelEngine::IsMaybeLocalOK(MaybeLocal<Value>& val) 
+{
+	if( val.IsEmpty() )
+	{
+		return false ;
+	}else
+	{
+		Local<Value> val2 = val.ToLocalChecked() ;
+		if( val2->IsNull() )
+		{
+			return false ;
+		}else if( val2->IsUndefined() )
+		{
+			return false ;
+		}
+		return true ;
+	}
+}
+
+long PixelEngine::RelativeDatetimeConvert(long currdt,long seconds) 
+{
+	time_t rawtime ;
+	time(&rawtime) ;
+	struct tm* timeinfo = localtime(&rawtime) ;
+
+	int hms = currdt%1000000L ;
+	timeinfo->tm_hour = hms / 10000;
+	timeinfo->tm_min = hms/100 - timeinfo->tm_hour*100  ;
+	timeinfo->tm_sec = hms%100 ;
+
+	int ymd = currdt/1000000L ;
+	timeinfo->tm_year = ymd/10000 ;
+	timeinfo->tm_mon = ymd/100 - 100*timeinfo->tm_year - 1; // tm_mon is [0,11]
+	timeinfo->tm_mday = ymd%100 ;
+
+	time_t time0 = mktime(timeinfo) ;
+	time_t time1 = time0 + seconds ;
+
+	struct tm* timeinfo1 = localtime(&time1) ;
+
+	long newdt = timeinfo1->tm_year*10000000000L
+	+(timeinfo1->tm_mon+1) * 100000000 
+	+timeinfo1->tm_mday * 1000000  //tm_mday must -1, i don't why.
+	+timeinfo1->tm_hour * 10000 
+	+timeinfo1->tm_min * 100 
+	+timeinfo1->tm_sec ;
+	return newdt ;
+
+}
+
 /// get predefined color ramp
 vector<int> PixelEngine::GetColorRamp(int colorid,int inverse) 
 {
@@ -406,15 +459,43 @@ vector<int> PixelEngine::ColorGrays{
 
 } ;
 
+void PixelEngine::log(string& str) 
+{
+	if( this->pe_logs.length() > 1024 )
+	{
+		cout<<"log size exceed 1024."<<endl ;
+		this->pe_logs += string("...\n") ;
+	}else
+	{
+		this->pe_logs += str+string("\n") ;
+	}
+}
+
 /// pe.log(...)
 void PixelEngine::GlobalFunc_Log(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-  if (args.Length() < 1) return;
-  Isolate* isolate = args.GetIsolate();
-  HandleScope scope(isolate);
-  Local<Value> arg = args[0];
-  String::Utf8Value value(isolate, arg);
-  cout<<"log: "<< *value <<endl;
+	if (args.Length() < 1) return;
+	Isolate* isolate = args.GetIsolate();
+	HandleScope scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> arg = args[0];
+	String::Utf8Value value(isolate, arg);
+	cout<<"log: "<< *value <<endl;
+
+	Local<Object> global = context->Global() ;
+	Local<Value> peinfo = global->Get( context
+		,String::NewFromUtf8(isolate, "PixelEnginePointer").ToLocalChecked())
+		.ToLocalChecked() ;
+	Object* peinfoObj = Object::Cast( *peinfo ) ;
+	Local<Value> thisPePtrValue = peinfoObj->GetInternalField(0) ;
+	External* thisPePtrEx = External::Cast(*thisPePtrValue);
+	PixelEngine* thisPePtr = static_cast<PixelEngine*>(thisPePtrEx->Value() );
+	if( thisPePtr != nullptr )
+	{
+		string str1(*value) ;
+		thisPePtr->log(str1) ;
+	}
 }
 
 /// use c++ create a new empty Dataset object
@@ -717,11 +798,12 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
 void PixelEngine::GlobalFunc_RenderRGBCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
 	cout<<"inside GlobalFunc_RenderRGBCallBack"<<endl; 
+	Isolate* isolate = args.GetIsolate() ;
 	if (args.Length() != 9 ){
 		cout<<"Error: args.Length != 9 "<<endl ;
 		return;
 	}
-	Isolate* isolate = args.GetIsolate() ;
+	
 	v8::HandleScope handle_scope(isolate);
 	Local<Context> context(isolate->GetCurrentContext()) ;
 
@@ -1243,8 +1325,7 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 	String::Utf8Value nameutf8( isolate , v8name) ;
 	string name( *nameutf8 ) ;
 
-	String::Utf8Value dtutf8( isolate , v8datetime) ;
-	string datetime( *dtutf8 ) ;
+	long datetime = (long) (v8datetime->ToNumber(context).ToLocalChecked())->Value();
 
 	cout<<name<<","<<datetime<<endl ;
 
@@ -1284,26 +1365,26 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 	External* thisPePtrEx = External::Cast(*thisPePtrValue);
 	PixelEngine* thisPePtr = static_cast<PixelEngine*>(thisPePtrEx->Value() );
 
-	// bool externalOk = PixelEngine::GetExternalDatasetCallBack(
-	// 	thisPePtrEx->Value() ,// pointer to PixelEngine Object.
-	// 	name,datetime,wantBands,externalData,
-	// 	dt,
-	// 	wid,
-	// 	hei,
-	// 	retnbands) ;
 	int tilez = thisPePtr->tileInfo.z  ;
 	int tiley = thisPePtr->tileInfo.y  ; 
 	int tilex = thisPePtr->tileInfo.x  ; 
 
-	if( datetime == "-1" )
+	if( datetime == PE_CURRENTDATETIME )
 	{
-		cout<<"use current "<<thisPePtr->currentDateTime<<endl ;
-		datetime = PixelEngine::long2str(thisPePtr->currentDateTime) ;
+		//datetime = PixelEngine::long2str(thisPePtr->currentDateTime) ;
+		datetime = thisPePtr->currentDateTime ;
+		cout<<"use current "<<datetime<<endl ;
+	}else if( datetime < 0 )
+	{
+		datetime = PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , datetime );
+		cout<<"use passed "<<datetime<<endl ;
 	}
+
+	string datetimestr = PixelEngine::long2str(datetime) ;
 
 	bool externalOk = PixelEngine::GetExternalTileDataCallBack(
 		thisPePtrEx->Value() ,// pointer to PixelEngine Object.
-		name,datetime,wantBands,
+		name,datetimestr,wantBands,
 		tilez,
 		tiley,
 		tilex,
@@ -1412,11 +1493,8 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	String::Utf8Value nameutf8( isolate , v8name) ;
 	string name( *nameutf8 ) ;
 
-	String::Utf8Value dt0utf8( isolate , v8from) ;
-	string fromdatetime( *dt0utf8 ) ;
-
-	String::Utf8Value dt1utf8( isolate , v8to) ;
-	string todatetime( *dt1utf8 ) ;
+	long fromdatetime =(long) (v8from->ToNumber(context).ToLocalChecked())->Value();
+	long todatetime = (long) (v8to->ToNumber(context).ToLocalChecked())->Value();
 
 	cout<<"from to :"<<fromdatetime<<"-"<<todatetime<<endl ;
 
@@ -1450,22 +1528,33 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	int tilez = thisPePtr->tileInfo.z  ;
 	int tiley = thisPePtr->tileInfo.y  ; 
 	int tilex = thisPePtr->tileInfo.x  ; 
-	if( fromdatetime == "-1" )
+	if( fromdatetime == PE_CURRENTDATETIME ) 
 	{
 		cout<<"fromdatetime use current "<<thisPePtr->currentDateTime<<endl ;
-		fromdatetime = PixelEngine::long2str(thisPePtr->currentDateTime) ;
+		fromdatetime = thisPePtr->currentDateTime  ;
+	}else if( fromdatetime<0 )
+	{
+		fromdatetime =  PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , fromdatetime ); 
+		cout<<"fromdatetime use passed "<<fromdatetime<<endl ;
 	}
 
-	if( todatetime == "-1" )
+	if( todatetime == PE_CURRENTDATETIME )
 	{
 		cout<<"todatetime use current "<<thisPePtr->currentDateTime<<endl ;
-		todatetime = PixelEngine::long2str(thisPePtr->currentDateTime) ;
+		todatetime =  thisPePtr->currentDateTime  ;
+	}else if( todatetime < 0 )
+	{
+		todatetime = PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , todatetime ); 
+		cout<<"todatetime use passed "<<todatetime<<endl ;
 	}
+
+	string fromdatetimestr = PixelEngine::long2str(fromdatetime) ;
+	string todatetimestr = PixelEngine::long2str(todatetime) ;
 
 
 	bool externalOk = PixelEngine::GetExternalTileDataArrCallBack(
 		thisPePtrEx->Value() ,// pointer to PixelEngine Object.
-		name,fromdatetime,todatetime,wantBands,
+		name,fromdatetimestr,todatetimestr,wantBands,
 		tilez,
 		tiley,
 		tilex,
@@ -1564,8 +1653,7 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 	String::Utf8Value nameutf8( isolate , v8name) ;
 	string name( *nameutf8 ) ;
 
-	String::Utf8Value dtutf8( isolate , v8datetime) ;
-	string datetime( *dtutf8 ) ;
+	long datetime =  (long) (v8datetime->ToNumber(context).ToLocalChecked())->Value();
 
 	int tilez = args[2]->ToInteger(context).ToLocalChecked()->Value() ;
 	int tiley = args[3]->ToInteger(context).ToLocalChecked()->Value() ; 
@@ -1588,16 +1676,20 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 	External* thisPePtrEx = External::Cast(*thisPePtrValue);
 	PixelEngine* thisPePtr = (PixelEngine*) thisPePtrEx->Value() ;
 
-	if( datetime == "-1" )
+	if( datetime == PE_CURRENTDATETIME )
 	{
 		cout<<"use current "<<thisPePtr->currentDateTime<<endl ;
-		datetime = PixelEngine::long2str(thisPePtr->currentDateTime) ;
+		datetime =  thisPePtr->currentDateTime  ;
+	}else if( datetime < 0 )
+	{
+		datetime = PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , datetime ); 
+		cout<<"use passed "<<datetime<<endl ;
 	}
-
+	string datetimestr = PixelEngine::long2str(datetime) ;
 
 	bool externalOk = PixelEngine::GetExternalTileDataCallBack(
 		thisPePtrEx->Value() ,// pointer to PixelEngine Object.
-		name,datetime,wantBands,
+		name,datetimestr,wantBands,
 		tilez,
 		tiley,
 		tilex,
@@ -1840,7 +1932,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampGrays").ToLocalChecked(),
 	   Integer::New(isolate,0));
 	pe->Set(context,String::NewFromUtf8(isolate, "DatetimeCurrent").ToLocalChecked(),
-	   Integer::New(isolate,0));//modified 2020-6-20
+	   Number::New(isolate,PE_CURRENTDATETIME));//modified 2020-6-20
 	pe->Set(context,String::NewFromUtf8(isolate, "Ignore").ToLocalChecked(),
 	   Integer::New(isolate,-1));
 
@@ -2113,6 +2205,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,int z,int y,int x, vector<unsigned char>& retbinary) 
 {
 	cout<<"in RunScriptForTile init v8"<<endl;
+	this->pe_logs.reserve(2048);//max 1k bytes.
 	this->tileInfo.x = x ;
 	this->tileInfo.y = y ;
 	this->tileInfo.z = z ;
@@ -2149,6 +2242,7 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 			cout<<"v8 exception:"<<*error<<endl;
 			// The script failed to compile; bail out.
 			//return false;
+
 			allOk = false ;
 		}else
 		{
@@ -2157,21 +2251,26 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 			Local<v8::Value> result ;
 			if (!script->Run(context).ToLocal(&result)) {
 				String::Utf8Value error( this->isolate, try_catch.Exception());
-				cout<<"v8 exception:"<<*error<<endl;
+				string exceptionstr = string("v8 exception:")+(*error) ;
+				cout<<exceptionstr<<endl;
 				// The script failed to compile; bail out.
 				//return false;
+				this->log(exceptionstr) ;
 				allOk = false ;
 			}else
 			{
 				MaybeLocal<Value> peMainResult = context->Global()->Get(context 
 		    		,String::NewFromUtf8(isolate, "PEMainResult").ToLocalChecked() ) ;
-				if( peMainResult.IsEmpty() ) //IsNullOrUndefined() )
+				if( PixelEngine::IsMaybeLocalOK(peMainResult) == false) //IsNullOrUndefined() )
 				{
-					cout<<"PEMainResult is null or undefined."<<endl ;
+					string error1("Error: the result from main() is null or undefined.") ;
+					cout<<error1<<endl ;
+					this->log(error1) ;
 					allOk = false ;
 				}else
 				{
 					cout<<"in RunScriptForTile 4"<<endl;
+
 					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 					printf("script run dura:%d ms \n", now1 - now);//
 

@@ -407,10 +407,53 @@ JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_V8Helper_CallTileCompute
 }
 
 
+//output com.pixelengine.V8HelperResult
+// package com.pixelengine;
+// public class V8HelperResult {
+//     String logs ;//logs
+//     byte[] data ;//png binary
+// }
+JNIEXPORT jobject JNICALL Java_com_pixelengine_V8Helper_CallTileComputeV2
+  (JNIEnv *env, jobject obj, jstring script, jlong current, jint z, jint y, jint x)
+{
+	printf("debug using CallTileComputeV2\n") ;
+	jclass	javaV8HelperResultClass = (env)->FindClass("com/pixelengine/V8HelperResult");
+	jobject	javaV8HelperResult = env->AllocObject(javaV8HelperResultClass);
+	jfieldID logsid = env->GetFieldID(javaV8HelperResultClass,"logs","Ljava/lang/String;") ;
+    jfieldID dataid = env->GetFieldID(javaV8HelperResultClass,"data","[B") ;
+ 
+	string jsSource = jstring2string(env,script) ;
+	if( PixelEngine::GetExternalTileDataArrCallBack ==nullptr )
+	{
+		PixelEngine::GetExternalTileDataCallBack = GetTileDataFromJava ;//will be deprecated 
+		PixelEngine::GetExternalTileDataArrCallBack = GetTileDataArrayFromJava ;
+		PixelEngine::GetExternalColorRampCallBack = GetColorRampFromJava ;
+	}
+	vector<unsigned char> retbinary ;
+	PixelEngine pe ;
+	bool runok = pe.RunScriptForTile(env,jsSource,current,z,y,x,retbinary) ;
+	if( runok )
+	{
+		jbyteArray retval = env->NewByteArray(retbinary.size());
+		const signed char* sptr = (signed char*)retbinary.data();
+		env->SetByteArrayRegion(retval,0, retbinary.size() , sptr );
+
+		env->SetObjectField( javaV8HelperResult, logsid, cstring2jstring(env,pe.pe_logs.c_str()) ) ;
+		env->SetObjectField( javaV8HelperResult, dataid, retval ) ;
+		return javaV8HelperResult ;
+	}else
+	{
+		env->SetObjectField( javaV8HelperResult, logsid, cstring2jstring(env,pe.pe_logs.c_str()) ) ;
+		return javaV8HelperResult ;
+	}
+}
+
+
+
 JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_Version
   (JNIEnv *env, jobject obj)
 {
-	return cstring2jstring( env , "1.2" ) ;
+	return cstring2jstring( env , "2.0" ) ;
 }
 
 

@@ -120,6 +120,12 @@ struct PixelEngine
 	static void Value2Color(int valx,float K,int nodata,int* nodataColor,int vmin,int vmax,int interpol,vector<int>& colorRamp,int ncolor,unsigned char& rr,unsigned char& rg,unsigned char& rb,unsigned char& ra );
 	static void Value2Color(int valx,PixelEngineColorRamp& cr,int interpol,unsigned char& rr,unsigned char& rg,unsigned char& rb,unsigned char& ra );
 	static void ColorReverse(vector<int>& colors) ;
+	static long RelativeDatetimeConvert(long curr,long relative) ;
+	static bool IsMaybeLocalOK(MaybeLocal<Value>& val) ;
+
+	//private
+	void log(string& str) ;
+
 
 	//PixelEngine
 	static void GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//from exteranl
@@ -169,19 +175,24 @@ struct PixelEngine
 	PixelEngineTileInfo tileInfo ;
 	long currentDateTime ;
 	void* extraPointer ;//do not release.
+	string pe_logs ;//max length 1k bytes.
 
 
 	Global<Value> GlobalFunc_ForEachPixelCallBack ;//not static, need Reset
 	Global<Value> GlobalFunc_GetPixelCallBack ;//not static , need reset
 	PixelEngine() ;//one
 	~PixelEngine() ;//three
-	bool RunScriptForTile(void* extra,string& jsSource,long dt,int z,int y,int x, vector<unsigned char>& retbinary) ;//two
+	bool RunScriptForTile(void* extra,string& jsSource,long dt,int z,int y,int x, vector<unsigned char>& retbinary) ;
+
 	string CheckScriptOk(string& scriptSource) ;
 
 	//static PixelEngine_GetDataFromExternal_FunctionPointer GetExternalDatasetCallBack;//will deprecated
 	static PixelEngine_GetDataFromExternal2_FunctionPointer GetExternalTileDataCallBack; 
 	static PixelEngine_GetDataFromExternal2Arr_FunctionPointer GetExternalTileDataArrCallBack ;
 	static PixelEngine_GetColorRampFromExternal_FunctionPointer GetExternalColorRampCallBack ;
+
+
+
 
 } ;
 
