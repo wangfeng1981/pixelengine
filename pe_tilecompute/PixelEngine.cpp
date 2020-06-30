@@ -1915,7 +1915,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	Local<Object> pe = Object::New(isolate) ;
 
 	Maybe<bool> okpe = global->Set( context
-		,String::NewFromUtf8(isolate, "PixelEngine").ToLocalChecked()
+		,String::NewFromUtf8(isolate, "PixelEngineObject").ToLocalChecked()
 		,pe ) ;// bind PixelEngine
 	if( okpe.IsNothing() )
 	{
@@ -1976,6 +1976,8 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 
 	//set globalFunc_forEachPixelCallBack in javascript
 	string sourceforEachPixelFunction = R"(
+		const PixelEngine=PixelEngineObject;
+		const pe=PixelEngineObject ;
 		var globalFunc_forEachPixelCallBack = function(pxfunc){
 			var outds = null ; 
 			var outtiledata = null ;
@@ -2119,7 +2121,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 				}else
 				{
 					this.nbloads[nbi] = 1 ;
-					var newloadedData = PixelEngine.GetTileData(this.dsName,this.dsDt,this.z,this.y+gy,this.x+gx) ;
+					var newloadedData = PixelEngineOjbect.GetTileData(this.dsName,this.dsDt,this.z,this.y+gy,this.x+gx) ;
 					this.nbdatas[nbi] = newloadedData ;
 					if( this.nbdatas[nbi] != null )
 					{
@@ -2131,7 +2133,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 				}
 			} 
 		};
-		PixelEngine.ColorRamp = function(colorRampId){
+		PixelEngineObject.ColorRamp = function(colorRampId){
 			var cr = new Object() ;
 			cr.useInteger = true ;
 			cr.numColors = 0 ;
