@@ -1,5 +1,7 @@
 //PixelEngine.h
 //add Custom ColorRamp 2020-6-20
+//version 2.0
+// return ds , if ds has 3 bands use rgb, else use first band render out[0,255];
 
 #ifndef PIXEL_ENGINE_H
 
@@ -127,6 +129,7 @@ struct PixelEngine
 	void log(string& str) ;
 
 
+
 	//PixelEngine
 	static void GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//from exteranl
 	static void GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//load a datetime range dataset.
@@ -151,6 +154,16 @@ struct PixelEngine
 	static bool initTemplate(PixelEngine* thePE,Isolate* isolate, Local<Context>& context );// not static
 	static void initV8() ;
 	static std::unique_ptr<v8::Platform> v8Platform ;
+
+	//tools methods
+	static bool V8ObjectGetIntValue(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,int& retvalue );
+	static bool V8ObjectGetNumberValue(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,double& retvalue );
+	static bool V8ObjectGetBoolValue(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,bool& retvalue );
+	static bool V8ObjectGetUint8Array(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,int shouldElementNumber , unsigned char* copyToPtr );
+	static bool V8ObjectGetInt32Array(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,int shouldElementNumber , int* copyToPtr );
+	static bool V8ObjectGetInt16Array(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,int shouldElementNumber , short* copyToPtr );
+	static bool V8ObjectGetFloat32Array(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,int shouldElementNumber , float* copyToPtr );
+
 
 	//private method
 	static Local<Object> CPP_NewDataset(Isolate* isolate,Local<Context>& context

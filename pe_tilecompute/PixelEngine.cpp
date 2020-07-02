@@ -1,4 +1,5 @@
 //PixelEngine.cpp
+
 #include "PixelEngine.h"
 #include <time.h>
 
@@ -95,63 +96,371 @@ int PixelEngineColorRamp::binary_equal(int val)
 	}
 }
 
+bool PixelEngine::V8ObjectGetIntValue(Isolate* isolate,
+	Local<Object>&obj,
+	Local<Context>&context,
+	string key,
+	int& retvalue ){
+
+	MaybeLocal<Value> maybe1 = obj->Get(context,
+		String::NewFromUtf8(isolate,key.c_str()).ToLocalChecked()
+		) ;
+	if( maybe1.IsEmpty() )
+	{
+		return false ;
+	}else
+	{
+		Local<Value> localval = maybe1.ToLocalChecked() ;
+		MaybeLocal<Integer> maybe2 = localval->ToInteger(context) ;
+		if( maybe2.IsEmpty() )
+		{
+			return false ;
+		}else{
+			Local<Integer> local2=maybe2.ToLocalChecked() ;
+			retvalue = local2->Value() ;
+			return true ;
+		}
+	}
+}
+
+bool PixelEngine::V8ObjectGetNumberValue(Isolate* isolate,
+	Local<Object>&obj,
+	Local<Context>&context,
+	string key,
+	double& retvalue ){
+
+	MaybeLocal<Value> maybe1 = obj->Get(context,
+		String::NewFromUtf8(isolate,key.c_str()).ToLocalChecked()
+		) ;
+	if( maybe1.IsEmpty() )
+	{
+		return false ;
+	}else
+	{
+		Local<Value> localval = maybe1.ToLocalChecked() ;
+		MaybeLocal<Number> maybe2 = localval->ToNumber(context) ;
+		if( maybe2.IsEmpty() )
+		{
+			return false ;
+		}else{
+			Local<Number> local2=maybe2.ToLocalChecked() ;
+			retvalue = local2->Value() ;
+			return true ;
+		}
+	}
+}
+
+bool PixelEngine::V8ObjectGetBoolValue(Isolate* isolate,
+	Local<Object>&obj,
+	Local<Context>&context,
+	string key,
+	bool& retvalue ){
+
+	MaybeLocal<Value> maybe1 = obj->Get(context,
+		String::NewFromUtf8(isolate,key.c_str()).ToLocalChecked()
+		) ;
+	if( maybe1.IsEmpty() )
+	{
+		return false ;
+	}else
+	{
+		Local<Value> localval = maybe1.ToLocalChecked() ;
+		retvalue = localval->BooleanValue(isolate) ;
+		return true ;
+	}
+}
+
+bool PixelEngine::V8ObjectGetUint8Array(Isolate* isolate,
+	Local<Object>&obj,
+	Local<Context>&context,
+	string key,
+	int shouldElementNumber , 
+	unsigned char* copyToPtr ){
+
+	MaybeLocal<Value> maybe1 = obj->Get(context,
+		String::NewFromUtf8(isolate,key.c_str()).ToLocalChecked()
+		) ;
+	if( maybe1.IsEmpty() ){
+		return false ;
+	}else
+	{
+		Local<Value> local1 = maybe1.ToLocalChecked() ;
+		if( local1->IsUint8Array() )
+		{
+			Uint8Array* arr = Uint8Array::Cast(*local1) ;
+			if( arr->Length() == shouldElementNumber )
+			{
+				arr->CopyContents( copyToPtr , shouldElementNumber) ;
+				return true ;
+			}else
+			{
+				return false ;
+			}
+		}else
+		{
+			return false ;
+		}
+	}
+}
+
+
+bool PixelEngine::V8ObjectGetInt32Array(Isolate* isolate,
+	Local<Object>&obj,
+	Local<Context>&context,
+	string key,
+	int shouldElementNumber , 
+	int* copyToPtr ){
+
+	MaybeLocal<Value> maybe1 = obj->Get(context,
+		String::NewFromUtf8(isolate,key.c_str()).ToLocalChecked()
+		) ;
+	if( maybe1.IsEmpty() ){
+		return false ;
+	}else
+	{
+		Local<Value> local1 = maybe1.ToLocalChecked() ;
+		if( local1->IsInt32Array() )
+		{
+			Int32Array* arr = Int32Array::Cast(*local1) ;
+			if( arr->Length() == shouldElementNumber )
+			{
+				arr->CopyContents( copyToPtr , shouldElementNumber*4) ;
+				return true ;
+			}else
+			{
+				return false ;
+			}
+		}else
+		{
+			return false ;
+		}
+	}
+}
+
+bool PixelEngine::V8ObjectGetInt16Array(Isolate* isolate,
+	Local<Object>&obj,
+	Local<Context>&context,
+	string key,
+	int shouldElementNumber , 
+	short* copyToPtr ){
+
+	MaybeLocal<Value> maybe1 = obj->Get(context,
+		String::NewFromUtf8(isolate,key.c_str()).ToLocalChecked()
+		) ;
+	if( maybe1.IsEmpty() ){
+		return false ;
+	}else
+	{
+		Local<Value> local1 = maybe1.ToLocalChecked() ;
+		if( local1->IsInt16Array() )
+		{
+			Int16Array* arr = Int16Array::Cast(*local1) ;
+			if( arr->Length() == shouldElementNumber )
+			{
+				arr->CopyContents( copyToPtr , shouldElementNumber*2) ;
+				return true ;
+			}else
+			{
+				return false ;
+			}
+		}else
+		{
+			return false ;
+		}
+	}
+}
+
+bool PixelEngine::V8ObjectGetFloat32Array(Isolate* isolate,
+	Local<Object>&obj,
+	Local<Context>&context,
+	string key,
+	int shouldElementNumber , 
+	float* copyToPtr ){
+
+	MaybeLocal<Value> maybe1 = obj->Get(context,
+		String::NewFromUtf8(isolate,key.c_str()).ToLocalChecked()
+		) ;
+	if( maybe1.IsEmpty() ){
+		return false ;
+	}else
+	{
+		Local<Value> local1 = maybe1.ToLocalChecked() ;
+		if( local1->IsFloat32Array() )
+		{
+			Float32Array* arr = Float32Array::Cast(*local1) ;
+			if( arr->Length() == shouldElementNumber )
+			{
+				arr->CopyContents( copyToPtr , shouldElementNumber*4) ;
+				return true ;
+			}else
+			{
+				return false ;
+			}
+		}else
+		{
+			return false ;
+		}
+	}
+}
+
+
 bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 {
 	v8::HandleScope handle_scope(isolate);
 	Local<Context> context(isolate->GetCurrentContext()) ;
 
-	Local<Object> crobj = obj->ToObject(context).ToLocalChecked() ;
-	this->useInteger = crobj->Get(context,
-		String::NewFromUtf8(isolate,"useInteger").ToLocalChecked())
-		.ToLocalChecked()->ToBoolean(isolate)->Value() ;
-	this->numColors = crobj->Get(context,
-		String::NewFromUtf8(isolate,"numColors").ToLocalChecked())
-		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	this->Nodata = crobj->Get(context,
-		String::NewFromUtf8(isolate,"Nodata").ToLocalChecked())
-		.ToLocalChecked()->ToNumber(context).ToLocalChecked()->Value() ;
+	Local<Object> crobj  ;
+	bool ok00 = obj->ToObject(context).ToLocal( &crobj ) ;
+	if( ok00 == false )
+	{
+		cout<<"PixelEngineColorRamp::unwrap ToObject failed."<<endl; 
+		return false ;
+	}
+
+	// this->useInteger = crobj->Get(context,
+	// 	String::NewFromUtf8(isolate,"useInteger").ToLocalChecked())
+	// 	.ToLocalChecked()->ToBoolean(isolate)->Value() ;
+	bool ok0 = PixelEngine::V8ObjectGetBoolValue(isolate,crobj,context,"useInteger",this->useInteger) ;
+	if( ok0==false ){
+		cout<<"PixelEngine::V8ObjectGetBoolValue useInteger failed."<<endl; 
+		return false ;
+	}
+
+	// this->numColors = crobj->Get(context,
+	// 	String::NewFromUtf8(isolate,"numColors").ToLocalChecked())
+	// 	.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+	bool ok1 = PixelEngine::V8ObjectGetIntValue(isolate,crobj,context,"numColors",this->numColors) ;
+	if( ok1==false ){
+		cout<<"PixelEngine::V8ObjectGetIntValue numColors failed."<<endl; 
+		return false ;
+	}
+
+	// this->Nodata = crobj->Get(context,
+	// 	String::NewFromUtf8(isolate,"Nodata").ToLocalChecked())
+	// 	.ToLocalChecked()->ToNumber(context).ToLocalChecked()->Value() ;
+	bool ok2 = PixelEngine::V8ObjectGetNumberValue(isolate,crobj,context,"Nodata",this->Nodata) ;
+	if( ok2==false ){
+		cout<<"PixelEngine::V8ObjectGetNumberValue Nodata failed."<<endl; 
+		return false ;
+	}
 
 	//nodatacolor
-	Uint8Array* nodatacolorArray = Uint8Array::Cast(
-			* crobj->Get(context,String::NewFromUtf8(isolate,"NodataColor").ToLocalChecked()).ToLocalChecked()
-			) ; 
-	nodatacolorArray->CopyContents( this->NodataColor , 4) ;
+	// Uint8Array* nodatacolorArray = Uint8Array::Cast(
+	// 		* crobj->Get(context,String::NewFromUtf8(isolate,"NodataColor").ToLocalChecked()).ToLocalChecked()
+	// 		) ; 
+	// nodatacolorArray->CopyContents( this->NodataColor , 4) ;
+	bool ok3 = PixelEngine::V8ObjectGetUint8Array(isolate,
+			crobj,
+			context,
+			"NodataColor",
+			4 , 
+			this->NodataColor ) ;
+	if( ok3==false )
+	{
+		cout<<"PixelEngine::V8ObjectGetUint8Array failed."<<endl; 
+		return false ;
+	}
 
 	//ivalues
-	Int32Array* ivaluesArray = Int32Array::Cast(
-			* crobj->Get(context,String::NewFromUtf8(isolate,"ivalues").ToLocalChecked()).ToLocalChecked()
-			) ; 
-	ivaluesArray->CopyContents( this->ivalues , PixelEngineColorRamp::MAXNUM_COLORS*4 ) ;
+	// Int32Array* ivaluesArray = Int32Array::Cast(
+	// 		* crobj->Get(context,String::NewFromUtf8(isolate,"ivalues").ToLocalChecked()).ToLocalChecked()
+	// 		) ; 
+	// ivaluesArray->CopyContents( this->ivalues , PixelEngineColorRamp::MAXNUM_COLORS*4 ) ;
+	ok3 = PixelEngine::V8ObjectGetInt32Array(isolate,
+			crobj,
+			context,
+			"ivalues",
+			PixelEngineColorRamp::MAXNUM_COLORS , 
+			this->ivalues ) ;
+	if( ok3==false )
+	{
+		cout<<"PixelEngine::V8ObjectGetInt32Array ivalues failed."<<endl; 
+		return false ;
+	}
 
-	//fvalues
-	Float32Array* fvaluesArray = Float32Array::Cast(
-			* crobj->Get(context,String::NewFromUtf8(isolate,"fvalues").ToLocalChecked()).ToLocalChecked()
-			) ; 
-	fvaluesArray->CopyContents( this->fvalues , PixelEngineColorRamp::MAXNUM_COLORS*4 ) ;
+
+	// //fvalues
+	// Float32Array* fvaluesArray = Float32Array::Cast(
+	// 		* crobj->Get(context,String::NewFromUtf8(isolate,"fvalues").ToLocalChecked()).ToLocalChecked()
+	// 		) ; 
+	// fvaluesArray->CopyContents( this->fvalues , PixelEngineColorRamp::MAXNUM_COLORS*4 ) ;
+	ok3 = PixelEngine::V8ObjectGetFloat32Array(isolate,
+			crobj,
+			context,
+			"fvalues",
+			PixelEngineColorRamp::MAXNUM_COLORS  , 
+			this->fvalues ) ;
+	if( ok3==false )
+	{
+		cout<<"PixelEngine::V8ObjectGetFloat32Array fvalues failed."<<endl; 
+		return false ;
+	}
+
 
 	//red
-	Uint8Array* rArray = Uint8Array::Cast(
-			* crobj->Get(context,String::NewFromUtf8(isolate,"r").ToLocalChecked()).ToLocalChecked()
-			) ; 
-	rArray->CopyContents( this->r , PixelEngineColorRamp::MAXNUM_COLORS) ;
+	// Uint8Array* rArray = Uint8Array::Cast(
+	// 		* crobj->Get(context,String::NewFromUtf8(isolate,"r").ToLocalChecked()).ToLocalChecked()
+	// 		) ; 
+	// rArray->CopyContents( this->r , PixelEngineColorRamp::MAXNUM_COLORS) ;
+	ok3 = PixelEngine::V8ObjectGetUint8Array(isolate,
+			crobj,
+			context,
+			"r",
+			PixelEngineColorRamp::MAXNUM_COLORS , 
+			this->r ) ;
+	if( ok3==false )
+	{
+		cout<<"PixelEngine::V8ObjectGetUint8Array r failed."<<endl; 
+		return false ;
+	}
 
 	//green
-	Uint8Array* gArray = Uint8Array::Cast(
-			* crobj->Get(context,String::NewFromUtf8(isolate,"g").ToLocalChecked()).ToLocalChecked()
-			) ; 
-	gArray->CopyContents( this->g , PixelEngineColorRamp::MAXNUM_COLORS) ;
+	ok3 = PixelEngine::V8ObjectGetUint8Array(isolate,
+			crobj,
+			context,
+			"g",
+			PixelEngineColorRamp::MAXNUM_COLORS , 
+			this->g ) ;
+	if( ok3==false )
+	{
+		cout<<"PixelEngine::V8ObjectGetUint8Array g failed."<<endl; 
+		return false ;
+	}
 
 	//blue
-	Uint8Array* bArray = Uint8Array::Cast(
-			* crobj->Get(context,String::NewFromUtf8(isolate,"b").ToLocalChecked()).ToLocalChecked()
-			) ; 
-	bArray->CopyContents( this->b , PixelEngineColorRamp::MAXNUM_COLORS) ;
+	// Uint8Array* bArray = Uint8Array::Cast(
+	// 		* crobj->Get(context,String::NewFromUtf8(isolate,"b").ToLocalChecked()).ToLocalChecked()
+	// 		) ; 
+	// bArray->CopyContents( this->b , PixelEngineColorRamp::MAXNUM_COLORS) ;
+	ok3 = PixelEngine::V8ObjectGetUint8Array(isolate,
+			crobj,
+			context,
+			"b",
+			PixelEngineColorRamp::MAXNUM_COLORS , 
+			this->b ) ;
+	if( ok3==false )
+	{
+		cout<<"PixelEngine::V8ObjectGetUint8Array b failed."<<endl; 
+		return false ;
+	}
 
 	//alpha
-	Uint8Array* aArray = Uint8Array::Cast(
-			* crobj->Get(context,String::NewFromUtf8(isolate,"a").ToLocalChecked()).ToLocalChecked()
-			) ; 
-	aArray->CopyContents( this->a , PixelEngineColorRamp::MAXNUM_COLORS) ;
+	// Uint8Array* aArray = Uint8Array::Cast(
+	// 		* crobj->Get(context,String::NewFromUtf8(isolate,"a").ToLocalChecked()).ToLocalChecked()
+	// 		) ; 
+	// aArray->CopyContents( this->a , PixelEngineColorRamp::MAXNUM_COLORS) ;
+	// return true ;
+	bool oka = PixelEngine::V8ObjectGetUint8Array(isolate,
+			crobj,
+			context,
+			"a",
+			PixelEngineColorRamp::MAXNUM_COLORS , 
+			this->a ) ;
+	if( oka==false )
+	{
+		cout<<"PixelEngine::V8ObjectGetUint8Array a failed."<<endl; 
+		return false ;
+	}
 	return true ;
 }
 
@@ -586,7 +895,7 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 			,i16array ) ;
 	}else
 	{//byte
-		int bsize = width*height*nband*2 ;
+		int bsize = width*height*nband ;
 		Local<ArrayBuffer> arrbuff = ArrayBuffer::New(isolate,bsize) ;
 		Local<Uint8Array> u8array = Uint8Array::New(arrbuff,0,bsize) ;
 		ds->Set(context
@@ -1189,7 +1498,12 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 		Local<Value> v8_interpol = args[2] ;
 		iband = v8_iband->ToInteger(context).ToLocalChecked()->Value() ;
 		colormethod = v8_interpol->ToInteger(context).ToLocalChecked()->Value() ;
-		colorRamp.unwrap(isolate , v8_colorramp ) ;
+		bool unwrapok = colorRamp.unwrap(isolate , v8_colorramp ) ;
+		if( unwrapok==false ){
+			cout<<"Error: colorRamp.unwrap failed.";
+			args.GetReturnValue().SetNull() ;
+			return ;
+		}
 	}
 
 	Local<Object> thisobj =  args.This() ;
@@ -1219,6 +1533,7 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 		,width
 		,height
 		,4 );
+
 	Local<Value> outDataValue = outds->Get(context,
 		String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
 		.ToLocalChecked() ;
@@ -1239,6 +1554,7 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 		Int16Array* i16Array = Int16Array::Cast(*tiledataValue) ;
 		short* backData = (short*) i16Array->Buffer()->GetBackingStore()->Data() ;
 		short* backDataOffset = backData + iband * asize;
+
 		for(int it = 0 ; it < asize ; ++ it )
 		{
 			PixelEngine::Value2Color(backDataOffset[it], 
@@ -1249,6 +1565,7 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 				outbackData[it+asize2],
 				outbackData[it+asize3]) ;
 		}
+
 	}else
 	{//byte
 		Uint8Array* u8Array = Uint8Array::Cast(*tiledataValue) ;
@@ -1267,6 +1584,7 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 	}
 	//info.GetReturnValue().Set(i16arr);
 	args.GetReturnValue().Set(outds) ;
+
 }
 
 /// javascript callback, create a new empty Dataset
@@ -1812,59 +2130,171 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 {
 	unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	Object* dsObj = Object::Cast(*dsValue) ;
-	int dt = dsObj->Get(context,
-		String::NewFromUtf8(isolate,"dataType").ToLocalChecked())
-		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	int width = dsObj->Get(context,
-		String::NewFromUtf8(isolate,"width").ToLocalChecked())
-		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	int height = dsObj->Get(context,
-		String::NewFromUtf8(isolate,"height").ToLocalChecked())
-		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	int nband = dsObj->Get(context,
-		String::NewFromUtf8(isolate,"nband").ToLocalChecked())
-		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	Local<Value> tiledataValue = dsObj->Get(context,
-		String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
-		.ToLocalChecked() ;
+	Local<Object> dsObj2 ;
+	bool objok = dsValue->ToObject(context).ToLocal( &dsObj2 ) ;
+	if(objok==false )
+	{
+		cout<<"main output is not a object."<<endl ;
+		return  ;
+	}
 
+	int dt = 1 ;
+	int width=256;
+	int height=256 ;
+	int nband =0;
+
+	bool ok1 = PixelEngine::V8ObjectGetIntValue(isolate,dsObj2,context,"dataType",dt) ;
+	if( ok1==false ){
+		cout<<"Error : failed to get dataType of output object."<<endl; 
+		return ;
+	}
+
+	ok1 = PixelEngine::V8ObjectGetIntValue(isolate,dsObj2,context,"width",width) ;
+	if( ok1==false ){
+		cout<<"Error : failed to get width of output object."<<endl; 
+		return ;
+	}
+
+	ok1 = PixelEngine::V8ObjectGetIntValue(isolate,dsObj2,context,"height",height) ;
+	if( ok1==false ){
+		cout<<"Error : failed to get height of output object."<<endl; 
+		return ;
+	}
+
+	ok1 = PixelEngine::V8ObjectGetIntValue(isolate,dsObj2,context,"nband",nband) ;
+	if( ok1==false ){
+		cout<<"Error : failed to get nband of output object."<<endl; 
+		return ;
+	}
+
+	if( nband == 0 )
+	{
+		cout<<"failed to make png: zero nbands of output object."<<endl; 
+		return ;
+	}
+
+
+	// dsObj->Get(context,
+	// 	String::NewFromUtf8(isolate,"dataType").ToLocalChecked())
+	// 	.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+	// int width = dsObj->Get(context,
+	// 	String::NewFromUtf8(isolate,"width").ToLocalChecked())
+	// 	.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+	// int height = dsObj->Get(context,
+	// 	String::NewFromUtf8(isolate,"height").ToLocalChecked())
+	// 	.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+	// int nband = dsObj->Get(context,
+	// 	String::NewFromUtf8(isolate,"nband").ToLocalChecked())
+	// 	.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+
+
+	// Local<Value> tiledataValue = dsObj->Get(context,
+	// 	String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
+	// 	.ToLocalChecked() ;
+	unsigned long now1 = 0; 
+	const int imgsize = width * height;
+	vector<unsigned char> rgbadata(imgsize * 4, 0);   
+	bool outimageOk = false ;
 	if( dt == 1 )
 	{
-		Uint8Array* u8arr = Uint8Array::Cast(*tiledataValue) ;
-		unsigned char* dataptr = (unsigned char*) u8arr->Buffer()->GetBackingStore()->Data() ;
-		unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		int elementnumber = width*height*nband ;
+		vector<unsigned char> tiledata(elementnumber) ;
+		bool dataok = PixelEngine::V8ObjectGetUint8Array(isolate,
+			dsObj2,
+			context,
+			"tiledata",
+			elementnumber, 
+			tiledata.data() ) ;
+		if( dataok==false )
+		{
+			cout<<"Error : failed to get tiledata."<<endl; 
+			return ;
+		}
+		// Uint8Array* u8arr = Uint8Array::Cast(*tiledataValue) ;
+		// unsigned char* dataptr = (unsigned char*) u8arr->Buffer()->GetBackingStore()->Data() ;
+		now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	  	printf("get dataptr:%d ms \n", now1 - now);//1024*1024 use 340millisec
 
-		const int imgsize = width * height;
-		vector<unsigned char> rgbadata(imgsize * 4, 0);
+		
 		if( nband==4 )
 		{
 			for (int it = 0; it < imgsize; ++it)
 			{
-				rgbadata[it * 4 + 0] = dataptr[it];
-				rgbadata[it * 4 + 1] = dataptr[it+imgsize];
-				rgbadata[it * 4 + 2] = dataptr[it+2*imgsize];
-				rgbadata[it * 4 + 3] = dataptr[it+3*imgsize];
+				rgbadata[it * 4 + 0] = tiledata[it];
+				rgbadata[it * 4 + 1] = tiledata[it+imgsize];
+				rgbadata[it * 4 + 2] = tiledata[it+2*imgsize];
+				rgbadata[it * 4 + 3] = tiledata[it+3*imgsize];
 			}
 		}else if(nband==3 )
 		{
 			for (int it = 0; it < imgsize; ++it)
 			{
-				rgbadata[it * 4 + 0] = dataptr[it];
-				rgbadata[it * 4 + 1] = dataptr[it+imgsize];
-				rgbadata[it * 4 + 2] = dataptr[it+2*imgsize];
+				rgbadata[it * 4 + 0] = tiledata[it];
+				rgbadata[it * 4 + 1] = tiledata[it+imgsize];
+				rgbadata[it * 4 + 2] = tiledata[it+2*imgsize];
 				rgbadata[it * 4 + 3] = 255;
 			}
 		} else
 		{
 			for (int it = 0; it < imgsize; ++it)
 			{
-				rgbadata[it * 4 + 0] = dataptr[it];
-				rgbadata[it * 4 + 1] = dataptr[it];
-				rgbadata[it * 4 + 2] = dataptr[it];
+				rgbadata[it * 4 + 0] = tiledata[it];
+				rgbadata[it * 4 + 1] = tiledata[it];
+				rgbadata[it * 4 + 2] = tiledata[it];
 				rgbadata[it * 4 + 3] = 255;
 			}
 		}
+		outimageOk=true ;
+	}else if( dt==3 )
+	{
+		int elementnumber = width*height*nband ;
+		vector<short> tiledata(elementnumber) ;
+		bool dataok = PixelEngine::V8ObjectGetInt16Array(isolate,
+			dsObj2,
+			context,
+			"tiledata",
+			elementnumber, 
+			tiledata.data() ) ;
+		if( dataok==false )
+		{
+			cout<<"Error : failed to get tiledata."<<endl; 
+			return ;
+		}
+		now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	  	printf("get dataptr:%d ms \n", now1 - now);//1024*1024 use 340millisec
+		if( nband==4 )
+		{
+			for (int it = 0; it < imgsize; ++it)
+			{
+				rgbadata[it * 4 + 0] = tiledata[it];
+				rgbadata[it * 4 + 1] = tiledata[it+imgsize];
+				rgbadata[it * 4 + 2] = tiledata[it+2*imgsize];
+				rgbadata[it * 4 + 3] = tiledata[it+3*imgsize];
+			}
+		}else if(nband==3 )
+		{
+			for (int it = 0; it < imgsize; ++it)
+			{
+				rgbadata[it * 4 + 0] = tiledata[it];
+				rgbadata[it * 4 + 1] = tiledata[it+imgsize];
+				rgbadata[it * 4 + 2] = tiledata[it+2*imgsize];
+				rgbadata[it * 4 + 3] = 255;
+			}
+		} else
+		{
+			for (int it = 0; it < imgsize; ++it)
+			{
+				rgbadata[it * 4 + 0] = tiledata[it];
+				rgbadata[it * 4 + 1] = tiledata[it];
+				rgbadata[it * 4 + 2] = tiledata[it];
+				rgbadata[it * 4 + 3] = 255;
+			}
+		}
+		outimageOk=true ;
+	} 
+
+	if( outimageOk )
+	{
 		unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	  	printf("forloop png:%d ms \n", now2 - now1);//1024*1024 use 340millisec
 
@@ -1885,7 +2315,9 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 		
 		unsigned long now3 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	  	printf("encode png:%d ms \n", now3 - now2);//1024*1024 use 340millisec
-
+	}else
+	{
+		printf("Error: outimageOk == false.");
 	}
 }
 
@@ -2147,6 +2579,10 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 			cr.Nodata = 0 ;
 			cr.NodataColor = new Uint8Array(4) ;
 			cr.NodataLabel = "Nan" ;
+			cr.setNodata=function(nval,tr,tg,tb,ta,lb){
+				this.Nodata=nval;this.NodataColor[0]=tr;this.NodataColor[1]=tg;
+				this.NodataColor[2]=tb;this.NodataColor[3]=ta;this.NodataLabel=lb;
+			};
 			cr.add = function(v,r,g,b,a,l){
 				if(this.numColors>50) return ;
 				let i = this.numColors ;
@@ -2170,12 +2606,24 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 			return cr ;
 		};	
 	)" ;
-	v8::Local<v8::Script> scriptForEach =
-          v8::Script::Compile(context
+	
+	v8::Local<v8::Script> scriptForEach ;
+	bool scriptOk = v8::Script::Compile(context
           	, String::NewFromUtf8(isolate,sourceforEachPixelFunction.c_str()).ToLocalChecked()
-          	).ToLocalChecked();
+          	).ToLocal( &scriptForEach );
+	if( scriptOk==false )
+	{
+		cout<<"compile sourceforEachPixelFunction failed."<<endl ;
+		return false ;
+	}
     
-    v8::Local<v8::Value> resultForEach = scriptForEach->Run(context).ToLocalChecked();
+    v8::Local<v8::Value> resultForEach ;
+    bool runok = scriptForEach->Run(context).ToLocal( &resultForEach );
+    if( runok==false )
+	{
+		cout<<"run sourceforEachPixelFunction failed."<<endl ;
+		return false ;
+	}
 
     Local<Value> forEachFuncInJs = global->Get(context 
     	,String::NewFromUtf8(isolate, "globalFunc_forEachPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;
