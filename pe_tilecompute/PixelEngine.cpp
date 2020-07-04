@@ -874,7 +874,7 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 		,String::Empty(isolate) ) ;
 	ds->Set(context
 		,String::NewFromUtf8(isolate, "dsDt").ToLocalChecked()
-		,String::Empty(isolate) ) ;
+		,Number::New(isolate,0) ) ;//long
 	ds->Set(context
 		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
 		,Integer::New(isolate,0) ) ;
