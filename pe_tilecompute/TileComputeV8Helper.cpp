@@ -453,7 +453,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_V8Helper_CallTileComputeV2
 JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_Version
   (JNIEnv *env, jobject obj)
 {
-	return cstring2jstring( env , "2.0" ) ;
+	return cstring2jstring( env , "2.1" ) ;
 }
 
 

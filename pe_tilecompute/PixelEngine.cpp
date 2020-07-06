@@ -11,6 +11,8 @@ PixelEngine_GetDataFromExternal2Arr_FunctionPointer PixelEngine::GetExternalTile
 PixelEngine_GetColorRampFromExternal_FunctionPointer PixelEngine::GetExternalColorRampCallBack = nullptr ;
 std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
+string PixelEngine::pejs_version = string("2.1") ;
+
 int PixelEngineColorRamp::upper_bound(int val) 
 {
 	if( this->numColors<2 )
@@ -2380,6 +2382,8 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	Integer::New(isolate,1));
 	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampExact").ToLocalChecked(),
 	Integer::New(isolate,2));//add 2020-6-20
+	pe->Set(context,String::NewFromUtf8(isolate, "pejs_version").ToLocalChecked(),
+		String::NewFromUtf8(isolate, PixelEngine::pejs_version.c_str()).ToLocalChecked()) ;
 
 
 	pe->Set(context
@@ -2398,6 +2402,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	pe->Set(context
 		,String::NewFromUtf8(isolate, "DatasetArray").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_DatasetArrayCallBack)->GetFunction(context).ToLocalChecked() );
+ 
 
 
 

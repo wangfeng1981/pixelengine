@@ -112,6 +112,7 @@ struct PixelEngineColorRamp
 
 struct PixelEngine
 {
+	static string pejs_version ;//pixelengine.js version.
 	static vector<int> ColorRainbow  ;//1
 	static vector<int> ColorBlues  ;//2
 	static vector<int> ColorReds  ;//3
