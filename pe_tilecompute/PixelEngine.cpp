@@ -1942,11 +1942,25 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 
 		//set data
 		vector<unsigned char>& indatavec = externalDataArr[ids] ;
-		Local<ArrayBuffer> arrbuf = ArrayBuffer::New(isolate,indatavec.size()) ;
-		Local<Int16Array> i16arr = Int16Array::New(arrbuf,0,indatavec.size()/2) ;
-		short* backData = (short*) i16arr->Buffer()->GetBackingStore()->Data() ;
-		memcpy(backData , indatavec.data(), indatavec.size() );
-		dataArrArray->Set(context,ids,i16arr) ;
+		if( dt == 1 )
+		{
+			Local<ArrayBuffer> arrbuf = ArrayBuffer::New(isolate,indatavec.size()) ;
+			Local<Uint8Array> u8arr = Uint8Array::New(arrbuf,0,indatavec.size()) ;
+			unsigned char* backData = (unsigned char*) u8arr->Buffer()->GetBackingStore()->Data() ;//here
+			memcpy(backData , indatavec.data(), indatavec.size() );
+			dataArrArray->Set(context,ids,u8arr) ;
+		}else if( dt==3 )
+		{
+			Local<ArrayBuffer> arrbuf = ArrayBuffer::New(isolate,indatavec.size()) ;
+			Local<Int16Array> i16arr = Int16Array::New(arrbuf,0,indatavec.size()/2) ;
+			short* backData = (short*) i16arr->Buffer()->GetBackingStore()->Data() ;//here
+			memcpy(backData , indatavec.data(), indatavec.size() );
+			dataArrArray->Set(context,ids,i16arr) ;
+		}else
+		{
+			printf("Error: unsupported data type:%d\n" , dt) ;
+		}
+		
 	}
 	//info.GetReturnValue().Set(i16arr);
 	args.GetReturnValue().Set(ds) ;
