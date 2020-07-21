@@ -164,6 +164,7 @@ bool GetTileDataFromJava(
     jfieldID numdsfid = env->GetFieldID(resultClass,"numds","I");
     jfieldID dtarrayfid = env->GetFieldID(resultClass,"datetimeArray","[J") ;//long for J
     jfieldID dataarrayfid = env->GetFieldID(resultClass,"tiledataArray","[[B") ;
+    jfieldID computeOncedataId = env->GetFieldID(resultClass,"computeOnceData","Ljava/lang/String;") ;
 
     dt = env->GetIntField(resultobj, dtypefid) ;
     nbands = env->GetIntField(resultobj, nbandfid) ;
@@ -174,6 +175,10 @@ bool GetTileDataFromJava(
 
     jobject dtarrayobj = env->GetObjectField(resultobj, dtarrayfid) ;
     jobject dataarrayobj = env->GetObjectField(resultobj, dataarrayfid) ;
+
+    jstring codataJStr =  (jstring) env->GetObjectField(resultobj, computeOncedataId);
+    string codataCStr = jstring2string(env , codataJStr) ;
+    cout<<"in cpp get computeOnceData:"<<codataCStr<<endl ;
 
     jlongArray* dtarrayPtr = (jlongArray*)(&dtarrayobj) ;
     jobjectArray* dataarrayPtr = (jobjectArray*)(&dataarrayobj) ;
@@ -476,6 +481,13 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_CheckScriptOK
 		return cstring2jstring( env , errorinfo.c_str() ) ;
 	}
 	
+}
+
+JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_ComputeOnce
+  (JNIEnv *, jobject, jstring)
+{
+	string nothing = "{\"computeonce\":\"nothing runs.\"}" ;
+	return cstring2jstring( env , nothing.c_str() ) ;
 }
 
 

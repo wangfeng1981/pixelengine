@@ -31,6 +31,14 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_Version
 JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_CheckScriptOK
   (JNIEnv *, jobject, jstring);
 
+/*
+ * Class:     com_pixelengine_V8Helper
+ * Method:    ComputeOnce
+ * Signature: (Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_ComputeOnce
+  (JNIEnv *, jobject, jstring);
+
 
 /*
  * Class:     com_pixelengine_V8Helper
