@@ -484,7 +484,7 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_CheckScriptOK
 }
 
 JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_ComputeOnce
-  (JNIEnv *, jobject, jstring)
+  (JNIEnv * env, jobject obj, jstring source)
 {
 	string nothing = "{\"computeonce\":\"nothing runs.\"}" ;
 	return cstring2jstring( env , nothing.c_str() ) ;
