@@ -80,6 +80,30 @@ typedef PixelEngineColorRamp (*PixelEngine_GetColorRampFromExternal_FunctionPoin
 		void* pePtr, string );
 
 
+//map reduce start ////////////////////////////////////////////////////////////////////
+//not used yet,20200722
+struct PixelEngineMapReduce
+{
+	string tabName ;
+	long datetime ;
+	int zlevel ;
+	string mapTile2ObjFunction ;
+	string reduceObj2ObjFunction ;
+	bool isSame(PixelEngineMapReduce& mr) ;
+} ;
+
+
+struct PixelEngineMapReduceContainer
+{
+	vector<PixelEngineMapReduce> mapreduceVector ;
+	void add(PixelEngineMapReduce& mr) ;
+} ;
+
+
+
+//map reduce end.////////////////////////////////////////////////////////////////////
+
+
 
 struct PixelEngineTileInfo
 {
@@ -190,6 +214,7 @@ struct PixelEngine
 	long currentDateTime ;
 	void* extraPointer ;//do not release.
 	string pe_logs ;//max length 1k bytes.
+	PixelEngineMapReduceContainer mapredContainer ;//not used yet,20200722
 
 
 	Global<Value> GlobalFunc_ForEachPixelCallBack ;//not static, need Reset
@@ -197,7 +222,8 @@ struct PixelEngine
 	PixelEngine() ;//one
 	~PixelEngine() ;//three
 	bool RunScriptForTile(void* extra,string& jsSource,long dt,int z,int y,int x, vector<unsigned char>& retbinary) ;
-
+	bool RunScriptForComputeOnce(void* extra, string& jsSource,long currentdt
+                                            ,int z,int y,int x, string& retJsonStr ) ;
 	string CheckScriptOk(string& scriptSource) ;
 
 	//static PixelEngine_GetDataFromExternal_FunctionPointer GetExternalDatasetCallBack;//will deprecated

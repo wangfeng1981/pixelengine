@@ -164,7 +164,7 @@ bool GetTileDataFromJava(
     jfieldID numdsfid = env->GetFieldID(resultClass,"numds","I");
     jfieldID dtarrayfid = env->GetFieldID(resultClass,"datetimeArray","[J") ;//long for J
     jfieldID dataarrayfid = env->GetFieldID(resultClass,"tiledataArray","[[B") ;
-    jfieldID computeOncedataId = env->GetFieldID(resultClass,"computeOnceData","Ljava/lang/String;") ;
+    //jfieldID computeOncedataId = env->GetFieldID(resultClass,"computeOnceData","Ljava/lang/String;") ;
 
     dt = env->GetIntField(resultobj, dtypefid) ;
     nbands = env->GetIntField(resultobj, nbandfid) ;
@@ -176,9 +176,9 @@ bool GetTileDataFromJava(
     jobject dtarrayobj = env->GetObjectField(resultobj, dtarrayfid) ;
     jobject dataarrayobj = env->GetObjectField(resultobj, dataarrayfid) ;
 
-    jstring codataJStr =  (jstring) env->GetObjectField(resultobj, computeOncedataId);
-    string codataCStr = jstring2string(env , codataJStr) ;
-    cout<<"in cpp get computeOnceData:"<<codataCStr<<endl ;
+    // jstring codataJStr =  (jstring) env->GetObjectField(resultobj, computeOncedataId);
+    // string codataCStr = jstring2string(env , codataJStr) ;
+    // cout<<"in cpp get computeOnceData:"<<codataCStr<<endl ;
 
     jlongArray* dtarrayPtr = (jlongArray*)(&dtarrayobj) ;
     jobjectArray* dataarrayPtr = (jobjectArray*)(&dataarrayobj) ;
@@ -421,7 +421,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_V8Helper_CallTileCompute
 JNIEXPORT jobject JNICALL Java_com_pixelengine_V8Helper_CallTileComputeV2
   (JNIEnv *env, jobject obj, jstring script, jlong current, jint z, jint y, jint x)
 {
-	printf("debug using CallTileComputeV2\n") ;
+	printf("using CallTileComputeV2\n") ;
 	jclass	javaV8HelperResultClass = (env)->FindClass("com/pixelengine/V8HelperResult");
 	jobject	javaV8HelperResult = env->AllocObject(javaV8HelperResultClass);
 	jfieldID logsid = env->GetFieldID(javaV8HelperResultClass,"logs","Ljava/lang/String;") ;
@@ -458,7 +458,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_V8Helper_CallTileComputeV2
 JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_Version
   (JNIEnv *env, jobject obj)
 {
-	return cstring2jstring( env , "2.1" ) ;
+	return cstring2jstring( env , "2.2" ) ;
 }
 
 
@@ -483,11 +483,42 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_CheckScriptOK
 	
 }
 
-JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_ComputeOnce
-  (JNIEnv * env, jobject obj, jstring source)
+
+void wft_replace_all(std::string & s, std::string const & t, std::string const & w)
 {
-	string nothing = "{\"computeonce\":\"nothing runs.\"}" ;
-	return cstring2jstring( env , nothing.c_str() ) ;
+  string::size_type pos = s.find(t), t_size = t.size(), r_size = w.size();
+  while(pos != std::string::npos){ // found 
+    s.replace(pos, t_size, w); 
+	pos = s.find(t, pos + r_size ); 
+  }
+}
+
+JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_ComputeOnce
+  (JNIEnv *env, jobject obj, jstring script, jlong current)
+{
+	printf("using ComputeOnce\n") ;
+ 
+	string jsSource = jstring2string(env,script) ;
+	if( PixelEngine::GetExternalTileDataArrCallBack ==nullptr )
+	{
+		PixelEngine::GetExternalTileDataCallBack = GetTileDataFromJava ;//will be deprecated 
+		PixelEngine::GetExternalTileDataArrCallBack = GetTileDataArrayFromJava ;
+		PixelEngine::GetExternalColorRampCallBack = GetColorRampFromJava ;
+	}
+	string coresult  ;
+	PixelEngine pe ;
+	bool runok = pe.RunScriptForComputeOnce(env,jsSource,current,0,0,0,coresult) ;
+	if( runok )
+	{
+		return cstring2jstring( env , coresult.c_str() ) ;
+	}else
+	{
+		string logs = pe.pe_logs ;//here
+		wft_replace_all(logs , "\n" , " ") ;
+		string errorstr = string("{\"Error\": \"in ComputeOnce:") + logs + "\"}" ;
+		cout<<errorstr<<endl ;
+		return cstring2jstring(env,errorstr.c_str()) ;
+	}
 }
 
 

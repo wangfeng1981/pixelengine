@@ -11,7 +11,53 @@ PixelEngine_GetDataFromExternal2Arr_FunctionPointer PixelEngine::GetExternalTile
 PixelEngine_GetColorRampFromExternal_FunctionPointer PixelEngine::GetExternalColorRampCallBack = nullptr ;
 std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
-string PixelEngine::pejs_version = string("2.1") ;
+string PixelEngine::pejs_version = string("2.2") ;
+
+
+//// mapreduce not used yet.
+bool PixelEngineMapReduce::isSame(PixelEngineMapReduce& mr)
+{
+	if( tabName.compare(mr.tabName)==0 )
+	{
+		if( datetime == mr.datetime )
+		{
+			if( zlevel==mr.zlevel)
+			{
+				if( mapTile2ObjFunction.compare(mr.mapTile2ObjFunction) ==0 )
+				{
+					if( reduceObj2ObjFunction.compare(mr.reduceObj2ObjFunction)==0 )
+					{
+						return true ;
+					}
+				}
+			}
+		}
+	}
+	return false ;
+}
+
+void PixelEngineMapReduceContainer::add(PixelEngineMapReduce& mr)
+{
+	int num = this->mapreduceVector.size() ;
+	bool hasSame = false ;
+	for(int i = 0 ; i<num ; ++ i )
+	{
+		if( this->mapreduceVector[i].isSame(mr) )
+		{
+			hasSame = true ;
+			break ;
+		}
+	}
+	if( hasSame==false )
+	{
+		this->mapreduceVector.push_back(mr) ;
+		cout<<"mapreduceVector add one"<<endl ;
+	}
+}
+
+
+///////////////////////////////////////////////////////////////
+
 
 int PixelEngineColorRamp::upper_bound(int val) 
 {
@@ -1629,11 +1675,14 @@ void PixelEngine::GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v
 void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
 	cout<<"inside GlobalFunc_DatasetCallBack"<<endl; 
-	if (args.Length() != 3 ){
-		cout<<"Error: args.Length != 3 "<<endl ;
+	if(args.Length() == 3 || args.Length() == 6 )
+	{
+		//ok
+	}else
+	{
+		cout<<"Error: args.Length != 3 or !=6 "<<endl ;
 		return;
 	}
-
 	Isolate* isolate = args.GetIsolate() ;
 	v8::HandleScope handle_scope(isolate);
 	Local<Context> context(isolate->GetCurrentContext()) ;
@@ -1688,7 +1737,13 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 	int tilez = thisPePtr->tileInfo.z  ;
 	int tiley = thisPePtr->tileInfo.y  ; 
 	int tilex = thisPePtr->tileInfo.x  ; 
-
+	if( args.Length()==6 )
+	{
+		tilez = (int) (args[3]->ToNumber(context).ToLocalChecked())->Value();
+		tiley = (int) (args[4]->ToNumber(context).ToLocalChecked())->Value();
+		tilex = (int) (args[5]->ToNumber(context).ToLocalChecked())->Value();
+	}
+	
 	if( datetime == PE_CURRENTDATETIME )
 	{
 		//datetime = PixelEngine::long2str(thisPePtr->currentDateTime) ;
@@ -1751,6 +1806,10 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 	//info.GetReturnValue().Set(i16arr);
 	args.GetReturnValue().Set(ds) ;
 }
+
+
+
+
 
 
 
@@ -2749,6 +2808,108 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 
 					unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 					printf("encode png:%d ms \n", now2 - now1);
+				}
+			}
+		}
+	}
+	
+
+	this->m_context.Reset() ;
+	this->GlobalFunc_ForEachPixelCallBack.Reset() ;
+	this->GlobalFunc_GetPixelCallBack.Reset() ;
+
+	// Dispose the isolate and tear down V8.
+	this->isolate->Dispose();
+	// v8::V8::Dispose();
+	// v8::V8::ShutdownPlatform();
+	//delete create_params.array_buffer_allocator;
+
+	return allOk ;
+}
+
+//Only ComputeOnce
+bool PixelEngine::RunScriptForComputeOnce(void* extra, string& jsSource,long currentdt
+	,int z,int y,int x, string& retJsonStr ) 
+{
+	cout<<"in RunScriptForComputeOnce init v8"<<endl;
+	this->pe_logs.reserve(2048);//max 1k bytes.
+	this->tileInfo.x = x ;
+	this->tileInfo.y = y ;
+	this->tileInfo.z = z ;
+	this->extraPointer = extra ;
+	this->currentDateTime = currentdt ;
+	bool allOk = true ;
+  	// Create a new Isolate and make it the current one.
+	//v8::Isolate::CreateParams create_params;
+	this->create_params.array_buffer_allocator =
+	v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+	//v8::Isolate* isolate = v8::Isolate::New(create_params);
+	this->isolate = v8::Isolate::New(create_params);
+	{
+		cout<<"in RunScriptForComputeOnce run ComputeOnce() in script"<<endl;
+		v8::Isolate::Scope isolate_scope(this->isolate);
+		v8::HandleScope handle_scope(this->isolate);
+
+		// Create a new context.
+		v8::Local<v8::Context> context = v8::Context::New(this->isolate );
+		// Enter the context for compiling and running the hello world script.
+		v8::Context::Scope context_scope(context);// enter scope
+		PixelEngine::initTemplate(  this , this->isolate , context) ;
+		this->m_context.Reset( this->isolate , context);
+		TryCatch try_catch(this->isolate);
+		string source = jsSource + "var temp_computeOnceResult=JSON.stringify(ComputeOnce());" ;
+
+		// Compile the source code.
+		v8::Local<v8::Script> script ;
+		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
+		  		source.c_str()).ToLocalChecked()).ToLocal(&script)) {
+			String::Utf8Value error(this->isolate, try_catch.Exception());
+			cout<<"v8 exception:"<<*error<<endl;
+			// The script failed to compile; bail out.
+			//return false;
+
+			allOk = false ;
+		}else
+		{
+			unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			// Run the script to get the result.
+			Local<v8::Value> result ;
+			if (!script->Run(context).ToLocal(&result)) {
+				String::Utf8Value error( this->isolate, try_catch.Exception());
+				string exceptionstr = string("v8 exception:")+(*error) ;
+				cout<<exceptionstr<<endl;
+				// The script failed to compile; bail out.
+				//return false;
+				this->log(exceptionstr) ;
+				allOk = false ;
+			}else
+			{
+				MaybeLocal<Value> coResult = context->Global()->Get(context 
+		    		,String::NewFromUtf8(isolate, "temp_computeOnceResult").ToLocalChecked() ) ;
+				if( PixelEngine::IsMaybeLocalOK(coResult) == false) //IsNullOrUndefined() )
+				{
+					string error1("Error: the result from ComputeOnce() is null or undefined.") ;
+					cout<<error1<<endl ;
+					this->log(error1) ;
+					allOk = false ;
+				}else
+				{
+					cout<<"in RunScriptForComputeOnce 4"<<endl;
+
+					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					printf("script run dura:%d ms \n", now1 - now);//
+
+					MaybeLocal<String> coStr = coResult.ToLocalChecked()->ToString(context) ;
+					Local<String> coStr2 ;
+					if( coStr.ToLocal(&coStr2) )
+					{
+						String::Utf8Value coStrUtf8( this->isolate, coStr2);
+						retJsonStr = (*coStrUtf8) ;
+					}else
+					{
+						retJsonStr = "null" ;
+					}
+
 				}
 			}
 		}

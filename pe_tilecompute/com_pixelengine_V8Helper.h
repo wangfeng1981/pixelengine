@@ -37,7 +37,7 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_CheckScriptOK
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_com_pixelengine_V8Helper_ComputeOnce
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv * , jobject  , jstring  , jlong  );
 
 
 /*
