@@ -11,7 +11,8 @@ PixelEngine_GetDataFromExternal2Arr_FunctionPointer PixelEngine::GetExternalTile
 PixelEngine_GetColorRampFromExternal_FunctionPointer PixelEngine::GetExternalColorRampCallBack = nullptr ;
 std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
-string PixelEngine::pejs_version = string("2.2") ;
+//string PixelEngine::pejs_version = string("2.2") ;
+string PixelEngine::pejs_version = string("2.3"); //2020-9-13
 
 
 //// mapreduce not used yet.
@@ -838,7 +839,7 @@ void PixelEngine::GlobalFunc_Log(const v8::FunctionCallbackInfo<v8::Value>& args
 
 	Local<Value> arg = args[0];
 	String::Utf8Value value(isolate, arg);
-	cout<<"log: "<< *value <<endl;
+	cout<<"log: "<< *value <<endl;//debug use
 
 	Local<Object> global = context->Global() ;
 	Local<Value> peinfo = global->Get( context
@@ -1148,6 +1149,80 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
 	//info.GetReturnValue().Set(i16arr);
 	args.GetReturnValue().Set(outds) ;
 }
+
+
+
+PixelEngine* PixelEngine::getPixelEnginePointer(const v8::FunctionCallbackInfo<v8::Value>& args) {
+	Isolate* isolate = args.GetIsolate();
+	HandleScope scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext());
+	Local<Object> global = context->Global();
+	Local<Value> peinfo = global->Get(context
+		, String::NewFromUtf8(isolate, "PixelEnginePointer").ToLocalChecked())
+		.ToLocalChecked();
+	Object* peinfoObj = Object::Cast(*peinfo);
+	Local<Value> thisPePtrValue = peinfoObj->GetInternalField(0);
+	External* thisPePtrEx = External::Cast(*thisPePtrValue);
+	PixelEngine* thisPePtr = static_cast<PixelEngine*>(thisPePtrEx->Value());
+	return thisPePtr;
+}
+
+
+/// convert v8 local value to cpp string
+string PixelEngine::convertV8LocalValue2CppString(Isolate* isolate, Local<Value>& v8value) {
+	String::Utf8Value value(isolate, v8value);
+	return string(*value);
+}
+
+/// 用于把C++的PeStyle对象打包成v8对象
+Local<Value> PixelEngine::warpCppStyle2V8Object(Isolate* isolate, PeStyle& style  ) {
+	EscapableHandleScope scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext());
+
+	string stylejson = style.toJson();
+	Local<String> v8str = String::NewFromUtf8(isolate, stylejson.c_str() ).ToLocalChecked();
+	MaybeLocal<Value> v8style = JSON::Parse(context, v8str);
+	Local<Value> v8stylelocal;
+	if (v8style.ToLocal( &v8stylelocal)) {
+		return scope.Escape(v8stylelocal);
+	}
+	else
+	{
+		cout << "Error : failed to parse v8style" << endl;
+	}
+}
+
+/// get render style from system by styleid
+/// params styleid
+void PixelEngine::GlobalFunc_GetStyleCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+	cout << "inside GlobalFunc_GetStyleCallBack" << endl;
+	Isolate* isolate = args.GetIsolate();
+	if (args.Length() != 1) {
+		cout << "Error: args.Length != 1 " << endl;
+		return;
+	}
+	v8::HandleScope handle_scope(isolate);
+
+	Local<Value> arg0 = args[0];
+	string styleid = convertV8LocalValue2CppString(isolate, arg0);
+	PixelEngine* peptr = PixelEngine::getPixelEnginePointer(args);
+	if (peptr) {
+		if (peptr->helperPointer) {
+
+			PeStyle retstyle;
+			string errorText;
+			bool styleok = peptr->helperPointer->getStyle(styleid, retstyle,errorText );
+			if (styleok) {
+				Local<Value> styleObj = PixelEngine::warpCppStyle2V8Object(isolate , retstyle);
+				args.GetReturnValue().Set(styleObj);
+			}
+		}
+	}
+
+
+}
+
 
 
 /// dataset.renderRGB , return a new Dataset
@@ -1694,7 +1769,7 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 	String::Utf8Value nameutf8( isolate , v8name) ;
 	string name( *nameutf8 ) ;
 
-	long datetime = (long) (v8datetime->ToNumber(context).ToLocalChecked())->Value();
+	int64_t datetime = (int64_t) (v8datetime->ToNumber(context).ToLocalChecked())->Value();
 
 	cout<<name<<","<<datetime<<endl ;
 
@@ -1757,22 +1832,49 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 
 	string datetimestr = PixelEngine::long2str(datetime) ;
 
-	bool externalOk = PixelEngine::GetExternalTileDataCallBack(
-		thisPePtrEx->Value() ,// pointer to PixelEngine Object.
-		name,datetimestr,wantBands,
-		tilez,
-		tiley,
-		tilex,
-		externalData , 
-		dt ,
-		wid , 
-		hei , 
-		retnbands ) ;
-	if( externalOk==false )
-	{
-		cout<<"Error: PixelEngine::GetExternalTileDataCallBack failed."<<endl;
-		return ;//return null in javascript.
+	if (PixelEngine::GetExternalTileDataCallBack != nullptr) {
+		bool externalOk = PixelEngine::GetExternalTileDataCallBack(
+			thisPePtrEx->Value(),// pointer to PixelEngine Object.
+			name, datetimestr, wantBands,
+			tilez,
+			tiley,
+			tilex,
+			externalData,
+			dt,
+			wid,
+			hei,
+			retnbands);
+		if (externalOk == false)
+		{
+			cout << "Error: PixelEngine::GetExternalTileDataCallBack failed." << endl;
+			return;//return null in javascript.
+		}
 	}
+	else if (thisPePtr->helperPointer != nullptr) {
+		string errorText;
+		bool dataok = thisPePtr->helperPointer->getTileData(
+			datetime,
+			name,
+			wantBands,
+			tilez, tiley, tilex,
+			externalData,
+			dt,
+			wid,
+			hei,
+			retnbands,
+			errorText
+		);
+		if (dataok==false) {
+			cout << "Error: PixelEngine::helperPointer getTileData failed." << endl;
+			return;//return null in javascript.
+		}
+	}
+	else
+	{
+		cout << "Error: PixelEngine::GetExternalTileDataCallBack is null and helper is null too." << endl;
+		return;//return null in javascript.
+	}
+	
 
 	Local<Object> ds = PixelEngine::CPP_NewDataset( isolate
 		,context
@@ -1872,8 +1974,8 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	String::Utf8Value nameutf8( isolate , v8name) ;
 	string name( *nameutf8 ) ;
 
-	long fromdatetime =(long) (v8from->ToNumber(context).ToLocalChecked())->Value();
-	long todatetime = (long) (v8to->ToNumber(context).ToLocalChecked())->Value();
+	int64_t fromdatetime =(int64_t) (v8from->ToNumber(context).ToLocalChecked())->Value();
+	int64_t todatetime = (int64_t) (v8to->ToNumber(context).ToLocalChecked())->Value();
 
 	cout<<"from to :"<<fromdatetime<<"-"<<todatetime<<endl ;
 
@@ -1930,30 +2032,59 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	string fromdatetimestr = PixelEngine::long2str(fromdatetime) ;
 	string todatetimestr = PixelEngine::long2str(todatetime) ;
 
-
-	bool externalOk = PixelEngine::GetExternalTileDataArrCallBack(
-		thisPePtrEx->Value() ,// pointer to PixelEngine Object.
-		name,fromdatetimestr,todatetimestr,wantBands,
-		tilez,
-		tiley,
-		tilex,
-		filtermon,
-		filterday,
-		filterhour,
-		filterminu,
-		filtersec ,
-		externalDataArr , 
-		externalTimeArr , 
-		dt ,
-		wid , 
-		hei , 
-		retnbands ,
-		retnumds ) ;
-	if( externalOk==false )
-	{
-		cout<<"Error: PixelEngine::GetExternalTileDataArrCallBack failed."<<endl;
-		return ;//return null in javascript.
+	if (PixelEngine::GetExternalTileDataArrCallBack != nullptr ) {
+		bool externalOk = PixelEngine::GetExternalTileDataArrCallBack(
+			thisPePtrEx->Value(),// pointer to PixelEngine Object.
+			name, fromdatetimestr, todatetimestr, wantBands,
+			tilez,
+			tiley,
+			tilex,
+			filtermon,
+			filterday,
+			filterhour,
+			filterminu,
+			filtersec,
+			externalDataArr,
+			externalTimeArr,
+			dt,
+			wid,
+			hei,
+			retnbands,
+			retnumds);
+		if (externalOk == false)
+		{
+			cout << "Error: PixelEngine::GetExternalTileDataArrCallBack failed." << endl;
+			return;//return null in javascript.
+		}
 	}
+	else if (thisPePtr->helperPointer != nullptr ) {
+		vector<int64_t> retDtVec;
+		string errorText;
+		bool dataok = thisPePtr->helperPointer->getTileDataArray(
+			fromdatetime, todatetime,
+			name,
+			wantBands,
+			tilez, tiley, tilex,
+			filtermon, filterday, filterhour, filterminu, filtersec,
+			externalDataArr,
+			retDtVec,
+			dt, wid, hei, retnbands, errorText);
+		if (dataok==false )
+		{
+			cout << "Error: PixelEngine::helper get tile data array failed." << endl;
+			return;//return null in javascript.
+		}
+		retnumds = retDtVec.size();
+		for (int idt = 0; idt < retDtVec.size(); ++idt) {
+			externalTimeArr.push_back((long)retDtVec[idt]);
+		}
+	}
+	else
+	{
+		cout << "Error: PixelEngine::GetExternalTileDataArrCallBack is null and helper is null too." << endl;
+		return;//return null in javascript.
+	}
+	
 
 	Local<Object> ds = PixelEngine::CPP_NewDatasetArray( isolate
 		,context
@@ -2025,7 +2156,7 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	args.GetReturnValue().Set(ds) ;
 }
 
-
+/// 该方法用在 forEachPixel里面做窗口计算，访问临近瓦片数据
 /// get external tile data only, return data array not dataset.
 /// PixelEngine.GetTileData(name,datetime,z,y,x)
 void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
@@ -2046,7 +2177,7 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 	String::Utf8Value nameutf8( isolate , v8name) ;
 	string name( *nameutf8 ) ;
 
-	long datetime =  (long) (v8datetime->ToNumber(context).ToLocalChecked())->Value();
+	int64_t datetime =  (int64_t)(v8datetime->ToNumber(context).ToLocalChecked())->Value();
 
 	int tilez = args[2]->ToInteger(context).ToLocalChecked()->Value() ;
 	int tiley = args[3]->ToInteger(context).ToLocalChecked()->Value() ; 
@@ -2080,21 +2211,48 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 	}
 	string datetimestr = PixelEngine::long2str(datetime) ;
 
-	bool externalOk = PixelEngine::GetExternalTileDataCallBack(
-		thisPePtrEx->Value() ,// pointer to PixelEngine Object.
-		name,datetimestr,wantBands,
-		tilez,
-		tiley,
-		tilex,
-		externalData , 
-		dt ,
-		wid , 
-		hei , 
-		nband ) ;
-	if( externalOk==false )
+	if (PixelEngine::GetExternalTileDataCallBack != nullptr)
 	{
-		cout<<"Error: PixelEngine::GlobalFunc_GetTileDataCallBack failed."<<endl;
-		return ;//return null in javascript.
+		bool externalOk = PixelEngine::GetExternalTileDataCallBack(
+			thisPePtrEx->Value(),// pointer to PixelEngine Object.
+			name, datetimestr, wantBands,
+			tilez,
+			tiley,
+			tilex,
+			externalData,
+			dt,
+			wid,
+			hei,
+			nband);
+		if (externalOk == false)
+		{
+			cout << "Error: PixelEngine::GlobalFunc_GetTileDataCallBack failed." << endl;
+			return;//return null in javascript.
+		}
+	}
+	else if (thisPePtr->helperPointer != nullptr) {
+		string errorText;
+		bool dataok = thisPePtr->helperPointer->getTileData(
+			datetime,
+			name,
+			wantBands,
+			tilez, tiley, tilex,
+			externalData,
+			dt,
+			wid,
+			hei,
+			nband,
+			errorText
+		);
+		if (dataok==false) {
+			cout << "Error: PixelEngine::helperPointer getTileData failed." << endl;
+			return;//return null in javascript.
+		}
+	}
+	else
+	{
+		cout << "Error: PixelEngine::GetExternalTileDataCallBack is null and helper is null too." << endl;
+		return;//return null in javascript.
 	}
 
 	Local<ArrayBuffer> exArrBuff = ArrayBuffer::New(isolate,externalData.size()) ;
@@ -2131,23 +2289,37 @@ void PixelEngine::GlobalFunc_ColorRampCallBack(const v8::FunctionCallbackInfo<v8
 
 	Local<Value> v8_crObj = args[1] ;
 
+	Local<Object> global = context->Global();
+	Local<Value> peinfo = global->Get(context
+		, String::NewFromUtf8(isolate, "PixelEnginePointer").ToLocalChecked())
+		.ToLocalChecked();
+	Object* peinfoObj = Object::Cast(*peinfo);
+	Local<Value> thisPePtrValue = peinfoObj->GetInternalField(0);
+	External* thisPePtrEx = External::Cast(*thisPePtrValue);
+	PixelEngine* thisPePtr = static_cast<PixelEngine*>(thisPePtrEx->Value());
+
 	if( PixelEngine::GetExternalColorRampCallBack != nullptr )
 	{
-		Local<Object> global = context->Global() ;
-		Local<Value> peinfo = global->Get( context
-			,String::NewFromUtf8(isolate, "PixelEnginePointer").ToLocalChecked())
-			.ToLocalChecked() ;
-		Object* peinfoObj = Object::Cast( *peinfo ) ;
-		Local<Value> thisPePtrValue = peinfoObj->GetInternalField(0) ;
-		External* thisPePtrEx = External::Cast(*thisPePtrValue);
-		PixelEngine* thisPePtr = static_cast<PixelEngine*>(thisPePtrEx->Value() );
-
 		PixelEngineColorRamp cr = PixelEngine::GetExternalColorRampCallBack(thisPePtrEx->Value(),strColorid) ;
 		cr.copy2v8( isolate , v8_crObj) ;
 		args.GetReturnValue().Set(v8_crObj) ;
-	}else
+	}
+	else if (thisPePtr->helperPointer != nullptr) {
+		PixelEngineColorRamp cr;
+		string errorText;
+		bool crok = thisPePtr->helperPointer->getColorRamp(strColorid, cr, errorText);
+		if (crok == false) {
+			cout << "Error: PixelEngine::helperPointer get color ramp failed ." << endl;
+			args.GetReturnValue().Set(v8_crObj);
+		}
+		else {
+			cr.copy2v8(isolate, v8_crObj);
+			args.GetReturnValue().Set(v8_crObj);
+		}
+	}
+	else
 	{
-		cout<<"Error: PixelEngine::GetExternalColorRampCallBack is nullptr."<<endl;
+		cout<<"Error: PixelEngine::GetExternalColorRampCallBack is nullptr and helper is null ."<<endl;
 		args.GetReturnValue().Set(v8_crObj) ;
 	}
 }
@@ -2475,7 +2647,10 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	pe->Set(context
 		,String::NewFromUtf8(isolate, "DatasetArray").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_DatasetArrayCallBack)->GetFunction(context).ToLocalChecked() );
- 
+	//2020-9-13
+	pe->Set(context
+		, String::NewFromUtf8(isolate, "getStyle").ToLocalChecked(),
+		FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_GetStyleCallBack)->GetFunction(context).ToLocalChecked());
 
 
 
@@ -2730,6 +2905,97 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	return true ;
 }
 
+
+//2020-9-13 get style from script
+bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retstyle)
+{
+	bool allOk = false;
+	this->pe_logs.reserve(2048);//max 1k bytes.
+	//v8::Isolate::CreateParams create_params;
+	this->create_params.array_buffer_allocator =
+		v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+	//v8::Isolate* isolate = v8::Isolate::New(create_params);
+	this->isolate = v8::Isolate::New(create_params);
+	{
+		cout << "in RunToGetStyleFromScript " << endl;
+		v8::Isolate::Scope isolate_scope(this->isolate);
+		v8::HandleScope handle_scope(this->isolate);
+
+		// Create a new context.
+		v8::Local<v8::Context> context = v8::Context::New(this->isolate);
+		// Enter the context for compiling and running the hello world script.
+		v8::Context::Scope context_scope(context);// enter scope
+		PixelEngine::initTemplate(this, this->isolate, context);
+		this->m_context.Reset(this->isolate, context);
+		TryCatch try_catch(this->isolate);
+		string source = scriptContent + "var pixelengine_run2getstyle_style=setStyle();";
+		// Compile the source code.
+		v8::Local<v8::Script> script;
+		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
+			source.c_str()).ToLocalChecked()).ToLocal(&script)) {
+			String::Utf8Value error(this->isolate, try_catch.Exception());
+			cout << "v8 exception:" << *error << endl;
+			// The script failed to compile; bail out.
+			//return false;
+
+			allOk = false;
+		}
+		else {
+			unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			// Run the script to get the result.
+			Local<v8::Value> result;
+			if (!script->Run(context).ToLocal(&result)) {
+				String::Utf8Value error(this->isolate, try_catch.Exception());
+				string exceptionstr = string("v8 exception:") + (*error);
+				cout << exceptionstr << endl;
+				// The script failed to compile; bail out.
+				//return false;
+				this->log(exceptionstr);
+				allOk = false;
+			}
+			else
+			{
+				MaybeLocal<Value> styleResult = context->Global()->Get(context
+					, String::NewFromUtf8(isolate, "pixelengine_run2getstyle_style").ToLocalChecked());
+				if (PixelEngine::IsMaybeLocalOK(styleResult) == false) //IsNullOrUndefined() )
+				{
+					string error1("Error: result from setStyle() is null or undefined.");
+					cout << error1 << endl;
+					this->log(error1);
+					allOk = false;
+				}
+				else
+				{
+					cout << "in RunToGetStyleFromScript 4" << endl;
+
+					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					printf("script run dura:%d ms \n", now1 - now);//
+
+					MaybeLocal<String> outStyleJson = JSON::Stringify(context, styleResult.ToLocalChecked());
+					Local<String> outStyleJson2;
+					if (outStyleJson.ToLocal(& outStyleJson2)) {
+						Local<Value> styleV8Value = outStyleJson2.As<Value>();
+						string cstrStyle = PixelEngine::convertV8LocalValue2CppString(isolate , styleV8Value);
+						cout << "cstrStyle:" << cstrStyle << endl;//debug
+						retstyle.loadFromJson(cstrStyle);
+						allOk = true;
+					}
+					unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					printf("get style:%d ms \n", now2 - now1);
+				}
+			}
+		}
+
+	}
+	this->m_context.Reset();
+	this->GlobalFunc_ForEachPixelCallBack.Reset();
+	this->GlobalFunc_GetPixelCallBack.Reset();
+	// Dispose the isolate and tear down V8.
+	this->isolate->Dispose();
+
+	return allOk;
+}
+
 bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,int z,int y,int x, vector<unsigned char>& retbinary) 
 {
 	cout<<"in RunScriptForTile init v8"<<endl;
@@ -2979,6 +3245,7 @@ PixelEngine::PixelEngine()
 	this->tileInfo.x = 0 ;
 	this->tileInfo.y = 0 ;
 	this->tileInfo.z = 0 ;
+	helperPointer = nullptr;
 }
 
 
@@ -2988,7 +3255,7 @@ PixelEngine::~PixelEngine()
 	
 }
 
-
+//只需要调用一次
 void PixelEngine::initV8() 
 {
 	// Initialize V8.

@@ -5,6 +5,8 @@
 
 #ifndef PIXEL_ENGINE_H
 
+#define PIXEL_ENGINE_H
+
 //must put this before v8.h
 #define V8_COMPRESS_POINTERS  
 
@@ -19,9 +21,55 @@
 #include <chrono>
 #include "lodepng.h"
 #include  <algorithm>
+#include "PeStyle.h"
 
 using namespace v8;
 using namespace std;
+
+
+struct PixelEngineColorRamp;
+using pe::PeStyle;
+
+//PixelEngineHelperInterface
+struct PixelEngineHelperInterface {
+	//通过pid获取瓦片数据
+	//virtual bool getTileDataByPid(string& tbname,string& fami,long dt,int pid,vector<int> bandindices,int z,int y,int x,vector<unsigned char> retTileData,string& errorText);
+
+	//通过pdtname获取瓦片数据
+	virtual bool getTileData(int64_t dt, string& dsName, vector<int> bandindices,
+		int z, int y, int x, vector<unsigned char>& retTileData, 
+		int& dataType,
+		int& wid,
+		int& hei,
+		int& nbands,
+		string& errorText)=0;
+
+	//获取时间段瓦片数据
+	virtual bool getTileDataArray( 
+		int64_t fromdtInclusive, int64_t todtInclusive,
+		string& dsName, vector<int> bandindices, int z, int y, int x,
+		int filterMonth,int filterDay,int filterHour,int filterMinu,
+		int filterSec ,
+		vector<vector<unsigned char>>& retTileDataArr,
+		vector<int64_t>& dtArr ,
+		int& dataType,
+		int& wid,
+		int& hei,
+		int& nbands,
+		string& errorText)=0;
+
+	//获得颜色列表
+	virtual bool getColorRamp(string& crid , PixelEngineColorRamp& crobj , string& errorText)=0;
+
+	//get render style by id from system
+	virtual bool getStyle(string& styleid, PeStyle& retStyle, string& errorText) =0;
+
+};
+
+
+
+
+
 
 //deprecated , use PixelEngine_GetDataFromExternal2_FunctionPointer
 // typedef bool (*PixelEngine_GetDataFromExternal_FunctionPointer)(
@@ -74,7 +122,7 @@ typedef bool (*PixelEngine_GetDataFromExternal2Arr_FunctionPointer)(
 		int& numds );//return number of dataset.
 
 
-struct PixelEngineColorRamp ;
+
 //get ColorRamp from external by StringID
 typedef PixelEngineColorRamp (*PixelEngine_GetColorRampFromExternal_FunctionPointer)(
 		void* pePtr, string );
@@ -162,6 +210,8 @@ struct PixelEngine
 	
 	static void GlobalFunc_LocalDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ; 
 	static void GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+	//2020-9-13
+	static void GlobalFunc_GetStyleCallBack(const v8::FunctionCallbackInfo<v8::Value>& args);
 
 
 	//Dataset methods:
@@ -225,6 +275,10 @@ struct PixelEngine
 	bool RunScriptForComputeOnce(void* extra, string& jsSource,long currentdt
                                             ,int z,int y,int x, string& retJsonStr ) ;
 	string CheckScriptOk(string& scriptSource) ;
+	//2020-9-13 get style from script
+	bool RunToGetStyleFromScript(string& scriptContent, PeStyle& retstyle);
+
+
 
 	//static PixelEngine_GetDataFromExternal_FunctionPointer GetExternalDatasetCallBack;//will deprecated
 	static PixelEngine_GetDataFromExternal2_FunctionPointer GetExternalTileDataCallBack; 
@@ -232,9 +286,16 @@ struct PixelEngine
 	static PixelEngine_GetColorRampFromExternal_FunctionPointer GetExternalColorRampCallBack ;
 
 
+	//2020-9-12
+	PixelEngineHelperInterface* helperPointer;
 
+	//2020-9-13
+	static PixelEngine* getPixelEnginePointer(const v8::FunctionCallbackInfo<v8::Value>& args);
+	static string convertV8LocalValue2CppString(Isolate* isolate, Local<Value>& v8value);
+	static Local<Value> warpCppStyle2V8Object(Isolate* isolate, PeStyle& style);
 
 } ;
+
 
 
 
