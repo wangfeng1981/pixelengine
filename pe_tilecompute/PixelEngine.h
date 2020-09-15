@@ -22,6 +22,8 @@
 #include "lodepng.h"
 #include  <algorithm>
 #include "PeStyle.h"
+#include "PeTileData.h"
+#include "./sqlite_interface/webservice/wstringutil.h"
 
 using namespace v8;
 using namespace std;
@@ -29,6 +31,7 @@ using namespace std;
 
 struct PixelEngineColorRamp;
 using pe::PeStyle;
+using pe::PeTileData;
 
 //PixelEngineHelperInterface
 struct PixelEngineHelperInterface {
@@ -234,10 +237,16 @@ struct PixelEngine
 	static bool V8ObjectGetIntValue(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,int& retvalue );
 	static bool V8ObjectGetNumberValue(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,double& retvalue );
 	static bool V8ObjectGetBoolValue(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,bool& retvalue );
-	static bool V8ObjectGetUint8Array(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,int shouldElementNumber , unsigned char* copyToPtr );
-	static bool V8ObjectGetInt32Array(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,int shouldElementNumber , int* copyToPtr );
-	static bool V8ObjectGetInt16Array(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,int shouldElementNumber , short* copyToPtr );
-	static bool V8ObjectGetFloat32Array(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,int shouldElementNumber , float* copyToPtr );
+	static bool V8ObjectGetUint8Array(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,int shouldElementNumber , void* copyToPtr );
+	static bool V8ObjectGetInt32Array(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,int shouldElementNumber , void* copyToPtr );
+	static bool V8ObjectGetInt16Array(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,int shouldElementNumber , void* copyToPtr );
+	static bool V8ObjectGetFloat32Array(Isolate* isolate,Local<Object>&obj,Local<Context>&context,string key,int shouldElementNumber , void* copyToPtr );
+
+	//2020-9-14
+	static bool V8ObjectGetUint16Array(Isolate* isolate, Local<Object>& obj, Local<Context>& context, string key, int shouldElementNumber, void* copyToPtr);
+	static bool V8ObjectGetUint32Array(Isolate* isolate, Local<Object>& obj, Local<Context>& context, string key, int shouldElementNumber, void* copyToPtr);
+	static bool V8ObjectGetFloat64Array(Isolate* isolate, Local<Object>& obj, Local<Context>& context, string key, int shouldElementNumber, void* copyToPtr);
+ 
 
 
 	//private method
@@ -261,7 +270,7 @@ struct PixelEngine
 	v8::Isolate::CreateParams create_params;
 	Global<Context> m_context ;//need Reset
 	PixelEngineTileInfo tileInfo ;
-	long currentDateTime ;
+	int64_t currentDateTime ;
 	void* extraPointer ;//do not release.
 	string pe_logs ;//max length 1k bytes.
 	PixelEngineMapReduceContainer mapredContainer ;//not used yet,20200722
@@ -276,7 +285,14 @@ struct PixelEngine
                                             ,int z,int y,int x, string& retJsonStr ) ;
 	string CheckScriptOk(string& scriptSource) ;
 	//2020-9-13 get style from script
-	bool RunToGetStyleFromScript(string& scriptContent, PeStyle& retstyle);
+	bool RunToGetStyleFromScript(string& scriptContent, PeStyle& retstyle, string& retLogText);
+	//2020-9-13
+	//运行脚本保留数据，不渲染
+	bool RunScriptForTileWithoutRender(void* extra, string& scriptContent, int64_t currentDatetime,
+		int z, int y, int x, PeTileData& tileData , string& logStr);//here
+	//运行脚本并渲染png图片
+	bool RunScriptForTileWithRender(void* extra, string& scriptContent, PeStyle& inStyle, int64_t currentDatetime,
+		int z, int y, int x, vector<unsigned char>& retPngBinary, string& logStr);//
 
 
 
@@ -294,6 +310,26 @@ struct PixelEngine
 	static string convertV8LocalValue2CppString(Isolate* isolate, Local<Value>& v8value);
 	static Local<Value> warpCppStyle2V8Object(Isolate* isolate, PeStyle& style);
 
+
+	private:
+		//2020-9-14
+		bool innerRenderTileDataByPeStyle(PeTileData& tileData, PeStyle& style, vector<unsigned char>& retPngBinary, string& error);
+		
+		//for exact,discrete,linear
+		template<typename T>
+		bool innerData2RGBAByPeStyle( T* dataPtr, int width, int height, int nbands, PeStyle& style, vector<unsigned char>& retRGBAData,string& retLogStr);
+		//for gray,rgb,rgba
+		template<typename T>
+		bool innerData2RGBAByPeStyle2(T* dataPtr, int width, int height, int nbands, PeStyle& style, vector<unsigned char>& retRGBAData,string& retLogStr);
+
+		bool innerRenderTileDataWithoutStyle(PeTileData& tileData, vector<unsigned char>& retPngBinary, string& error);
+		template<typename T>
+		void innerData2RGBAWithoutStyle(T* data, int width, int height, int nbands, vector<unsigned char>& retPngBinary );
+		
+		bool innerRGBAData2Png(vector<unsigned char>& rgbaData, int width, int height, vector<unsigned char>& retPngBinary);
+		bool innerV8Dataset2TileData(Isolate* isolate, Local<Context>& context, Local<Value>& v8dsValue, PeTileData& retTileData, string& error);
+		template<typename T>
+		static unsigned char clamp255(T val);
 } ;
 
 

@@ -10,6 +10,9 @@ namespace pe {
 	struct PeTileData {
 		vector<unsigned char> tiledata;
 		int width, height, nbands, dataType;
+		PeTileData();
 	};
 
 }
+
+ 

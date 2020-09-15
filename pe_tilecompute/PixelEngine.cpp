@@ -3,6 +3,8 @@
 #include "PixelEngine.h"
 #include <time.h>
 
+
+
 const double PE_CURRENTDATETIME = 0L; 
 
 //PixelEngine_GetDataFromExternal_FunctionPointer PixelEngine::GetExternalDatasetCallBack = nullptr ;
@@ -224,7 +226,7 @@ bool PixelEngine::V8ObjectGetUint8Array(Isolate* isolate,
 	Local<Context>&context,
 	string key,
 	int shouldElementNumber , 
-	unsigned char* copyToPtr ){
+	void* copyToPtr ){
 
 	MaybeLocal<Value> maybe1 = obj->Get(context,
 		String::NewFromUtf8(isolate,key.c_str()).ToLocalChecked()
@@ -253,12 +255,87 @@ bool PixelEngine::V8ObjectGetUint8Array(Isolate* isolate,
 }
 
 
+bool PixelEngine::V8ObjectGetUint16Array(Isolate* isolate,
+	Local<Object>& obj,
+	Local<Context>& context,
+	string key,
+	int shouldElementNumber,
+	void* copyToPtr) {
+
+	MaybeLocal<Value> maybe1 = obj->Get(context,
+		String::NewFromUtf8(isolate, key.c_str()).ToLocalChecked()
+	);
+	if (maybe1.IsEmpty()) {
+		return false;
+	}
+	else
+	{
+		Local<Value> local1 = maybe1.ToLocalChecked();
+		if (local1->IsUint16Array())
+		{
+			Uint16Array* arr = Uint16Array::Cast(*local1);
+			if (arr->Length() == shouldElementNumber)
+			{
+				arr->CopyContents(copyToPtr, shouldElementNumber*2 );
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else
+		{
+			return false;
+		}
+	}
+}
+
+bool PixelEngine::V8ObjectGetUint32Array(Isolate* isolate,
+	Local<Object>& obj,
+	Local<Context>& context,
+	string key,
+	int shouldElementNumber,
+	void* copyToPtr) {
+
+	MaybeLocal<Value> maybe1 = obj->Get(context,
+		String::NewFromUtf8(isolate, key.c_str()).ToLocalChecked()
+	);
+	if (maybe1.IsEmpty()) {
+		return false;
+	}
+	else
+	{
+		Local<Value> local1 = maybe1.ToLocalChecked();
+		if (local1->IsUint32Array())
+		{
+			Uint32Array* arr = Uint32Array::Cast(*local1);
+			if (arr->Length() == shouldElementNumber)
+			{
+				arr->CopyContents(copyToPtr, shouldElementNumber * 4);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else
+		{
+			return false;
+		}
+	}
+}
+
+
+
+
 bool PixelEngine::V8ObjectGetInt32Array(Isolate* isolate,
 	Local<Object>&obj,
 	Local<Context>&context,
 	string key,
 	int shouldElementNumber , 
-	int* copyToPtr ){
+	void* copyToPtr ){
 
 	MaybeLocal<Value> maybe1 = obj->Get(context,
 		String::NewFromUtf8(isolate,key.c_str()).ToLocalChecked()
@@ -291,7 +368,7 @@ bool PixelEngine::V8ObjectGetInt16Array(Isolate* isolate,
 	Local<Context>&context,
 	string key,
 	int shouldElementNumber , 
-	short* copyToPtr ){
+	void* copyToPtr ){
 
 	MaybeLocal<Value> maybe1 = obj->Get(context,
 		String::NewFromUtf8(isolate,key.c_str()).ToLocalChecked()
@@ -324,7 +401,7 @@ bool PixelEngine::V8ObjectGetFloat32Array(Isolate* isolate,
 	Local<Context>&context,
 	string key,
 	int shouldElementNumber , 
-	float* copyToPtr ){
+	void* copyToPtr ){
 
 	MaybeLocal<Value> maybe1 = obj->Get(context,
 		String::NewFromUtf8(isolate,key.c_str()).ToLocalChecked()
@@ -348,6 +425,43 @@ bool PixelEngine::V8ObjectGetFloat32Array(Isolate* isolate,
 		}else
 		{
 			return false ;
+		}
+	}
+}
+
+
+bool PixelEngine::V8ObjectGetFloat64Array(Isolate* isolate,
+	Local<Object>& obj,
+	Local<Context>& context,
+	string key,
+	int shouldElementNumber,
+	void* copyToPtr) {
+
+	MaybeLocal<Value> maybe1 = obj->Get(context,
+		String::NewFromUtf8(isolate, key.c_str()).ToLocalChecked()
+	);
+	if (maybe1.IsEmpty()) {
+		return false;
+	}
+	else
+	{
+		Local<Value> local1 = maybe1.ToLocalChecked();
+		if (local1->IsFloat64Array())
+		{
+			Float64Array* arr = Float64Array::Cast(*local1);
+			if (arr->Length() == shouldElementNumber)
+			{
+				arr->CopyContents(copyToPtr, shouldElementNumber * 8);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else
+		{
+			return false;
 		}
 	}
 }
@@ -1188,8 +1302,9 @@ Local<Value> PixelEngine::warpCppStyle2V8Object(Isolate* isolate, PeStyle& style
 	}
 	else
 	{
-		cout << "Error : failed to parse v8style" << endl;
+		cout << "Error : failed to parse v8style, return null." << endl;
 	}
+	return scope.Escape(Null(isolate));
 }
 
 /// get render style from system by styleid
@@ -2568,6 +2683,149 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 	}
 }
 
+
+bool PixelEngine::innerV8Dataset2TileData(Isolate* isolate, Local<Context>& context, 
+	Local<Value>& v8dsValue, PeTileData& retTileData, string& error) 
+{
+	unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+	Local<Object> dsObj2;
+	bool objok = v8dsValue->ToObject(context).ToLocal(&dsObj2);
+	if (objok == false)
+	{
+		cout << "Error : innerV8Dataset2TileData v8dsValue is not a object." << endl;
+		return false;
+	}
+
+	int dt = 1;
+	int width = 256;
+	int height = 256;
+	int nband = 0;
+
+	bool ok1 = PixelEngine::V8ObjectGetIntValue(isolate, dsObj2, context, "dataType", dt);
+	if (ok1 == false) {
+		cout << "Error : failed to get dataType of output object." << endl;
+		return false;
+	}
+
+	ok1 = PixelEngine::V8ObjectGetIntValue(isolate, dsObj2, context, "width", width);
+	if (ok1 == false) {
+		cout << "Error : failed to get width of output object." << endl;
+		return false;
+	}
+
+	ok1 = PixelEngine::V8ObjectGetIntValue(isolate, dsObj2, context, "height", height);
+	if (ok1 == false) {
+		cout << "Error : failed to get height of output object." << endl;
+		return false;
+	}
+
+	ok1 = PixelEngine::V8ObjectGetIntValue(isolate, dsObj2, context, "nband", nband);
+	if (ok1 == false) {
+		cout << "Error : failed to get nband of output object." << endl;
+		return false;
+	}
+
+	if (nband == 0)
+	{
+		cout << "Error : failed to make png: zero nbands of output object." << endl;
+		return false;
+	}
+
+	retTileData.dataType = dt;
+	retTileData.width = width;
+	retTileData.height = height;
+	retTileData.nbands = nband;
+
+	int imgsize = width * height;
+	int elementnumber = imgsize * nband;
+
+	bool copyDataOk = false;
+	switch (dt) {
+		case 1:
+		{
+			retTileData.tiledata.resize(elementnumber);
+			copyDataOk = PixelEngine::V8ObjectGetUint8Array(isolate,
+				dsObj2,
+				context,
+				"tiledata",
+				elementnumber,
+				retTileData.tiledata.data());
+
+		}
+		break;
+		case 2:
+		{
+			retTileData.tiledata.resize(elementnumber*2);
+			copyDataOk = PixelEngine::V8ObjectGetUint16Array(isolate,
+				dsObj2,
+				context,
+				"tiledata",
+				elementnumber,
+				retTileData.tiledata.data());
+		}
+		break;
+		case 3:
+		{
+			retTileData.tiledata.resize(elementnumber*2);
+			copyDataOk = PixelEngine::V8ObjectGetInt16Array(isolate,
+				dsObj2,
+				context,
+				"tiledata",
+				elementnumber,
+				retTileData.tiledata.data());
+		}
+		break;
+		case 4:
+		{
+			retTileData.tiledata.resize(elementnumber*4);
+			copyDataOk = PixelEngine::V8ObjectGetUint32Array(isolate,
+				dsObj2,
+				context,
+				"tiledata",
+				elementnumber,
+				retTileData.tiledata.data());
+		}
+		break;
+		case 5:
+		{
+			retTileData.tiledata.resize(elementnumber*4);
+			copyDataOk = PixelEngine::V8ObjectGetInt32Array(isolate,
+				dsObj2,
+				context,
+				"tiledata",
+				elementnumber,
+				retTileData.tiledata.data());
+		}
+		break;
+		case 6:
+		{
+			retTileData.tiledata.resize(elementnumber*4);
+			copyDataOk = PixelEngine::V8ObjectGetFloat32Array(isolate,
+				dsObj2,
+				context,
+				"tiledata",
+				elementnumber,
+				retTileData.tiledata.data());
+		}
+		break;
+		case 7:
+		{
+			retTileData.tiledata.resize(elementnumber*8);
+			copyDataOk = PixelEngine::V8ObjectGetFloat64Array(isolate,
+				dsObj2,
+				context,
+				"tiledata",
+				elementnumber,
+				retTileData.tiledata.data());
+		}
+		break;
+	}
+
+	return copyDataOk;
+ 
+}
+
 /// init global objects and functions 
 bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Context>& context )
 {
@@ -2907,7 +3165,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 
 
 //2020-9-13 get style from script
-bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retstyle)
+bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retstyle, string& retLogText)
 {
 	bool allOk = false;
 	this->pe_logs.reserve(2048);//max 1k bytes.
@@ -2928,16 +3186,14 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 		PixelEngine::initTemplate(this, this->isolate, context);
 		this->m_context.Reset(this->isolate, context);
 		TryCatch try_catch(this->isolate);
-		string source = scriptContent + "var pixelengine_run2getstyle_style=setStyle();";
+		string source = scriptContent + "var pixelengine_run2getstyle_style=null;if(typeof setStyle=='function'){pixelengine_run2getstyle_style=setStyle();}";
 		// Compile the source code.
 		v8::Local<v8::Script> script;
 		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
 			source.c_str()).ToLocalChecked()).ToLocal(&script)) {
 			String::Utf8Value error(this->isolate, try_catch.Exception());
 			cout << "v8 exception:" << *error << endl;
-			// The script failed to compile; bail out.
-			//return false;
-
+			retLogText = string() +"compile v8 exception " + (*error);
 			allOk = false;
 		}
 		else {
@@ -2951,6 +3207,7 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 				// The script failed to compile; bail out.
 				//return false;
 				this->log(exceptionstr);
+				retLogText = string() + "run script v8 exception " + exceptionstr;
 				allOk = false;
 			}
 			else
@@ -2962,6 +3219,7 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 					string error1("Error: result from setStyle() is null or undefined.");
 					cout << error1 << endl;
 					this->log(error1);
+					retLogText = error1;
 					allOk = false;
 				}
 				else
@@ -2973,12 +3231,60 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 
 					MaybeLocal<String> outStyleJson = JSON::Stringify(context, styleResult.ToLocalChecked());
 					Local<String> outStyleJson2;
+					
 					if (outStyleJson.ToLocal(& outStyleJson2)) {
-						Local<Value> styleV8Value = outStyleJson2.As<Value>();
+						//SetStyle返回的是json对象
+						Local<Value> styleV8Value  = outStyleJson2.As<Value>();
 						string cstrStyle = PixelEngine::convertV8LocalValue2CppString(isolate , styleV8Value);
 						cout << "cstrStyle:" << cstrStyle << endl;//debug
-						retstyle.loadFromJson(cstrStyle);
-						allOk = true;
+						bool isjsonok = retstyle.loadFromJson(cstrStyle);
+						if (isjsonok) {
+							retLogText = "Info : find style by json";
+							allOk =  true;
+						}
+						else {
+							cout << "Info : it seems return string from setStyle not be valid json, then try styleid..." << endl;
+							//json解析失败, 查看字符串是否是一个有效的数字，如果是有效数据则通过数据库查找渲染方案
+							//Local<String> localResultStr = styleResult.ToLocalChecked().As<String>() ;
+							//Local<Value> localResultValue = localResultStr.As<Value>();
+							Local<Value> localResultValue = styleResult.ToLocalChecked();
+							string styleResultCStr = PixelEngine::convertV8LocalValue2CppString(isolate, localResultValue);
+							double resultNum = 0;
+							pe::wStringUtil util;
+							if (util.isValidNumber(styleResultCStr, resultNum) == true )
+							{
+								if (this->helperPointer) {
+									string errorText;
+									if (this->helperPointer->getStyle(styleResultCStr, retstyle, errorText)) {
+										cout << "Info : getStyle ok." << endl;
+										retLogText = "Info : find style by styleid";
+										allOk = true;
+									}
+									else {
+										cout << "Error : helper not find style with id '" << styleResultCStr << "' " << endl;
+										retLogText = string() + "Error : setStyle not return valid json and return value as styleid: "
+											+ styleResultCStr+ " also not finded." ;
+										allOk = false;
+									}
+								}
+								else {
+									cout << "Error : helper is null " << endl;
+									retLogText = "Error : helper is null";
+									allOk = false;
+								}
+							}
+							else {
+								cout << "Error : setStyle return value is not valid styleid '" << styleResultCStr << "' " << endl;
+								retLogText = string() + "Error : setStyle return value is not valid styleid " + styleResultCStr;
+								allOk = false;
+							}
+						}
+					}
+					else
+					{
+						cout << "Error : RunToGetStyleFromScript failed in ToLocal" << endl;
+						retLogText =  "Error : RunToGetStyleFromScript failed in ToLocal" ;
+						allOk = false;
 					}
 					unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 					printf("get style:%d ms \n", now2 - now1);
@@ -3235,6 +3541,613 @@ string PixelEngine::CheckScriptOk(string& scriptSource)
 
 	return errorText ;
 }
+
+
+//2020-9-14
+//运行脚本保留数据，不渲染
+bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptContent, int64_t currentdt,
+	int z, int y, int x, PeTileData& tileData, string& logStr) {
+
+	cout << "in RunScriptForTile init v8" << endl;
+	this->pe_logs.reserve(2048);//max 1k bytes.
+	this->tileInfo.x = x;
+	this->tileInfo.y = y;
+	this->tileInfo.z = z;
+	this->extraPointer = extra;
+	this->currentDateTime = currentdt;
+
+	bool allOk = true;
+
+	// Create a new Isolate and make it the current one.
+	//v8::Isolate::CreateParams create_params;
+	this->create_params.array_buffer_allocator =
+		v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+	//v8::Isolate* isolate = v8::Isolate::New(create_params);
+	this->isolate = v8::Isolate::New(create_params);
+	{
+		cout << "in RunScriptForTileWithoutRender run script" << endl;
+		v8::Isolate::Scope isolate_scope(this->isolate);
+		v8::HandleScope handle_scope(this->isolate);
+
+		// Create a new context.
+		v8::Local<v8::Context> context = v8::Context::New(this->isolate);
+		// Enter the context for compiling and running the hello world script.
+		v8::Context::Scope context_scope(context);// enter scope
+		PixelEngine::initTemplate(this, this->isolate, context);
+		this->m_context.Reset(this->isolate, context);
+		TryCatch try_catch(this->isolate);
+		string source = scriptContent + "var PEMainResult=main();";
+
+		// Compile the source code.
+		v8::Local<v8::Script> script;
+		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
+			source.c_str()).ToLocalChecked()).ToLocal(&script)) {
+			String::Utf8Value error(this->isolate, try_catch.Exception());
+			cout << "v8 exception:" << *error << endl;
+			// The script failed to compile; bail out.
+			//return false;
+
+			allOk = false;
+		}
+		else
+		{
+			unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			// Run the script to get the result.
+			Local<v8::Value> result;
+			if (!script->Run(context).ToLocal(&result)) {
+				String::Utf8Value error(this->isolate, try_catch.Exception());
+				string exceptionstr = string("v8 exception:") + (*error);
+				cout << exceptionstr << endl;
+				// The script failed to compile; bail out.
+				//return false;
+				this->log(exceptionstr);
+				allOk = false;
+			}
+			else
+			{
+				MaybeLocal<Value> peMainResult = context->Global()->Get(context
+					, String::NewFromUtf8(isolate, "PEMainResult").ToLocalChecked());
+				if (PixelEngine::IsMaybeLocalOK(peMainResult) == false) //IsNullOrUndefined() )
+				{
+					string error1("Error: the result from main() is null or undefined.");
+					cout << error1 << endl;
+					this->log(error1);
+					allOk = false;
+				}
+				else
+				{
+					cout << "in RunScriptForTileWithoutRender step4" << endl;
+
+					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					printf("script run dura:%d ms \n", now1 - now);//
+
+					// v8 dataset object 2 tileData
+					string errorText;
+					Local<Value> localMainResult = peMainResult.ToLocalChecked();
+					bool tiledataok = this->innerV8Dataset2TileData(isolate, context, localMainResult, tileData, errorText);
+					unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					printf("encode png:%d ms \n", now2 - now1);
+					cout << "Info : innerV8Dataset2TileData return  " << tiledataok << endl;
+					allOk = tiledataok;
+				}
+			}
+		}
+	}
+
+
+	this->m_context.Reset();
+	this->GlobalFunc_ForEachPixelCallBack.Reset();
+	this->GlobalFunc_GetPixelCallBack.Reset();
+
+	// Dispose the isolate and tear down V8.
+	this->isolate->Dispose();
+
+
+	return allOk;
+}
+//运行脚本并渲染png图片
+bool PixelEngine::RunScriptForTileWithRender(void* extra, string& scriptContent,PeStyle& inStyle, int64_t currentDatetime,
+	int z, int y, int x, vector<unsigned char>& retPngBinary, string& logStr) {
+
+	cout << "in PixelEngine::RunScriptForTileWithRender" << endl;
+	PeTileData retTileData;
+	string retLogText;
+	bool tiledataok = this->RunScriptForTileWithoutRender(extra, scriptContent, currentDateTime, z, y, x,
+		retTileData, logStr);
+	if (tiledataok) {
+		//do render staff
+		if (inStyle.type == "") {
+			//do not use style
+			cout << "Info : a empty inStyle, so do not use input style." << endl;
+			string renderError;
+			bool renderok = innerRenderTileDataWithoutStyle(retTileData, retPngBinary, renderError);
+			return renderok;
+		}
+		else {
+			//use input style
+			cout << "Info : use input style" << endl;
+			string renderError;
+			bool renderok = this->innerRenderTileDataByPeStyle(retTileData, inStyle,  retPngBinary, renderError);
+			return renderok;
+		}
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool PixelEngine::innerRenderTileDataWithoutStyle(PeTileData& tileData, vector<unsigned char>& retPngBinary, string& error ) {
+	if (tileData.tiledata.size() == 0) {
+		cout << "Error : innerRenderTileDataWithoutStyle tileData is empty." << endl;
+		return false;
+	}
+	unsigned long  now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	vector<unsigned char> rgbaData;
+	switch (tileData.dataType)
+	{
+	case 1:
+	{
+		unsigned char* ptr = (unsigned char*)tileData.tiledata.data() ;
+		this->innerData2RGBAWithoutStyle(ptr , tileData.width, tileData.height , tileData.nbands , rgbaData);
+	}
+	break;
+	case 2:
+	{
+		unsigned short* ptr = (unsigned short*)tileData.tiledata.data();
+		this->innerData2RGBAWithoutStyle(ptr, tileData.width, tileData.height, tileData.nbands, rgbaData);
+	}
+	break;
+	case 3:
+	{
+		short* ptr = (short*)tileData.tiledata.data();
+		this->innerData2RGBAWithoutStyle(ptr, tileData.width, tileData.height, tileData.nbands, rgbaData);
+	}
+	break;
+	case 4:
+	{
+		unsigned int* ptr = (unsigned int*)tileData.tiledata.data();
+		this->innerData2RGBAWithoutStyle(ptr, tileData.width, tileData.height, tileData.nbands, rgbaData);
+	}
+	break;
+	case 5:
+	{
+		int* ptr = (int*)tileData.tiledata.data();
+		this->innerData2RGBAWithoutStyle(ptr, tileData.width, tileData.height, tileData.nbands, rgbaData);
+	}
+	break;
+	case 6:
+	{
+		float* ptr = (float*)tileData.tiledata.data();
+		this->innerData2RGBAWithoutStyle(ptr, tileData.width, tileData.height, tileData.nbands, rgbaData);
+	}
+	break;
+	case 7:
+	{
+		double* ptr = (double*)tileData.tiledata.data();
+		this->innerData2RGBAWithoutStyle(ptr, tileData.width, tileData.height, tileData.nbands, rgbaData);
+	}
+	break;
+	default:
+		break;
+	}
+	unsigned long  now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	cout << "Info : make RGBA colors duration:" << now2 - now1 << " ms " << endl;
+
+	//rgba to png
+	if (rgbaData.size() == 0) {
+		return false;
+	}
+	//rgba data to png
+	this->innerRGBAData2Png(rgbaData, tileData.width, tileData.height, retPngBinary);
+
+
+	return true;
+}
+template<typename T>
+void PixelEngine::innerData2RGBAWithoutStyle(T* data, int width,int height, int nbands, vector<unsigned char>& rgbaData ) {
+	rgbaData.resize( width*height*4) ;
+	int dataLen = width * height;
+	int dataLen2 = dataLen * 2;
+	int dataLen3 = dataLen * 3;
+	if (nbands == 3) {
+		//rgb
+		for (int it = 0; it < dataLen; ++it) {
+			int it1 = it * 4;
+			rgbaData[it1] = PixelEngine::clamp255(data[it]) ;
+			rgbaData[it1+1] = PixelEngine::clamp255(data[dataLen + it])  ;
+			rgbaData[it1+2] = PixelEngine::clamp255(data[dataLen2 + it])  ;
+			rgbaData[it1+3] = 255;
+		}
+	}
+	else if (nbands == 4) {
+		//rgba
+		for (int it = 0; it < dataLen; ++it) {
+			int it1 = it * 4;
+			rgbaData[it1] = PixelEngine::clamp255(data[it])  ;
+			rgbaData[it1+1] = PixelEngine::clamp255(data[dataLen + it]) ;
+			rgbaData[it1+2] = PixelEngine::clamp255(data[dataLen2 + it]) ;
+			rgbaData[it1+3] = PixelEngine::clamp255(data[dataLen3 + it])  ;
+		}
+	}
+	else {
+		//grey 0-255 for band zero
+		for (int it = 0; it < dataLen; ++it) {
+			int it1 = it * 4;
+			rgbaData[it1] = PixelEngine::clamp255(data[it]) ;
+			rgbaData[it1+1] = rgbaData[it];
+			rgbaData[it1+2] = rgbaData[it];
+			rgbaData[it1+3] = 255;
+		}
+	}
+}
+
+template<typename T>
+unsigned char PixelEngine::clamp255(T val) {
+	if (val < 0) return 0;
+	else if (val > 255) return 255;
+	else return (unsigned char)val;
+}
+
+
+/// 该方法制作Style渲染，必须保证style是正确的。
+bool PixelEngine::innerRenderTileDataByPeStyle(PeTileData& tileData, PeStyle& style, vector<unsigned char>& retPngBinary, string& error) {
+	if (tileData.tiledata.size() == 0) {
+		cout << "Error : innerRenderTileDataByPeStyle tileData is empty." << endl;
+		return false;
+	}
+	if (style.type == "") {
+		cout << "Error : innerRenderTileDataByPeStyle style is empty." << endl;
+		return false;
+	}
+	unsigned long  now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	int dataLen = tileData.width * tileData.height;
+	vector<unsigned char> rgbaData;
+	bool pngok = false;
+	string pngLogStr;
+	switch (tileData.dataType)
+	{
+		case 1:
+		{
+			unsigned char* ptr = (unsigned char*)tileData.tiledata.data();
+			if (style.type == "gray" || style.type == "rgb" || style.type == "rgba") {
+				pngok = this->innerData2RGBAByPeStyle2(ptr, tileData.width , tileData.height , tileData.nbands , style, rgbaData , pngLogStr );
+			}
+			else {
+				//discrete exact linear
+				pngok = this->innerData2RGBAByPeStyle(ptr, tileData.width, tileData.height, tileData.nbands, style, rgbaData, pngLogStr);
+			}
+		}
+		break;
+		case 2:
+		{
+			unsigned short * ptr = (unsigned short*)tileData.tiledata.data()   ;
+			if (style.type == "gray" || style.type == "rgb" || style.type == "rgba") {
+				pngok = this->innerData2RGBAByPeStyle2(ptr, tileData.width, tileData.height, tileData.nbands, style, rgbaData, pngLogStr);
+			}
+			else {
+				//discrete exact linear
+				pngok = this->innerData2RGBAByPeStyle(ptr, tileData.width, tileData.height, tileData.nbands, style, rgbaData, pngLogStr);
+			}
+		}
+		break;
+		case 3:
+		{
+			short* ptr = (short*)tileData.tiledata.data()  ;
+			if (style.type == "gray" || style.type == "rgb" || style.type == "rgba") {
+				pngok = this->innerData2RGBAByPeStyle2(ptr, tileData.width, tileData.height, tileData.nbands, style, rgbaData, pngLogStr);
+			}
+			else {
+				//discrete exact linear
+				pngok = this->innerData2RGBAByPeStyle(ptr, tileData.width, tileData.height, tileData.nbands, style, rgbaData, pngLogStr);
+			}
+		}
+		break;
+		case 4:
+		{
+			unsigned int* ptr = (unsigned int*)tileData.tiledata.data() ;
+			if (style.type == "gray" || style.type == "rgb" || style.type == "rgba") {
+				pngok = this->innerData2RGBAByPeStyle2(ptr, tileData.width, tileData.height, tileData.nbands, style, rgbaData, pngLogStr);
+			}
+			else {
+				//discrete exact linear
+				pngok = this->innerData2RGBAByPeStyle(ptr, tileData.width, tileData.height, tileData.nbands, style, rgbaData, pngLogStr);
+			}
+		}
+		break;
+		case 5:
+		{
+			int* ptr = (int*)tileData.tiledata.data()  ;
+			if (style.type == "gray" || style.type == "rgb" || style.type == "rgba") {
+				pngok = this->innerData2RGBAByPeStyle2(ptr, tileData.width, tileData.height, tileData.nbands, style, rgbaData, pngLogStr);
+			}
+			else {
+				//discrete exact linear
+				pngok = this->innerData2RGBAByPeStyle(ptr, tileData.width, tileData.height, tileData.nbands, style, rgbaData, pngLogStr);
+			}
+		}
+		break;
+		case 6:
+		{
+			float* ptr = (float*)tileData.tiledata.data()  ;
+			if (style.type == "gray" || style.type == "rgb" || style.type == "rgba") {
+				pngok = this->innerData2RGBAByPeStyle2(ptr, tileData.width, tileData.height, tileData.nbands, style, rgbaData, pngLogStr);
+			}
+			else {
+				//discrete exact linear
+				pngok = this->innerData2RGBAByPeStyle(ptr, tileData.width, tileData.height, tileData.nbands, style, rgbaData, pngLogStr);
+			}
+		}
+		break;
+		case 7:
+		{
+			double* ptr = (double*)tileData.tiledata.data() ;
+			if (style.type == "gray" || style.type == "rgb" || style.type == "rgba") {
+				pngok = this->innerData2RGBAByPeStyle2(ptr, tileData.width, tileData.height, tileData.nbands, style, rgbaData, pngLogStr);
+			}
+			else {
+				//discrete exact linear
+				pngok = this->innerData2RGBAByPeStyle(ptr, tileData.width, tileData.height, tileData.nbands, style, rgbaData, pngLogStr);
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+	if (pngok == false) {
+		cout << "Error : make png failed " << pngLogStr << endl;
+		error = pngLogStr;
+		return false;
+	}
+
+	unsigned long  now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	cout << "Info : make RGBA colors duration:" << now2 - now1 << " ms " << endl;
+
+	//rgba to png
+	if (rgbaData.size() == 0) {
+		return false;
+	}
+	//rgba data to png
+	this->innerRGBAData2Png(rgbaData, tileData.width, tileData.height, retPngBinary);
+	return true;
+
+}
+
+bool PixelEngine::innerRGBAData2Png(vector<unsigned char>& rgbaData, int width, int height, vector<unsigned char>& retPngBinary) {
+	unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+	retPngBinary.reserve( width * height * 4 + 128);
+	lodepng::State state; //optionally customize this one
+	state.encoder.filter_palette_zero = 0; //
+	state.encoder.add_id = false; //Don't add LodePNG version chunk to save more bytes
+	state.encoder.text_compression = 1; //
+	state.encoder.zlibsettings.nicematch = 258; //
+	state.encoder.zlibsettings.lazymatching = 1; //
+	state.encoder.zlibsettings.windowsize = 512; //32768
+	state.encoder.filter_strategy = LFS_ZERO;//{ LFS_ZERO, LFS_MINSUM, LFS_ENTROPY, LFS_BRUTE_FORCE };
+	state.encoder.zlibsettings.minmatch = 3;
+	state.encoder.zlibsettings.btype = 2;
+	state.encoder.auto_convert = 0;
+	unsigned error = lodepng::encode(retPngBinary, rgbaData, width, height, state);
+
+	unsigned long now3 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	printf("encode png:%d ms \n", now3 - now2);//1024*1024 use 340millisec
+	return true;
+}
+
+//针对exact，discrete，linear三个类型
+template<typename T>
+bool PixelEngine::innerData2RGBAByPeStyle(T* dataPtr, int width,int height,int nbands, PeStyle& style, vector<unsigned char>& retRGBAData, string& retLogStr) {
+	int dataLen = width * height;
+	int bandindex = style.getBand(0);
+	if (bandindex < 0 || bandindex >= nbands) {
+		stringstream ss("Error : bandindex is invalid : ");
+		ss << bandindex;
+		retLogStr = ss.str();
+		return false;
+	}
+	if (style.type == "discrete" || style.type == "exact" || style.type == "linear") {
+		T* newDataPtr = dataPtr + bandindex * dataLen;
+		retRGBAData.resize(dataLen * 4);//RGBA
+		for (int it = 0; it < dataLen; ++it)
+		{
+			int it1 = it * 4;
+			style.value2rgba(
+				newDataPtr[it],
+				retRGBAData[it1],
+				retRGBAData[it1 + 1],
+				retRGBAData[it1 + 2],
+				retRGBAData[it1 + 3]);
+		}
+		return true;
+	}
+	else {
+		stringstream ss("Error : style.type=");
+		ss << style.type << " not working in innerData2RGBAByPeStyle.";
+		retLogStr = ss.str();
+		return false;
+	}
+}
+
+//针对gray,rgb,rgba三个渲染类型
+template<typename T>
+bool PixelEngine::innerData2RGBAByPeStyle2(T* dataPtr, int width, int height, int nbands, PeStyle& style, vector<unsigned char>& retRGBAData, string& retLogStr) {
+	int dataLen = width * height;
+	retRGBAData.resize(dataLen * 4);//RGBA
+	
+	if (style.type == "gray" && style.vranges.size() > 0) {
+		int bandindex = style.getBand(0);
+		if (bandindex < 0 || bandindex >= nbands) {
+			stringstream ss("Error : bandindex is invalid : ");
+			ss << bandindex;
+			retLogStr = ss.str();
+			return false;
+		}
+		T* newDataPtr = dataPtr + bandindex * dataLen ;
+		double fenmu = style.vranges[0].maxval - style.vranges[0].minval;
+		for (int it = 0; it < dataLen; ++it) {
+			int it1 = it * 4;
+			T valx = newDataPtr[it];
+			if (valx == (T)style.nodatacolor.val) {
+				retRGBAData[it1] = style.nodatacolor.r; retRGBAData[it1+1] = style.nodatacolor.g;
+				retRGBAData[it1+2] = style.nodatacolor.b; retRGBAData[it1+3] = style.nodatacolor.a;
+			}
+			else {
+				if (valx <= style.vranges[0].minval) {
+					retRGBAData[it1] = 0; retRGBAData[it1 + 1] = 0;
+					retRGBAData[it1 + 2] = 0; retRGBAData[it1 + 3] = 255;
+				}
+				else if (valx >= style.vranges[0].maxval) {
+					retRGBAData[it1] = 255; retRGBAData[it1 + 1] = 255;
+					retRGBAData[it1 + 2] = 255; retRGBAData[it1 + 3] = 255;
+				}
+				else {
+					if (fenmu == 0) {
+						retRGBAData[it1] = 0; retRGBAData[it1 + 1] = 0;
+						retRGBAData[it1 + 2] = 0; retRGBAData[it1 + 3] = 255;
+					}
+					else {
+						int newdn = 255* (valx - style.vranges[0].minval) / fenmu;
+						retRGBAData[it1] = newdn; retRGBAData[it1 + 1] = newdn;
+						retRGBAData[it1 + 2] = newdn; retRGBAData[it1 + 3] = 255;
+					}
+				}
+
+			}
+		}
+	}
+	else if (style.type == "rgb" && style.vranges.size() > 2) {
+		int bandindices[3];
+		bandindices[0] = style.getBand(0);
+		bandindices[1] = style.getBand(1);
+		bandindices[2] = style.getBand(2);
+
+		if (bandindices[0] < 0 || bandindices[0] >= nbands 
+			|| bandindices[1] < 0 || bandindices[1] >= nbands
+			|| bandindices[2] < 0 || bandindices[2] >= nbands) {
+			stringstream ss("Error : some bandindex is invalid : ");
+			ss << bandindices[0] << " " <<bandindices[1] <<" " << bandindices[2] ;
+			retLogStr = ss.str();
+			return false;
+		}
+
+		T* newDataPtr[3];
+		newDataPtr[0] = dataPtr + bandindices[0] * dataLen;
+		newDataPtr[1] = dataPtr + bandindices[1] * dataLen;
+		newDataPtr[2] = dataPtr + bandindices[2] * dataLen;
+
+		double fenmu[3];
+		fenmu[0] = style.vranges[0].maxval - style.vranges[0].minval;
+		fenmu[1] = style.vranges[1].maxval - style.vranges[1].minval;
+		fenmu[2] = style.vranges[2].maxval - style.vranges[2].minval;
+		for (int it = 0; it < dataLen; ++it) {
+			int it1 = it * 4;
+
+			if (newDataPtr[0][it] == (T)style.nodatacolor.val
+				|| newDataPtr[1][it] == (T)style.nodatacolor.val
+				|| newDataPtr[2][it] == (T)style.nodatacolor.val) {
+				//bad pixel
+				retRGBAData[it1] = style.nodatacolor.r; retRGBAData[it1 + 1] = style.nodatacolor.g;
+				retRGBAData[it1 + 2] = style.nodatacolor.b; retRGBAData[it1 + 3] = style.nodatacolor.a;
+			}
+			else {
+				//good pixel
+				retRGBAData[it1 + 3] = 255;
+				for (int ib = 0; ib < 3; ++ib) {
+					T valx = newDataPtr[ib][it];
+					if (valx <= style.vranges[ib].minval) {
+						retRGBAData[it1+ib] = 0; 
+					}
+					else if (valx >= style.vranges[ib].maxval) {
+						retRGBAData[it1 + ib] = 255;
+					}
+					else {
+						if (fenmu[ib] == 0) {
+							retRGBAData[it1 + ib] = 0;
+						}
+						else {
+							retRGBAData[it1 + ib] = 255 * (valx - style.vranges[ib].minval) / fenmu[ib];
+						}
+					}
+				}
+			}
+		}
+	}
+	else if (style.type == "rgba" && style.vranges.size() > 3) {
+		int bandindices[4];
+		bandindices[0] = style.getBand(0);
+		bandindices[1] = style.getBand(1);
+		bandindices[2] = style.getBand(2);
+		bandindices[3] = style.getBand(3);
+
+		if (bandindices[0] < 0 || bandindices[0] >= nbands
+			|| bandindices[1] < 0 || bandindices[1] >= nbands
+			|| bandindices[2] < 0 || bandindices[2] >= nbands
+			|| bandindices[3] < 0 || bandindices[3] >= nbands) {
+			stringstream ss("Error : some bandindex is invalid : ");
+			ss << bandindices[0] << " " << bandindices[1] << " " << bandindices[2]<<" "<<bandindices[3] ;
+			retLogStr = ss.str();
+			return false;
+		}
+
+		T* newDataPtr[4];
+		newDataPtr[0] = dataPtr + bandindices[0] * dataLen;
+		newDataPtr[1] = dataPtr + bandindices[1] * dataLen;
+		newDataPtr[2] = dataPtr + bandindices[2] * dataLen;
+		newDataPtr[3] = dataPtr + bandindices[3] * dataLen;
+
+		double fenmu[4];
+		fenmu[0] = style.vranges[0].maxval - style.vranges[0].minval;
+		fenmu[1] = style.vranges[1].maxval - style.vranges[1].minval;
+		fenmu[2] = style.vranges[2].maxval - style.vranges[2].minval;
+		fenmu[3] = style.vranges[3].maxval - style.vranges[3].minval;
+		for (int it = 0; it < dataLen; ++it) {
+			int it1 = it * 4;
+
+			if (newDataPtr[0][it] == (T)style.nodatacolor.val
+				|| newDataPtr[1][it] == (T)style.nodatacolor.val
+				|| newDataPtr[2][it] == (T)style.nodatacolor.val
+				|| newDataPtr[3][it] == (T)style.nodatacolor.val) {
+				//bad pixel
+				retRGBAData[it1] = style.nodatacolor.r; retRGBAData[it1 + 1] = style.nodatacolor.g;
+				retRGBAData[it1 + 2] = style.nodatacolor.b; retRGBAData[it1 + 3] = style.nodatacolor.a;
+			}
+			else {
+				//good pixel
+				for (int ib = 0; ib < 4; ++ib) {
+					T valx = newDataPtr[ib][it];
+					if (valx <= style.vranges[ib].minval) {
+						retRGBAData[it1 + ib] = 0;
+					}
+					else if (valx >= style.vranges[ib].maxval) {
+						retRGBAData[it1 + ib] = 255;
+					}
+					else {
+						if (fenmu[ib] == 0) {
+							retRGBAData[it1 + ib] = 0;
+						}
+						else {
+							retRGBAData[it1 + ib] = 255 * (valx - style.vranges[ib].minval) / fenmu[ib];
+						}
+					}
+				}
+			}
+		}
+		
+	}
+	else {
+		stringstream ss("Error : style.type=");
+		ss << style.type << " with vranges.size=" << style.vranges.size() << " not working in innerData2RGBAByPeStyle2.";
+		retLogStr = ss.str();
+		return false;
+	}
+	return true;
+}
+
+
+
 
 
 
