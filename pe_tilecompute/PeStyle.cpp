@@ -105,6 +105,7 @@ namespace pe {
 		return false;
 	}
 
+
 	string PeStyle::toJson() {
 		stringstream ss;
 		ss << "{ \"type\":\"" << type <<"\"," ;

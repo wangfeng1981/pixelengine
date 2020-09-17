@@ -280,19 +280,27 @@ struct PixelEngine
 	Global<Value> GlobalFunc_GetPixelCallBack ;//not static , need reset
 	PixelEngine() ;//one
 	~PixelEngine() ;//three
+
+	/// 老版本瓦片计算，为了保证以前业务可用保留，后续开发不再调用
 	bool RunScriptForTile(void* extra,string& jsSource,long dt,int z,int y,int x, vector<unsigned char>& retbinary) ;
+
+	/// 老版本瓦片计算，为了保证以前业务可用保留，后续开发不再调用
 	bool RunScriptForComputeOnce(void* extra, string& jsSource,long currentdt
                                             ,int z,int y,int x, string& retJsonStr ) ;
+
+	/// 检查脚本是否有语法错误
 	string CheckScriptOk(string& scriptSource) ;
-	//2020-9-13 get style from script
+	//2020-9-13 get style from script 从脚本获取PeStyle对象
 	bool RunToGetStyleFromScript(string& scriptContent, PeStyle& retstyle, string& retLogText);
 	//2020-9-13
 	//运行脚本保留数据，不渲染
 	bool RunScriptForTileWithoutRender(void* extra, string& scriptContent, int64_t currentDatetime,
-		int z, int y, int x, PeTileData& tileData , string& logStr);//here
-	//运行脚本并渲染png图片
+		int z, int y, int x, PeTileData& tileData , string& logStr);
+	//运行脚本并渲染png图片，PeStyle从外部传入
 	bool RunScriptForTileWithRender(void* extra, string& scriptContent, PeStyle& inStyle, int64_t currentDatetime,
 		int z, int y, int x, vector<unsigned char>& retPngBinary, string& logStr);//
+	//使用esprima解析脚本生成AST json对象 2020-9-19
+	bool RunScriptForAST(void* extra, string& scriptContent, string& retJsonStr, string& errorText);
 
 
 

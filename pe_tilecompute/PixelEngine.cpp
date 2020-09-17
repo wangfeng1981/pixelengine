@@ -2,6 +2,7 @@
 
 #include "PixelEngine.h"
 #include <time.h>
+#include "wTextfilereader.h"
 
 
 
@@ -3677,6 +3678,133 @@ bool PixelEngine::RunScriptForTileWithRender(void* extra, string& scriptContent,
 		return false;
 	}
 }
+
+
+
+//使用esprima解析脚本生成AST json对象 2020-9-19
+bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& retJsonStr, string& errorText) {
+	cout << "in PixelEngine::RunScriptForAST" << endl;
+	string esprimaMinJs = "esprima.min.js";
+	cout << "loading "<< esprimaMinJs << endl;
+	pe::wTextfilereader reader;
+	string esprimaSource = reader.readfile(esprimaMinJs);
+	if (esprimaSource == "") {
+		cout << "Error : failed to read " << esprimaMinJs << endl;
+		return false;
+	}
+	cout << "load esprima codes with size:" << esprimaSource.size() << endl;
+	bool allOk = true;
+
+	// Create a new Isolate and make it the current one.
+	//v8::Isolate::CreateParams create_params;
+	this->create_params.array_buffer_allocator =
+		v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+	//v8::Isolate* isolate = v8::Isolate::New(create_params);
+	this->isolate = v8::Isolate::New(create_params);
+	{
+		v8::Isolate::Scope isolate_scope(this->isolate);
+		v8::HandleScope handle_scope(this->isolate);
+		// Create a new context.
+		v8::Local<v8::Context> context = v8::Context::New(this->isolate);
+		// Enter the context for compiling and running the hello world script.
+		v8::Context::Scope context_scope(context);// enter scope
+		PixelEngine::initTemplate(this, this->isolate, context);
+		this->m_context.Reset(this->isolate, context);
+		TryCatch try_catch(this->isolate);
+
+		//add esprima codes and try catch.
+		string source2 = esprimaSource + ";"
+			+ "var pe_ast_parse_resultjsonstr = null ; "
+			+ "var pe_ast_parse_resulterrorstr='' ; "
+			+ "try{"
+			+ "var pe_ast_parse_result=esprima.parseScript(\"" + scriptContent + "\"); "
+			+ "pe_ast_parse_resultjsonstr=JSON.stringify(pe_ast_parse_result);"
+			+ "}catch(err){"
+			+ "pe_ast_parse_resulterrorstr = err;"
+			+ "}";
+		// Compile the source code.
+		v8::Local<v8::Script> script;
+		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
+			source2.c_str()).ToLocalChecked()).ToLocal(&script)) {
+			String::Utf8Value error(this->isolate, try_catch.Exception());
+			cout << "compile v8 exception:" << *error << endl;
+			// The script failed to compile; bail out.
+			//return false;
+			errorText = "compile v8 exception:" + string(*error) ;
+			allOk = false;
+		}
+		else
+		{
+			unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			// Run the script to get the result.
+			Local<v8::Value> result;
+			if (!script->Run(context).ToLocal(&result)) {
+				String::Utf8Value error(this->isolate, try_catch.Exception());
+				string exceptionstr = string("run v8 exception:") + (*error);
+				cout << exceptionstr << endl;
+				// The script failed to compile; bail out.
+				//return false;
+				//this->log(exceptionstr);
+				errorText = "run v8 exception:" + string(*error);
+				allOk = false;
+			}
+			else
+			{
+				MaybeLocal<Value> astresultjsostrObj = context->Global()->Get(context
+					, String::NewFromUtf8(isolate, "pe_ast_parse_resultjsonstr").ToLocalChecked());
+				if (PixelEngine::IsMaybeLocalOK(astresultjsostrObj) == false) //IsNullOrUndefined() )
+				{
+					allOk = false;
+					string error1("Error: the ast parse result is null or undefined.");
+					cout << error1 << endl;
+
+					MaybeLocal<Value> errorobj = context->Global()->Get(context
+						, String::NewFromUtf8(isolate, "pe_ast_parse_resulterrorstr").ToLocalChecked());
+					Local<Value> errorobj2;
+					bool eok = errorobj.ToLocal(&errorobj2);
+					if (eok == false) {
+						errorText = error1 + "\n get AST exception string also failed.";
+					}
+					else {
+						string estr = PixelEngine::convertV8LocalValue2CppString(isolate, errorobj2);
+						errorText = error1 + "\n The AST exception:" + estr ;
+					}
+				}
+				else
+				{
+					cout << "ast parse result ok" << endl;
+					string errorText;
+					Local<Value> astresult = astresultjsostrObj.ToLocalChecked();
+					retJsonStr = PixelEngine::convertV8LocalValue2CppString(isolate, astresult);
+					if (retJsonStr.length() > 0) {
+						allOk =true ;
+					}
+					else {
+						cout << "Error : AST result is empty string." << endl;
+						errorText = "Error : AST result is empty string.";
+						allOk = false;
+					}
+					
+				}
+			}
+		}
+	}
+	this->m_context.Reset();
+	this->GlobalFunc_ForEachPixelCallBack.Reset();
+	this->GlobalFunc_GetPixelCallBack.Reset();
+	// Dispose the isolate and tear down V8.
+	this->isolate->Dispose();
+	return allOk;
+}
+
+
+
+
+
+
+
+
+
 
 bool PixelEngine::innerRenderTileDataWithoutStyle(PeTileData& tileData, vector<unsigned char>& retPngBinary, string& error ) {
 	if (tileData.tiledata.size() == 0) {
