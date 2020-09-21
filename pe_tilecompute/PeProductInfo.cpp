@@ -9,7 +9,10 @@ namespace pe {
 
 	bool PeProductInfo::loadFromJson(string jsonText) {
 		ArduinoJson::DynamicJsonBuffer jsonBuffer;
-		ArduinoJson::JsonVariant root = jsonBuffer.parseObject(jsonText);
+		ArduinoJson::JsonObject& root = jsonBuffer.parseObject(jsonText);
+		if (root.success() == false) {
+			return false;
+		}
 
 		productName = root["productName"].as<char*>() ;
 		proj = root["proj"].as<char*>();
@@ -58,17 +61,7 @@ namespace pe {
 		}		
 
 		dataTypeByteLen = 0;
-		switch (dataType)
-		{
-		case 1: dataTypeByteLen = 1; break;
-		case 2: dataTypeByteLen = 2; break;
-		case 3:dataTypeByteLen = 2; break;
-		case 4: dataTypeByteLen = 4; break;
-		case 5:dataTypeByteLen = 4; break;
-		case 6:dataTypeByteLen = 4; break;//float
-		default:
-			break;
-		}
+		updateDataTypeByteLen();
 
 
 		return true;
@@ -77,7 +70,10 @@ namespace pe {
 	bool PeProductInfo::loadFromJsonFile(string filename) {
 		ifstream ifs(filename.c_str());
 		ArduinoJson::DynamicJsonBuffer jsonBuffer;
-		ArduinoJson::JsonVariant root = jsonBuffer.parseObject(ifs);
+		ArduinoJson::JsonObject& root = jsonBuffer.parseObject(ifs);
+		if (root.success() == false) {
+			return false;
+		}
 
 		productName = root["productName"].as<char*>();
 		proj = root["proj"].as<char*>();
@@ -126,17 +122,7 @@ namespace pe {
 		}
 
 		dataTypeByteLen = 0;
-		switch (dataType)
-		{
-		case 1: dataTypeByteLen = 1; break;
-		case 2: dataTypeByteLen = 2; break;
-		case 3:dataTypeByteLen = 2; break;
-		case 4: dataTypeByteLen = 4; break;
-		case 5:dataTypeByteLen = 4; break;
-		case 6:dataTypeByteLen = 4; break;//float
-		default:
-			break;
-		}
+		updateDataTypeByteLen();
 
 
 		return true;
@@ -186,5 +172,21 @@ namespace pe {
 		root.printTo(outJsonText);
 
 		return outJsonText;
+	}
+
+	void PeProductInfo::updateDataTypeByteLen() {
+		dataTypeByteLen = 0;
+		switch (dataType)
+		{
+		case 1: dataTypeByteLen = 1; break;
+		case 2: dataTypeByteLen = 2; break;
+		case 3:dataTypeByteLen = 2; break;
+		case 4: dataTypeByteLen = 4; break;
+		case 5:dataTypeByteLen = 4; break;
+		case 6:dataTypeByteLen = 4; break;//float
+		case 7:dataTypeByteLen = 8; break;//double
+		default:
+			break;
+		}
 	}
 }

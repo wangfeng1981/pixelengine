@@ -2,9 +2,9 @@
 
 #include "PixelEngine.h"
 #include <time.h>
-#include "wTextfilereader.h"
 
 
+bool PixelEngine::quietMode = false;
 
 const double PE_CURRENTDATETIME = 0L; 
 
@@ -55,7 +55,7 @@ void PixelEngineMapReduceContainer::add(PixelEngineMapReduce& mr)
 	if( hasSame==false )
 	{
 		this->mapreduceVector.push_back(mr) ;
-		cout<<"mapreduceVector add one"<<endl ;
+		if(! PixelEngine::quietMode) cout<<"mapreduceVector add one"<<endl ;
 	}
 }
 
@@ -477,7 +477,7 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 	bool ok00 = obj->ToObject(context).ToLocal( &crobj ) ;
 	if( ok00 == false )
 	{
-		cout<<"PixelEngineColorRamp::unwrap ToObject failed."<<endl; 
+		if (!PixelEngine::quietMode)cout<<"PixelEngineColorRamp::unwrap ToObject failed."<<endl;
 		return false ;
 	}
 
@@ -486,7 +486,7 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 	// 	.ToLocalChecked()->ToBoolean(isolate)->Value() ;
 	bool ok0 = PixelEngine::V8ObjectGetBoolValue(isolate,crobj,context,"useInteger",this->useInteger) ;
 	if( ok0==false ){
-		cout<<"PixelEngine::V8ObjectGetBoolValue useInteger failed."<<endl; 
+		if (!PixelEngine::quietMode)cout<<"PixelEngine::V8ObjectGetBoolValue useInteger failed."<<endl;
 		return false ;
 	}
 
@@ -495,7 +495,7 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 	// 	.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
 	bool ok1 = PixelEngine::V8ObjectGetIntValue(isolate,crobj,context,"numColors",this->numColors) ;
 	if( ok1==false ){
-		cout<<"PixelEngine::V8ObjectGetIntValue numColors failed."<<endl; 
+		if (!PixelEngine::quietMode)cout<<"PixelEngine::V8ObjectGetIntValue numColors failed."<<endl;
 		return false ;
 	}
 
@@ -504,7 +504,7 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 	// 	.ToLocalChecked()->ToNumber(context).ToLocalChecked()->Value() ;
 	bool ok2 = PixelEngine::V8ObjectGetNumberValue(isolate,crobj,context,"Nodata",this->Nodata) ;
 	if( ok2==false ){
-		cout<<"PixelEngine::V8ObjectGetNumberValue Nodata failed."<<endl; 
+		if (!PixelEngine::quietMode)cout<<"PixelEngine::V8ObjectGetNumberValue Nodata failed."<<endl;
 		return false ;
 	}
 
@@ -521,7 +521,7 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 			this->NodataColor ) ;
 	if( ok3==false )
 	{
-		cout<<"PixelEngine::V8ObjectGetUint8Array failed."<<endl; 
+		if (!PixelEngine::quietMode)cout<<"PixelEngine::V8ObjectGetUint8Array failed."<<endl;
 		return false ;
 	}
 
@@ -538,7 +538,7 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 			this->ivalues ) ;
 	if( ok3==false )
 	{
-		cout<<"PixelEngine::V8ObjectGetInt32Array ivalues failed."<<endl; 
+		if (!PixelEngine::quietMode)cout<<"PixelEngine::V8ObjectGetInt32Array ivalues failed."<<endl;
 		return false ;
 	}
 
@@ -556,7 +556,7 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 			this->fvalues ) ;
 	if( ok3==false )
 	{
-		cout<<"PixelEngine::V8ObjectGetFloat32Array fvalues failed."<<endl; 
+		if (!PixelEngine::quietMode)cout<<"PixelEngine::V8ObjectGetFloat32Array fvalues failed."<<endl;
 		return false ;
 	}
 
@@ -574,7 +574,7 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 			this->r ) ;
 	if( ok3==false )
 	{
-		cout<<"PixelEngine::V8ObjectGetUint8Array r failed."<<endl; 
+		if (!PixelEngine::quietMode)cout<<"PixelEngine::V8ObjectGetUint8Array r failed."<<endl;
 		return false ;
 	}
 
@@ -587,7 +587,7 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 			this->g ) ;
 	if( ok3==false )
 	{
-		cout<<"PixelEngine::V8ObjectGetUint8Array g failed."<<endl; 
+		if (!PixelEngine::quietMode)cout<<"PixelEngine::V8ObjectGetUint8Array g failed."<<endl;
 		return false ;
 	}
 
@@ -604,7 +604,7 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 			this->b ) ;
 	if( ok3==false )
 	{
-		cout<<"PixelEngine::V8ObjectGetUint8Array b failed."<<endl; 
+		if (!PixelEngine::quietMode)cout<<"PixelEngine::V8ObjectGetUint8Array b failed."<<endl;
 		return false ;
 	}
 
@@ -622,7 +622,7 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 			this->a ) ;
 	if( oka==false )
 	{
-		cout<<"PixelEngine::V8ObjectGetUint8Array a failed."<<endl; 
+		if(! PixelEngine::quietMode)cout<<"PixelEngine::V8ObjectGetUint8Array a failed."<<endl; 
 		return false ;
 	}
 	return true ;
@@ -936,7 +936,7 @@ void PixelEngine::log(string& str)
 {
 	if( this->pe_logs.length() > 1024 )
 	{
-		cout<<"log size exceed 1024."<<endl ;
+		if(! PixelEngine::quietMode)cout<<"log size exceed 1024."<<endl ;
 		this->pe_logs += string("...\n") ;
 	}else
 	{
@@ -954,7 +954,7 @@ void PixelEngine::GlobalFunc_Log(const v8::FunctionCallbackInfo<v8::Value>& args
 
 	Local<Value> arg = args[0];
 	String::Utf8Value value(isolate, arg);
-	cout<<"log: "<< *value <<endl;//debug use
+	if(! PixelEngine::quietMode)cout<<"log: "<< *value <<endl;//debug use
 
 	Local<Object> global = context->Global() ;
 	Local<Value> peinfo = global->Get( context
@@ -978,7 +978,7 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 	,const int height
 	,const int nband )
 {
-	cout<<"inside CPP_NewDataset"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside CPP_NewDataset"<<endl; 
 	v8::EscapableHandleScope handle_scope(isolate);
 
 	Local<Object> global = context->Global() ;
@@ -1078,7 +1078,7 @@ Local<Object> PixelEngine::CPP_NewDatasetArray(Isolate* isolate,Local<Context>& 
 	,const int nband
 	,const int numds )
 {
-	cout<<"inside CPP_NewDatasetArray"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside CPP_NewDatasetArray"<<endl; 
 	v8::EscapableHandleScope handle_scope(isolate);
 
 	Local<Object> global = context->Global() ;
@@ -1143,7 +1143,7 @@ Local<Object> PixelEngine::CPP_NewDatasetArray(Isolate* isolate,Local<Context>& 
 /// iband,vmin,vmax,nodata,nodataColor
 void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-	cout<<"inside GlobalFunc_RenderGrayCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_RenderGrayCallBack"<<endl; 
 	if (args.Length() != 5 ){
 		cout<<"Error: args.Length != 5 "<<endl ;
 		return;
@@ -1303,7 +1303,7 @@ Local<Value> PixelEngine::warpCppStyle2V8Object(Isolate* isolate, PeStyle& style
 	}
 	else
 	{
-		cout << "Error : failed to parse v8style, return null." << endl;
+		if(! PixelEngine::quietMode)cout << "Error : failed to parse v8style, return null." << endl;
 	}
 	return scope.Escape(Null(isolate));
 }
@@ -1315,7 +1315,7 @@ void PixelEngine::GlobalFunc_GetStyleCallBack(const v8::FunctionCallbackInfo<v8:
 	cout << "inside GlobalFunc_GetStyleCallBack" << endl;
 	Isolate* isolate = args.GetIsolate();
 	if (args.Length() != 1) {
-		cout << "Error: args.Length != 1 " << endl;
+		if(! PixelEngine::quietMode)cout << "Error: args.Length != 1 " << endl;
 		return;
 	}
 	v8::HandleScope handle_scope(isolate);
@@ -1345,10 +1345,10 @@ void PixelEngine::GlobalFunc_GetStyleCallBack(const v8::FunctionCallbackInfo<v8:
 /// ri,gi,bi,rmin,rmax,gmin,gmax,bmin,bmax
 void PixelEngine::GlobalFunc_RenderRGBCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-	cout<<"inside GlobalFunc_RenderRGBCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_RenderRGBCallBack"<<endl; 
 	Isolate* isolate = args.GetIsolate() ;
 	if (args.Length() != 9 ){
-		cout<<"Error: args.Length != 9 "<<endl ;
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 9 "<<endl ;
 		return;
 	}
 	
@@ -1372,22 +1372,22 @@ void PixelEngine::GlobalFunc_RenderRGBCallBack(const v8::FunctionCallbackInfo<v8
 	int thisDataType = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"dataType").ToLocalChecked())
 		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	//cout<<"thisDataType "<<thisDataType<<endl;
+	//if(! PixelEngine::quietMode)cout<<"thisDataType "<<thisDataType<<endl;
 
 	int width = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"width").ToLocalChecked())
 		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	//cout<<"thisDataType "<<thisDataType<<endl;
+	//if(! PixelEngine::quietMode)cout<<"thisDataType "<<thisDataType<<endl;
 
 	int height = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"height").ToLocalChecked())
 		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	//cout<<"thisDataType "<<thisDataType<<endl;
+	//if(! PixelEngine::quietMode)cout<<"thisDataType "<<thisDataType<<endl;
 
 	int nband = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"nband").ToLocalChecked())
 		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	//cout<<"thisDataType "<<thisDataType<<endl;
+	//if(! PixelEngine::quietMode)cout<<"thisDataType "<<thisDataType<<endl;
 
 	//output
 	Local<Object> outds = PixelEngine::CPP_NewDataset(isolate,context
@@ -1449,9 +1449,9 @@ void PixelEngine::GlobalFunc_RenderRGBCallBack(const v8::FunctionCallbackInfo<v8
 /// iband,vmin,vmax
 void PixelEngine::GlobalFunc_FillRangeCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-	cout<<"inside GlobalFunc_FillRangeCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_FillRangeCallBack"<<endl; 
 	if (args.Length() != 3 ){
-		cout<<"Error: args.Length !=2 "<<endl ;
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length !=2 "<<endl ;
 		return;
 	}
 	Isolate* isolate = args.GetIsolate() ;
@@ -1470,17 +1470,17 @@ void PixelEngine::GlobalFunc_FillRangeCallBack(const v8::FunctionCallbackInfo<v8
 	int thisDataType = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"dataType").ToLocalChecked())
 		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	//cout<<"thisDataType "<<thisDataType<<endl;
+	//if(! PixelEngine::quietMode)cout<<"thisDataType "<<thisDataType<<endl;
 
 	int width = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"width").ToLocalChecked())
 		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	//cout<<"thisDataType "<<thisDataType<<endl;
+	//if(! PixelEngine::quietMode)cout<<"thisDataType "<<thisDataType<<endl;
 
 	int height = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"height").ToLocalChecked())
 		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	//cout<<"thisDataType "<<thisDataType<<endl;
+	//if(! PixelEngine::quietMode)cout<<"thisDataType "<<thisDataType<<endl;
 
 	int nband = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"nband").ToLocalChecked())
@@ -1678,9 +1678,9 @@ void PixelEngine::Value2Color(int valx,
 //args2: iband,colorRamp,method(discrete 0/linear 1/exact 2)
 void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-	cout<<"inside GlobalFunc_RenderPsuedColorCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_RenderPsuedColorCallBack"<<endl; 
 	if (args.Length() != 8 && args.Length() != 3){
-		cout<<"Error: args.Length != 8 and != 3 "<<endl ;
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 8 and != 3 "<<endl ;
 		return;
 	}
 	Isolate* isolate = args.GetIsolate() ;
@@ -1739,7 +1739,7 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 		colormethod = v8_interpol->ToInteger(context).ToLocalChecked()->Value() ;
 		bool unwrapok = colorRamp.unwrap(isolate , v8_colorramp ) ;
 		if( unwrapok==false ){
-			cout<<"Error: colorRamp.unwrap failed.";
+			if(! PixelEngine::quietMode)cout<<"Error: colorRamp.unwrap failed.";
 			args.GetReturnValue().SetNull() ;
 			return ;
 		}
@@ -1749,22 +1749,22 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 	int thisDataType = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"dataType").ToLocalChecked())
 		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	//cout<<"thisDataType "<<thisDataType<<endl;
+	//if(! PixelEngine::quietMode)cout<<"thisDataType "<<thisDataType<<endl;
 
 	int width = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"width").ToLocalChecked())
 		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	//cout<<"thisDataType "<<thisDataType<<endl;
+	//if(! PixelEngine::quietMode)cout<<"thisDataType "<<thisDataType<<endl;
 
 	int height = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"height").ToLocalChecked())
 		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	//cout<<"thisDataType "<<thisDataType<<endl;
+	//if(! PixelEngine::quietMode)cout<<"thisDataType "<<thisDataType<<endl;
 
 	int nband = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"nband").ToLocalChecked())
 		.ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-	//cout<<"thisDataType "<<thisDataType<<endl;
+	//if(! PixelEngine::quietMode)cout<<"thisDataType "<<thisDataType<<endl;
 
 	//output
 	Local<Object> outds = PixelEngine::CPP_NewDataset(isolate,context
@@ -1830,9 +1830,9 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 /// create an empty Dataset.
 void PixelEngine::GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-	cout<<"inside GlobalFunc_NewDatasetCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_NewDatasetCallBack"<<endl; 
 	if (args.Length() != 4 ){
-		cout<<"Error: args.Length != 4 "<<endl ;
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 4 "<<endl ;
 		return;
 	}
 
@@ -1865,13 +1865,13 @@ void PixelEngine::GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v
 /// create a dataset from name, datetime, bands
 void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-	cout<<"inside GlobalFunc_DatasetCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_DatasetCallBack"<<endl; 
 	if(args.Length() == 3 || args.Length() == 6 )
 	{
 		//ok
 	}else
 	{
-		cout<<"Error: args.Length != 3 or !=6 "<<endl ;
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 3 or !=6 "<<endl ;
 		return;
 	}
 	Isolate* isolate = args.GetIsolate() ;
@@ -1887,20 +1887,20 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 
 	int64_t datetime = (int64_t) (v8datetime->ToNumber(context).ToLocalChecked())->Value();
 
-	cout<<name<<","<<datetime<<endl ;
+	if(! PixelEngine::quietMode)cout<<name<<","<<datetime<<endl ;
 
 	if( v8bands->IsArray() )
 	{
-		cout<<"v8bands is array"<<endl ;
+		if(! PixelEngine::quietMode)cout<<"v8bands is array"<<endl ;
 	}
 	if( v8bands->IsObject() )
 	{
-		cout<<"v8bands is object"<<endl ;
+		if(! PixelEngine::quietMode)cout<<"v8bands is object"<<endl ;
 	}
 	Array* i32array = Array::Cast(*v8bands) ;
 	int nband = i32array->Length() ;
 
-	cout<<"nband "<<nband<<endl ;
+	if(! PixelEngine::quietMode)cout<<"nband "<<nband<<endl ;
 
 	vector<int> wantBands ;
 	wantBands.reserve(32) ;
@@ -1939,11 +1939,11 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 	{
 		//datetime = PixelEngine::long2str(thisPePtr->currentDateTime) ;
 		datetime = thisPePtr->currentDateTime ;
-		cout<<"use current "<<datetime<<endl ;
+		if(! PixelEngine::quietMode)cout<<"use current "<<datetime<<endl ;
 	}else if( datetime < 0 )
 	{
 		datetime = PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , datetime );
-		cout<<"use passed "<<datetime<<endl ;
+		if(! PixelEngine::quietMode)cout<<"use passed "<<datetime<<endl ;
 	}
 
 	string datetimestr = PixelEngine::long2str(datetime) ;
@@ -1962,7 +1962,7 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 			retnbands);
 		if (externalOk == false)
 		{
-			cout << "Error: PixelEngine::GetExternalTileDataCallBack failed." << endl;
+			if(! PixelEngine::quietMode)cout << "Error: PixelEngine::GetExternalTileDataCallBack failed." << endl;
 			return;//return null in javascript.
 		}
 	}
@@ -1981,13 +1981,13 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 			errorText
 		);
 		if (dataok==false) {
-			cout << "Error: PixelEngine::helperPointer getTileData failed." << endl;
+			if(! PixelEngine::quietMode)cout << "Error: PixelEngine::helperPointer getTileData failed." << endl;
 			return;//return null in javascript.
 		}
 	}
 	else
 	{
-		cout << "Error: PixelEngine::GetExternalTileDataCallBack is null and helper is null too." << endl;
+		if(! PixelEngine::quietMode)cout << "Error: PixelEngine::GetExternalTileDataCallBack is null and helper is null too." << endl;
 		return;//return null in javascript.
 	}
 	
@@ -2045,9 +2045,9 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 /// @params filterSec optional    PixelEngine.Ignore
 void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-	cout<<"inside GlobalFunc_DatasetArrayCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_DatasetArrayCallBack"<<endl; 
 	if (args.Length() < 4 ){
-		cout<<"Error: args.Length < 4 "<<endl ;
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length < 4 "<<endl ;
 		return;
 	}
 
@@ -2093,7 +2093,7 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	int64_t fromdatetime =(int64_t) (v8from->ToNumber(context).ToLocalChecked())->Value();
 	int64_t todatetime = (int64_t) (v8to->ToNumber(context).ToLocalChecked())->Value();
 
-	cout<<"from to :"<<fromdatetime<<"-"<<todatetime<<endl ;
+	if(! PixelEngine::quietMode)cout<<"from to :"<<fromdatetime<<"-"<<todatetime<<endl ;
 
 	Array* i32array = Array::Cast(*v8bands) ;
 	int nband = i32array->Length() ;
@@ -2127,22 +2127,22 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	int tilex = thisPePtr->tileInfo.x  ; 
 	if( fromdatetime == PE_CURRENTDATETIME ) 
 	{
-		cout<<"fromdatetime use current "<<thisPePtr->currentDateTime<<endl ;
+		if(! PixelEngine::quietMode)cout<<"fromdatetime use current "<<thisPePtr->currentDateTime<<endl ;
 		fromdatetime = thisPePtr->currentDateTime  ;
 	}else if( fromdatetime<0 )
 	{
 		fromdatetime =  PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , fromdatetime ); 
-		cout<<"fromdatetime use passed "<<fromdatetime<<endl ;
+		if(! PixelEngine::quietMode)cout<<"fromdatetime use passed "<<fromdatetime<<endl ;
 	}
 
 	if( todatetime == PE_CURRENTDATETIME )
 	{
-		cout<<"todatetime use current "<<thisPePtr->currentDateTime<<endl ;
+		if(! PixelEngine::quietMode)cout<<"todatetime use current "<<thisPePtr->currentDateTime<<endl ;
 		todatetime =  thisPePtr->currentDateTime  ;
 	}else if( todatetime < 0 )
 	{
 		todatetime = PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , todatetime ); 
-		cout<<"todatetime use passed "<<todatetime<<endl ;
+		if(! PixelEngine::quietMode)cout<<"todatetime use passed "<<todatetime<<endl ;
 	}
 
 	string fromdatetimestr = PixelEngine::long2str(fromdatetime) ;
@@ -2169,7 +2169,7 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 			retnumds);
 		if (externalOk == false)
 		{
-			cout << "Error: PixelEngine::GetExternalTileDataArrCallBack failed." << endl;
+			if(! PixelEngine::quietMode)cout << "Error: PixelEngine::GetExternalTileDataArrCallBack failed." << endl;
 			return;//return null in javascript.
 		}
 	}
@@ -2187,7 +2187,7 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 			dt, wid, hei, retnbands, errorText);
 		if (dataok==false )
 		{
-			cout << "Error: PixelEngine::helper get tile data array failed." << endl;
+			if(! PixelEngine::quietMode)cout << "Error: PixelEngine::helper get tile data array failed." << endl;
 			return;//return null in javascript.
 		}
 		retnumds = retDtVec.size();
@@ -2197,7 +2197,7 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	}
 	else
 	{
-		cout << "Error: PixelEngine::GetExternalTileDataArrCallBack is null and helper is null too." << endl;
+		if(! PixelEngine::quietMode)cout << "Error: PixelEngine::GetExternalTileDataArrCallBack is null and helper is null too." << endl;
 		return;//return null in javascript.
 	}
 	
@@ -2277,9 +2277,9 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 /// PixelEngine.GetTileData(name,datetime,z,y,x)
 void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-	cout<<"inside GlobalFunc_GetTileDataCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_GetTileDataCallBack"<<endl; 
 	if (args.Length() != 5 ){
-		cout<<"Error: args.Length != 5 "<<endl ;
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 5 "<<endl ;
 		return;
 	}
 
@@ -2318,12 +2318,12 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 
 	if( datetime == PE_CURRENTDATETIME )
 	{
-		cout<<"use current "<<thisPePtr->currentDateTime<<endl ;
+		if(! PixelEngine::quietMode)cout<<"use current "<<thisPePtr->currentDateTime<<endl ;
 		datetime =  thisPePtr->currentDateTime  ;
 	}else if( datetime < 0 )
 	{
 		datetime = PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , datetime ); 
-		cout<<"use passed "<<datetime<<endl ;
+		if(! PixelEngine::quietMode)cout<<"use passed "<<datetime<<endl ;
 	}
 	string datetimestr = PixelEngine::long2str(datetime) ;
 
@@ -2342,7 +2342,7 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 			nband);
 		if (externalOk == false)
 		{
-			cout << "Error: PixelEngine::GlobalFunc_GetTileDataCallBack failed." << endl;
+			if(! PixelEngine::quietMode)cout << "Error: PixelEngine::GlobalFunc_GetTileDataCallBack failed." << endl;
 			return;//return null in javascript.
 		}
 	}
@@ -2361,13 +2361,13 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 			errorText
 		);
 		if (dataok==false) {
-			cout << "Error: PixelEngine::helperPointer getTileData failed." << endl;
+			if(! PixelEngine::quietMode)cout << "Error: PixelEngine::helperPointer getTileData failed." << endl;
 			return;//return null in javascript.
 		}
 	}
 	else
 	{
-		cout << "Error: PixelEngine::GetExternalTileDataCallBack is null and helper is null too." << endl;
+		if(! PixelEngine::quietMode)cout << "Error: PixelEngine::GetExternalTileDataCallBack is null and helper is null too." << endl;
 		return;//return null in javascript.
 	}
 
@@ -2389,9 +2389,9 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 /// PixelEngine.ColorRamp(colorid,colorRampObj)
 void PixelEngine::GlobalFunc_ColorRampCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-	cout<<"inside GlobalFunc_ColorRampCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_ColorRampCallBack"<<endl; 
 	if (args.Length() != 2 ){
-		cout<<"Error: args.Length != 2 "<<endl ;
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 2 "<<endl ;
 		return;
 	}
 
@@ -2425,7 +2425,7 @@ void PixelEngine::GlobalFunc_ColorRampCallBack(const v8::FunctionCallbackInfo<v8
 		string errorText;
 		bool crok = thisPePtr->helperPointer->getColorRamp(strColorid, cr, errorText);
 		if (crok == false) {
-			cout << "Error: PixelEngine::helperPointer get color ramp failed ." << endl;
+			if(! PixelEngine::quietMode)cout << "Error: PixelEngine::helperPointer get color ramp failed ." << endl;
 			args.GetReturnValue().Set(v8_crObj);
 		}
 		else {
@@ -2435,7 +2435,7 @@ void PixelEngine::GlobalFunc_ColorRampCallBack(const v8::FunctionCallbackInfo<v8
 	}
 	else
 	{
-		cout<<"Error: PixelEngine::GetExternalColorRampCallBack is nullptr and helper is null ."<<endl;
+		if(! PixelEngine::quietMode)cout<<"Error: PixelEngine::GetExternalColorRampCallBack is nullptr and helper is null ."<<endl;
 		args.GetReturnValue().Set(v8_crObj) ;
 	}
 }
@@ -2445,9 +2445,9 @@ void PixelEngine::GlobalFunc_ColorRampCallBack(const v8::FunctionCallbackInfo<v8
 /// filepath,dt,width,hight,nband
 void PixelEngine::GlobalFunc_LocalDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-	cout<<"inside GlobalFunc_LocalDatasetCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_LocalDatasetCallBack"<<endl; 
 	if (args.Length() != 5 ){
-		cout<<"Error: args.Length != 5 "<<endl ;
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 5 "<<endl ;
 		return;
 	}
 
@@ -2497,7 +2497,7 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 	bool objok = dsValue->ToObject(context).ToLocal( &dsObj2 ) ;
 	if(objok==false )
 	{
-		cout<<"main output is not a object."<<endl ;
+		if(! PixelEngine::quietMode)cout<<"main output is not a object."<<endl ;
 		return  ;
 	}
 
@@ -2508,31 +2508,31 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 
 	bool ok1 = PixelEngine::V8ObjectGetIntValue(isolate,dsObj2,context,"dataType",dt) ;
 	if( ok1==false ){
-		cout<<"Error : failed to get dataType of output object."<<endl; 
+		if(! PixelEngine::quietMode)cout<<"Error : failed to get dataType of output object."<<endl; 
 		return ;
 	}
 
 	ok1 = PixelEngine::V8ObjectGetIntValue(isolate,dsObj2,context,"width",width) ;
 	if( ok1==false ){
-		cout<<"Error : failed to get width of output object."<<endl; 
+		if(! PixelEngine::quietMode)cout<<"Error : failed to get width of output object."<<endl; 
 		return ;
 	}
 
 	ok1 = PixelEngine::V8ObjectGetIntValue(isolate,dsObj2,context,"height",height) ;
 	if( ok1==false ){
-		cout<<"Error : failed to get height of output object."<<endl; 
+		if(! PixelEngine::quietMode)cout<<"Error : failed to get height of output object."<<endl; 
 		return ;
 	}
 
 	ok1 = PixelEngine::V8ObjectGetIntValue(isolate,dsObj2,context,"nband",nband) ;
 	if( ok1==false ){
-		cout<<"Error : failed to get nband of output object."<<endl; 
+		if(! PixelEngine::quietMode)cout<<"Error : failed to get nband of output object."<<endl; 
 		return ;
 	}
 
 	if( nband == 0 )
 	{
-		cout<<"failed to make png: zero nbands of output object."<<endl; 
+		if(! PixelEngine::quietMode)cout<<"failed to make png: zero nbands of output object."<<endl; 
 		return ;
 	}
 
@@ -2570,7 +2570,7 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 			tiledata.data() ) ;
 		if( dataok==false )
 		{
-			cout<<"Error : failed to get tiledata."<<endl; 
+			if(! PixelEngine::quietMode)cout<<"Error : failed to get tiledata."<<endl; 
 			return ;
 		}
 		// Uint8Array* u8arr = Uint8Array::Cast(*tiledataValue) ;
@@ -2620,7 +2620,7 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 			tiledata.data() ) ;
 		if( dataok==false )
 		{
-			cout<<"Error : failed to get tiledata."<<endl; 
+			if(! PixelEngine::quietMode)cout<<"Error : failed to get tiledata."<<endl; 
 			return ;
 		}
 		now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -2694,7 +2694,7 @@ bool PixelEngine::innerV8Dataset2TileData(Isolate* isolate, Local<Context>& cont
 	bool objok = v8dsValue->ToObject(context).ToLocal(&dsObj2);
 	if (objok == false)
 	{
-		cout << "Error : innerV8Dataset2TileData v8dsValue is not a object." << endl;
+		if(! PixelEngine::quietMode)cout << "Error : innerV8Dataset2TileData v8dsValue is not a object." << endl;
 		return false;
 	}
 
@@ -2705,31 +2705,31 @@ bool PixelEngine::innerV8Dataset2TileData(Isolate* isolate, Local<Context>& cont
 
 	bool ok1 = PixelEngine::V8ObjectGetIntValue(isolate, dsObj2, context, "dataType", dt);
 	if (ok1 == false) {
-		cout << "Error : failed to get dataType of output object." << endl;
+		if(! PixelEngine::quietMode)cout << "Error : failed to get dataType of output object." << endl;
 		return false;
 	}
 
 	ok1 = PixelEngine::V8ObjectGetIntValue(isolate, dsObj2, context, "width", width);
 	if (ok1 == false) {
-		cout << "Error : failed to get width of output object." << endl;
+		if(! PixelEngine::quietMode)cout << "Error : failed to get width of output object." << endl;
 		return false;
 	}
 
 	ok1 = PixelEngine::V8ObjectGetIntValue(isolate, dsObj2, context, "height", height);
 	if (ok1 == false) {
-		cout << "Error : failed to get height of output object." << endl;
+		if(! PixelEngine::quietMode)cout << "Error : failed to get height of output object." << endl;
 		return false;
 	}
 
 	ok1 = PixelEngine::V8ObjectGetIntValue(isolate, dsObj2, context, "nband", nband);
 	if (ok1 == false) {
-		cout << "Error : failed to get nband of output object." << endl;
+		if(! PixelEngine::quietMode)cout << "Error : failed to get nband of output object." << endl;
 		return false;
 	}
 
 	if (nband == 0)
 	{
-		cout << "Error : failed to make png: zero nbands of output object." << endl;
+		if(! PixelEngine::quietMode)cout << "Error : failed to make png: zero nbands of output object." << endl;
 		return false;
 	}
 
@@ -2846,7 +2846,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 		,peinfo ) ;// bind PixelEngine
 	if( okinfo.IsNothing() )
 	{
-		cout<<"Error: PixelEnginePointer is nothing."<<endl ;
+		if(! PixelEngine::quietMode)cout<<"Error: PixelEnginePointer is nothing."<<endl ;
 	}
 
 	//var PixelEngine = {} ;
@@ -2857,7 +2857,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 		,pe ) ;// bind PixelEngine
 	if( okpe.IsNothing() )
 	{
-		cout<<"okpe is nothing."<<endl ;
+		if(! PixelEngine::quietMode)cout<<"okpe is nothing."<<endl ;
 	}
 	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampRainbow").ToLocalChecked(),
 	   Integer::New(isolate,1));
@@ -3125,7 +3125,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
           	).ToLocal( &scriptForEach );
 	if( scriptOk==false )
 	{
-		cout<<"compile sourceforEachPixelFunction failed."<<endl ;
+		if(! PixelEngine::quietMode)cout<<"compile sourceforEachPixelFunction failed."<<endl ;
 		return false ;
 	}
     
@@ -3133,7 +3133,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
     bool runok = scriptForEach->Run(context).ToLocal( &resultForEach );
     if( runok==false )
 	{
-		cout<<"run sourceforEachPixelFunction failed."<<endl ;
+		if(! PixelEngine::quietMode)cout<<"run sourceforEachPixelFunction failed."<<endl ;
 		return false ;
 	}
 
@@ -3176,7 +3176,7 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 	//v8::Isolate* isolate = v8::Isolate::New(create_params);
 	this->isolate = v8::Isolate::New(create_params);
 	{
-		cout << "in RunToGetStyleFromScript " << endl;
+		if(! PixelEngine::quietMode)cout << "in RunToGetStyleFromScript " << endl;
 		v8::Isolate::Scope isolate_scope(this->isolate);
 		v8::HandleScope handle_scope(this->isolate);
 
@@ -3193,7 +3193,7 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
 			source.c_str()).ToLocalChecked()).ToLocal(&script)) {
 			String::Utf8Value error(this->isolate, try_catch.Exception());
-			cout << "v8 exception:" << *error << endl;
+			if(! PixelEngine::quietMode)cout << "v8 exception:" << *error << endl;
 			retLogText = string() +"compile v8 exception " + (*error);
 			allOk = false;
 		}
@@ -3204,7 +3204,7 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 			if (!script->Run(context).ToLocal(&result)) {
 				String::Utf8Value error(this->isolate, try_catch.Exception());
 				string exceptionstr = string("v8 exception:") + (*error);
-				cout << exceptionstr << endl;
+				if(! PixelEngine::quietMode)cout << exceptionstr << endl;
 				// The script failed to compile; bail out.
 				//return false;
 				this->log(exceptionstr);
@@ -3218,14 +3218,14 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 				if (PixelEngine::IsMaybeLocalOK(styleResult) == false) //IsNullOrUndefined() )
 				{
 					string error1("Error: result from setStyle() is null or undefined.");
-					cout << error1 << endl;
+					if(! PixelEngine::quietMode)cout << error1 << endl;
 					this->log(error1);
 					retLogText = error1;
 					allOk = false;
 				}
 				else
 				{
-					cout << "in RunToGetStyleFromScript 4" << endl;
+					if(! PixelEngine::quietMode)cout << "in RunToGetStyleFromScript 4" << endl;
 
 					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 					printf("script run dura:%d ms \n", now1 - now);//
@@ -3237,14 +3237,14 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 						//SetStyle返回的是json对象
 						Local<Value> styleV8Value  = outStyleJson2.As<Value>();
 						string cstrStyle = PixelEngine::convertV8LocalValue2CppString(isolate , styleV8Value);
-						cout << "cstrStyle:" << cstrStyle << endl;//debug
+						if(! PixelEngine::quietMode)cout << "cstrStyle:" << cstrStyle << endl;//debug
 						bool isjsonok = retstyle.loadFromJson(cstrStyle);
 						if (isjsonok) {
 							retLogText = "Info : find style by json";
 							allOk =  true;
 						}
 						else {
-							cout << "Info : it seems return string from setStyle not be valid json, then try styleid..." << endl;
+							if(! PixelEngine::quietMode)cout << "Info : it seems return string from setStyle not be valid json, then try styleid..." << endl;
 							//json解析失败, 查看字符串是否是一个有效的数字，如果是有效数据则通过数据库查找渲染方案
 							//Local<String> localResultStr = styleResult.ToLocalChecked().As<String>() ;
 							//Local<Value> localResultValue = localResultStr.As<Value>();
@@ -3257,25 +3257,25 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 								if (this->helperPointer) {
 									string errorText;
 									if (this->helperPointer->getStyle(styleResultCStr, retstyle, errorText)) {
-										cout << "Info : getStyle ok." << endl;
+										if(! PixelEngine::quietMode)cout << "Info : getStyle ok." << endl;
 										retLogText = "Info : find style by styleid";
 										allOk = true;
 									}
 									else {
-										cout << "Error : helper not find style with id '" << styleResultCStr << "' " << endl;
+										if(! PixelEngine::quietMode)cout << "Error : helper not find style with id '" << styleResultCStr << "' " << endl;
 										retLogText = string() + "Error : setStyle not return valid json and return value as styleid: "
 											+ styleResultCStr+ " also not finded." ;
 										allOk = false;
 									}
 								}
 								else {
-									cout << "Error : helper is null " << endl;
+									if(! PixelEngine::quietMode)cout << "Error : helper is null " << endl;
 									retLogText = "Error : helper is null";
 									allOk = false;
 								}
 							}
 							else {
-								cout << "Error : setStyle return value is not valid styleid '" << styleResultCStr << "' " << endl;
+								if(! PixelEngine::quietMode)cout << "Error : setStyle return value is not valid styleid '" << styleResultCStr << "' " << endl;
 								retLogText = string() + "Error : setStyle return value is not valid styleid " + styleResultCStr;
 								allOk = false;
 							}
@@ -3283,7 +3283,7 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 					}
 					else
 					{
-						cout << "Error : RunToGetStyleFromScript failed in ToLocal" << endl;
+						if(! PixelEngine::quietMode)cout << "Error : RunToGetStyleFromScript failed in ToLocal" << endl;
 						retLogText =  "Error : RunToGetStyleFromScript failed in ToLocal" ;
 						allOk = false;
 					}
@@ -3305,7 +3305,7 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 
 bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,int z,int y,int x, vector<unsigned char>& retbinary) 
 {
-	cout<<"in RunScriptForTile init v8"<<endl;
+	if(! PixelEngine::quietMode)cout<<"in RunScriptForTile init v8"<<endl;
 	this->pe_logs.reserve(2048);//max 1k bytes.
 	this->tileInfo.x = x ;
 	this->tileInfo.y = y ;
@@ -3322,7 +3322,7 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 	//v8::Isolate* isolate = v8::Isolate::New(create_params);
 	this->isolate = v8::Isolate::New(create_params);
 	{
-		cout<<"in RunScriptForTile run script"<<endl;
+		if(! PixelEngine::quietMode)cout<<"in RunScriptForTile run script"<<endl;
 		v8::Isolate::Scope isolate_scope(this->isolate);
 		v8::HandleScope handle_scope(this->isolate);
 
@@ -3340,7 +3340,7 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
 		  		source.c_str()).ToLocalChecked()).ToLocal(&script)) {
 			String::Utf8Value error(this->isolate, try_catch.Exception());
-			cout<<"v8 exception:"<<*error<<endl;
+			if(! PixelEngine::quietMode)cout<<"v8 exception:"<<*error<<endl;
 			// The script failed to compile; bail out.
 			//return false;
 
@@ -3353,7 +3353,7 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 			if (!script->Run(context).ToLocal(&result)) {
 				String::Utf8Value error( this->isolate, try_catch.Exception());
 				string exceptionstr = string("v8 exception:")+(*error) ;
-				cout<<exceptionstr<<endl;
+				if(! PixelEngine::quietMode)cout<<exceptionstr<<endl;
 				// The script failed to compile; bail out.
 				//return false;
 				this->log(exceptionstr) ;
@@ -3365,12 +3365,12 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 				if( PixelEngine::IsMaybeLocalOK(peMainResult) == false) //IsNullOrUndefined() )
 				{
 					string error1("Error: the result from main() is null or undefined.") ;
-					cout<<error1<<endl ;
+					if(! PixelEngine::quietMode)cout<<error1<<endl ;
 					this->log(error1) ;
 					allOk = false ;
 				}else
 				{
-					cout<<"in RunScriptForTile 4"<<endl;
+					if(! PixelEngine::quietMode)cout<<"in RunScriptForTile 4"<<endl;
 
 					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 					printf("script run dura:%d ms \n", now1 - now);//
@@ -3404,7 +3404,7 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 bool PixelEngine::RunScriptForComputeOnce(void* extra, string& jsSource,long currentdt
 	,int z,int y,int x, string& retJsonStr ) 
 {
-	cout<<"in RunScriptForComputeOnce init v8"<<endl;
+	if(! PixelEngine::quietMode)cout<<"in RunScriptForComputeOnce init v8"<<endl;
 	this->pe_logs.reserve(2048);//max 1k bytes.
 	this->tileInfo.x = x ;
 	this->tileInfo.y = y ;
@@ -3419,7 +3419,7 @@ bool PixelEngine::RunScriptForComputeOnce(void* extra, string& jsSource,long cur
 	//v8::Isolate* isolate = v8::Isolate::New(create_params);
 	this->isolate = v8::Isolate::New(create_params);
 	{
-		cout<<"in RunScriptForComputeOnce run ComputeOnce() in script"<<endl;
+		if(! PixelEngine::quietMode)cout<<"in RunScriptForComputeOnce run ComputeOnce() in script"<<endl;
 		v8::Isolate::Scope isolate_scope(this->isolate);
 		v8::HandleScope handle_scope(this->isolate);
 
@@ -3437,7 +3437,7 @@ bool PixelEngine::RunScriptForComputeOnce(void* extra, string& jsSource,long cur
 		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
 		  		source.c_str()).ToLocalChecked()).ToLocal(&script)) {
 			String::Utf8Value error(this->isolate, try_catch.Exception());
-			cout<<"v8 exception:"<<*error<<endl;
+			if(! PixelEngine::quietMode)cout<<"v8 exception:"<<*error<<endl;
 			// The script failed to compile; bail out.
 			//return false;
 
@@ -3450,7 +3450,7 @@ bool PixelEngine::RunScriptForComputeOnce(void* extra, string& jsSource,long cur
 			if (!script->Run(context).ToLocal(&result)) {
 				String::Utf8Value error( this->isolate, try_catch.Exception());
 				string exceptionstr = string("v8 exception:")+(*error) ;
-				cout<<exceptionstr<<endl;
+				if(! PixelEngine::quietMode)cout<<exceptionstr<<endl;
 				// The script failed to compile; bail out.
 				//return false;
 				this->log(exceptionstr) ;
@@ -3462,12 +3462,12 @@ bool PixelEngine::RunScriptForComputeOnce(void* extra, string& jsSource,long cur
 				if( PixelEngine::IsMaybeLocalOK(coResult) == false) //IsNullOrUndefined() )
 				{
 					string error1("Error: the result from ComputeOnce() is null or undefined.") ;
-					cout<<error1<<endl ;
+					if(! PixelEngine::quietMode)cout<<error1<<endl ;
 					this->log(error1) ;
 					allOk = false ;
 				}else
 				{
-					cout<<"in RunScriptForComputeOnce 4"<<endl;
+					if(! PixelEngine::quietMode)cout<<"in RunScriptForComputeOnce 4"<<endl;
 
 					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 					printf("script run dura:%d ms \n", now1 - now);//
@@ -3504,7 +3504,7 @@ bool PixelEngine::RunScriptForComputeOnce(void* extra, string& jsSource,long cur
 
 string PixelEngine::CheckScriptOk(string& scriptSource) 
 {
-	cout<<"in CheckScriptOk"<<endl;
+	if(! PixelEngine::quietMode)cout<<"in CheckScriptOk"<<endl;
 
 	string errorText = "" ;
 	this->create_params.array_buffer_allocator =
@@ -3524,7 +3524,7 @@ string PixelEngine::CheckScriptOk(string& scriptSource)
 			//compile error
 			v8::String::Utf8Value error( this->isolate, try_catch.Exception());
 			errorText = std::string(*error);
-			std::cout << "build source error:" << errorText << std::endl;
+			if(! PixelEngine::quietMode)cout << "build source error:" << errorText << std::endl;
 		}else
 		{
 			v8::MaybeLocal<v8::Script> compiledScript =
@@ -3533,7 +3533,7 @@ string PixelEngine::CheckScriptOk(string& scriptSource)
 				//compile error
 				v8::String::Utf8Value error( this->isolate, try_catch.Exception());
 				errorText = std::string(*error);
-				std::cout << "compile error:" << errorText << std::endl;
+				if(! PixelEngine::quietMode)cout << "compile error:" << errorText << std::endl;
 			}
 		}
 
@@ -3549,7 +3549,7 @@ string PixelEngine::CheckScriptOk(string& scriptSource)
 bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptContent, int64_t currentdt,
 	int z, int y, int x, PeTileData& tileData, string& logStr) {
 
-	cout << "in RunScriptForTile init v8" << endl;
+	if(! PixelEngine::quietMode)cout << "in RunScriptForTile init v8" << endl;
 	this->pe_logs.reserve(2048);//max 1k bytes.
 	this->tileInfo.x = x;
 	this->tileInfo.y = y;
@@ -3566,7 +3566,7 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 	//v8::Isolate* isolate = v8::Isolate::New(create_params);
 	this->isolate = v8::Isolate::New(create_params);
 	{
-		cout << "in RunScriptForTileWithoutRender run script" << endl;
+		if(! PixelEngine::quietMode)cout << "in RunScriptForTileWithoutRender run script" << endl;
 		v8::Isolate::Scope isolate_scope(this->isolate);
 		v8::HandleScope handle_scope(this->isolate);
 
@@ -3584,7 +3584,7 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
 			source.c_str()).ToLocalChecked()).ToLocal(&script)) {
 			String::Utf8Value error(this->isolate, try_catch.Exception());
-			cout << "v8 exception:" << *error << endl;
+			if(! PixelEngine::quietMode)cout << "v8 exception:" << *error << endl;
 			// The script failed to compile; bail out.
 			//return false;
 
@@ -3598,7 +3598,7 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 			if (!script->Run(context).ToLocal(&result)) {
 				String::Utf8Value error(this->isolate, try_catch.Exception());
 				string exceptionstr = string("v8 exception:") + (*error);
-				cout << exceptionstr << endl;
+				if(! PixelEngine::quietMode)cout << exceptionstr << endl;
 				// The script failed to compile; bail out.
 				//return false;
 				this->log(exceptionstr);
@@ -3611,24 +3611,24 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 				if (PixelEngine::IsMaybeLocalOK(peMainResult) == false) //IsNullOrUndefined() )
 				{
 					string error1("Error: the result from main() is null or undefined.");
-					cout << error1 << endl;
+					if(! PixelEngine::quietMode)cout << error1 << endl;
 					this->log(error1);
 					allOk = false;
 				}
 				else
 				{
-					cout << "in RunScriptForTileWithoutRender step4" << endl;
+					if(! PixelEngine::quietMode)cout << "in RunScriptForTileWithoutRender step4" << endl;
 
 					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-					printf("script run dura:%d ms \n", now1 - now);//
+					if (!PixelEngine::quietMode)printf("script run dura:%d ms \n", now1 - now);//
 
 					// v8 dataset object 2 tileData
 					string errorText;
 					Local<Value> localMainResult = peMainResult.ToLocalChecked();
 					bool tiledataok = this->innerV8Dataset2TileData(isolate, context, localMainResult, tileData, errorText);
 					unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-					printf("encode png:%d ms \n", now2 - now1);
-					cout << "Info : innerV8Dataset2TileData return  " << tiledataok << endl;
+					if(!PixelEngine::quietMode)printf("v8 value to tiledata dura:%d ms \n", now2 - now1);
+					if(! PixelEngine::quietMode)cout << "Info : innerV8Dataset2TileData return  " << tiledataok << endl;
 					allOk = tiledataok;
 				}
 			}
@@ -3650,7 +3650,7 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 bool PixelEngine::RunScriptForTileWithRender(void* extra, string& scriptContent,PeStyle& inStyle, int64_t currentDatetime,
 	int z, int y, int x, vector<unsigned char>& retPngBinary, string& logStr) {
 
-	cout << "in PixelEngine::RunScriptForTileWithRender" << endl;
+	if(! PixelEngine::quietMode)cout << "in PixelEngine::RunScriptForTileWithRender" << endl;
 	PeTileData retTileData;
 	string retLogText;
 	bool tiledataok = this->RunScriptForTileWithoutRender(extra, scriptContent, currentDateTime, z, y, x,
@@ -3659,14 +3659,14 @@ bool PixelEngine::RunScriptForTileWithRender(void* extra, string& scriptContent,
 		//do render staff
 		if (inStyle.type == "") {
 			//do not use style
-			cout << "Info : a empty inStyle, so do not use input style." << endl;
+			if(! PixelEngine::quietMode)cout << "Info : a empty inStyle, so do not use input style." << endl;
 			string renderError;
 			bool renderok = innerRenderTileDataWithoutStyle(retTileData, retPngBinary, renderError);
 			return renderok;
 		}
 		else {
 			//use input style
-			cout << "Info : use input style" << endl;
+			if(! PixelEngine::quietMode)cout << "Info : use input style" << endl;
 			string renderError;
 			bool renderok = this->innerRenderTileDataByPeStyle(retTileData, inStyle,  retPngBinary, renderError);
 			return renderok;
@@ -3683,16 +3683,16 @@ bool PixelEngine::RunScriptForTileWithRender(void* extra, string& scriptContent,
 
 //使用esprima解析脚本生成AST json对象 2020-9-19
 bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& retJsonStr, string& errorText) {
-	cout << "in PixelEngine::RunScriptForAST" << endl;
+	if(! PixelEngine::quietMode)cout << "in PixelEngine::RunScriptForAST" << endl;
 	string esprimaMinJs = "esprima.min.js";
-	cout << "loading "<< esprimaMinJs << endl;
+	if(! PixelEngine::quietMode)cout << "loading "<< esprimaMinJs << endl;
 	pe::wTextfilereader reader;
 	string esprimaSource = reader.readfile(esprimaMinJs);
 	if (esprimaSource == "") {
-		cout << "Error : failed to read " << esprimaMinJs << endl;
+		if(! PixelEngine::quietMode)cout << "Error : failed to read " << esprimaMinJs << endl;
 		return false;
 	}
-	cout << "load esprima codes with size:" << esprimaSource.size() << endl;
+	if(! PixelEngine::quietMode)cout << "load esprima codes with size:" << esprimaSource.size() << endl;
 	bool allOk = true;
 
 	// Create a new Isolate and make it the current one.
@@ -3712,22 +3712,30 @@ bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& re
 		this->m_context.Reset(this->isolate, context);
 		TryCatch try_catch(this->isolate);
 
+		pe::wStringUtil strutil;
+		string escapeScript = strutil.escape(scriptContent);
+		if(! PixelEngine::quietMode)cout << escapeScript << endl;
+ 
+
 		//add esprima codes and try catch.
 		string source2 = esprimaSource + ";"
 			+ "var pe_ast_parse_resultjsonstr = null ; "
 			+ "var pe_ast_parse_resulterrorstr='' ; "
 			+ "try{"
-			+ "var pe_ast_parse_result=esprima.parseScript(\"" + scriptContent + "\"); "
+			+ "var pe_ast_parse_result=esprima.parseScript(\"" + escapeScript + "\"); "
 			+ "pe_ast_parse_resultjsonstr=JSON.stringify(pe_ast_parse_result);"
 			+ "}catch(err){"
 			+ "pe_ast_parse_resulterrorstr = err;"
 			+ "}";
+
+ 
+
 		// Compile the source code.
 		v8::Local<v8::Script> script;
 		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
 			source2.c_str()).ToLocalChecked()).ToLocal(&script)) {
 			String::Utf8Value error(this->isolate, try_catch.Exception());
-			cout << "compile v8 exception:" << *error << endl;
+			if(! PixelEngine::quietMode)cout << "compile v8 exception:" << *error << endl;
 			// The script failed to compile; bail out.
 			//return false;
 			errorText = "compile v8 exception:" + string(*error) ;
@@ -3741,7 +3749,7 @@ bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& re
 			if (!script->Run(context).ToLocal(&result)) {
 				String::Utf8Value error(this->isolate, try_catch.Exception());
 				string exceptionstr = string("run v8 exception:") + (*error);
-				cout << exceptionstr << endl;
+				if(! PixelEngine::quietMode)cout << exceptionstr << endl;
 				// The script failed to compile; bail out.
 				//return false;
 				//this->log(exceptionstr);
@@ -3756,7 +3764,7 @@ bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& re
 				{
 					allOk = false;
 					string error1("Error: the ast parse result is null or undefined.");
-					cout << error1 << endl;
+					if(! PixelEngine::quietMode)cout << error1 << endl;
 
 					MaybeLocal<Value> errorobj = context->Global()->Get(context
 						, String::NewFromUtf8(isolate, "pe_ast_parse_resulterrorstr").ToLocalChecked());
@@ -3772,7 +3780,7 @@ bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& re
 				}
 				else
 				{
-					cout << "ast parse result ok" << endl;
+					if(! PixelEngine::quietMode)cout << "ast parse result ok" << endl;
 					string errorText;
 					Local<Value> astresult = astresultjsostrObj.ToLocalChecked();
 					retJsonStr = PixelEngine::convertV8LocalValue2CppString(isolate, astresult);
@@ -3780,7 +3788,7 @@ bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& re
 						allOk =true ;
 					}
 					else {
-						cout << "Error : AST result is empty string." << endl;
+						if(! PixelEngine::quietMode)cout << "Error : AST result is empty string." << endl;
 						errorText = "Error : AST result is empty string.";
 						allOk = false;
 					}
@@ -3808,7 +3816,7 @@ bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& re
 
 bool PixelEngine::innerRenderTileDataWithoutStyle(PeTileData& tileData, vector<unsigned char>& retPngBinary, string& error ) {
 	if (tileData.tiledata.size() == 0) {
-		cout << "Error : innerRenderTileDataWithoutStyle tileData is empty." << endl;
+		if(! PixelEngine::quietMode)cout << "Error : innerRenderTileDataWithoutStyle tileData is empty." << endl;
 		return false;
 	}
 	unsigned long  now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -3861,7 +3869,7 @@ bool PixelEngine::innerRenderTileDataWithoutStyle(PeTileData& tileData, vector<u
 		break;
 	}
 	unsigned long  now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	cout << "Info : make RGBA colors duration:" << now2 - now1 << " ms " << endl;
+	if(! PixelEngine::quietMode)cout << "Info : make RGBA colors duration:" << now2 - now1 << " ms " << endl;
 
 	//rgba to png
 	if (rgbaData.size() == 0) {
@@ -3922,11 +3930,11 @@ unsigned char PixelEngine::clamp255(T val) {
 /// 该方法制作Style渲染，必须保证style是正确的。
 bool PixelEngine::innerRenderTileDataByPeStyle(PeTileData& tileData, PeStyle& style, vector<unsigned char>& retPngBinary, string& error) {
 	if (tileData.tiledata.size() == 0) {
-		cout << "Error : innerRenderTileDataByPeStyle tileData is empty." << endl;
+		if(! PixelEngine::quietMode)cout << "Error : innerRenderTileDataByPeStyle tileData is empty." << endl;
 		return false;
 	}
 	if (style.type == "") {
-		cout << "Error : innerRenderTileDataByPeStyle style is empty." << endl;
+		if(! PixelEngine::quietMode)cout << "Error : innerRenderTileDataByPeStyle style is empty." << endl;
 		return false;
 	}
 	unsigned long  now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -4025,13 +4033,13 @@ bool PixelEngine::innerRenderTileDataByPeStyle(PeTileData& tileData, PeStyle& st
 	}
 
 	if (pngok == false) {
-		cout << "Error : make png failed " << pngLogStr << endl;
+		if(! PixelEngine::quietMode)cout << "Error : make png failed " << pngLogStr << endl;
 		error = pngLogStr;
 		return false;
 	}
 
 	unsigned long  now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	cout << "Info : make RGBA colors duration:" << now2 - now1 << " ms " << endl;
+	if(! PixelEngine::quietMode)cout << "Info : make RGBA colors duration:" << now2 - now1 << " ms " << endl;
 
 	//rgba to png
 	if (rgbaData.size() == 0) {
@@ -4281,7 +4289,7 @@ bool PixelEngine::innerData2RGBAByPeStyle2(T* dataPtr, int width, int height, in
 
 PixelEngine::PixelEngine() 
 {
-	cout<<"PixelEngine()"<<endl;
+	if(! PixelEngine::quietMode)cout<<"PixelEngine()"<<endl;
 	extraPointer = 0 ;
 	this->tileInfo.x = 0 ;
 	this->tileInfo.y = 0 ;
@@ -4292,7 +4300,7 @@ PixelEngine::PixelEngine()
 
 PixelEngine::~PixelEngine() 
 {
-	cout<<"~PixelEngine()"<<endl;
+	if(! PixelEngine::quietMode)cout<<"~PixelEngine()"<<endl;
 	
 }
 
@@ -4300,7 +4308,7 @@ PixelEngine::~PixelEngine()
 void PixelEngine::initV8() 
 {
 	// Initialize V8.
-	cout<<"init v8"<<endl ;
+	if(! PixelEngine::quietMode)cout<<"init v8"<<endl ;
 	v8::V8::InitializeICUDefaultLocation(".");
 	v8::V8::InitializeExternalStartupData(".");
 	v8Platform = v8::platform::NewDefaultPlatform();

@@ -24,6 +24,7 @@
 #include "PeStyle.h"
 #include "PeTileData.h"
 #include "./sqlite_interface/webservice/wstringutil.h"
+#include "./sqlite_interface/webservice/wTextfilereader.h"
 
 using namespace v8;
 using namespace std;
@@ -66,6 +67,9 @@ struct PixelEngineHelperInterface {
 
 	//get render style by id from system
 	virtual bool getStyle(string& styleid, PeStyle& retStyle, string& errorText) =0;
+
+	//保存瓦片数据到存储设备
+	virtual bool writeTileData(string& tb,string& fami,int64_t col,int pid,int z,int y,int x, PeTileData& tileData) = 0;
 
 };
 
@@ -318,6 +322,8 @@ struct PixelEngine
 	static string convertV8LocalValue2CppString(Isolate* isolate, Local<Value>& v8value);
 	static Local<Value> warpCppStyle2V8Object(Isolate* isolate, PeStyle& style);
 
+	//2020-9-19
+	static bool quietMode;
 
 	private:
 		//2020-9-14

@@ -46,6 +46,7 @@ namespace pe {
 
 		bool loadFromJson(string jsonText);
 		bool loadFromJsonFile(string filename);
+		void updateDataTypeByteLen();
 		string toJson();
 	};
 
