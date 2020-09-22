@@ -16,7 +16,7 @@ namespace pe {
 
 	struct PeProductInfo
 	{
-		inline PeProductInfo():minZoom(0),maxZoom(0),dataType(0),bandNum(0),hPidByteNum(0),hPid(0),hYXByteNum(0),noData(0),tileWid(0),tileHei(0){ dataTypeByteLen = 0; }
+		inline PeProductInfo():uid(0),minZoom(0),maxZoom(0),dataType(0),bandNum(0),hPidByteNum(0),hPid(0),hYXByteNum(0),noData(0),tileWid(0),tileHei(0){ dataTypeByteLen = 0; }
 
 		string productName;
 		string proj;
@@ -43,6 +43,7 @@ namespace pe {
 		string compress;
 
 		int dataTypeByteLen ;
+		int uid;
 
 		bool loadFromJson(string jsonText);
 		bool loadFromJsonFile(string filename);
