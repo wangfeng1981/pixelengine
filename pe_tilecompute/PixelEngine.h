@@ -68,8 +68,8 @@ struct PixelEngineHelperInterface {
 	//get render style by id from system
 	virtual bool getStyle(string& styleid, PeStyle& retStyle, string& errorText) =0;
 
-	//保存瓦片数据到存储设备
-	virtual bool writeTileData(string& tb,string& fami,int64_t col,int pid,int z,int y,int x, PeTileData& tileData) = 0;
+	//保存瓦片数据到存储设备(这个接口不应该放在PixelEngineHelper里面 2020-9-24)
+	//virtual bool writeTileData(string& tb,string& fami,int64_t col,int pid,int z,int y,int x, PeTileData& tileData) = 0;
 
 };
 
