@@ -4308,10 +4308,16 @@ PixelEngine::~PixelEngine()
 void PixelEngine::initV8() 
 {
 	// Initialize V8.
-	if(! PixelEngine::quietMode)cout<<"init v8"<<endl ;
-	v8::V8::InitializeICUDefaultLocation(".");
-	v8::V8::InitializeExternalStartupData(".");
-	v8Platform = v8::platform::NewDefaultPlatform();
-	v8::V8::InitializePlatform(v8Platform.get());
-	v8::V8::Initialize();
+	
+	if( v8Platform  ){
+		if(! PixelEngine::quietMode)cout<<"v8 has inited"<<endl ;
+	}else{
+		if(! PixelEngine::quietMode)cout<<"init v8"<<endl ;
+		v8::V8::InitializeICUDefaultLocation(".");
+		v8::V8::InitializeExternalStartupData(".");
+		v8Platform = v8::platform::NewDefaultPlatform();
+		v8::V8::InitializePlatform(v8Platform.get());
+		v8::V8::Initialize();
+	}
+
 }

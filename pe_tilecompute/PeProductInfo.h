@@ -5,7 +5,7 @@
 
 #include <string>
 #include <vector>
-#include "../../sharedcodes2/ajson5.h"
+#include "ajson5.h"
 #include "compress.h"
 using std::string;
 using std::vector;

@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
-#include "../../sharedcodes2/ajson5.h"
+#include "ajson5.h"
 using std::stringstream;
 
 using std::vector;
@@ -32,7 +32,7 @@ namespace pe {
 
 	struct PeStyle
 	{
-	private:
+	public:
 		vector<int>bands;
 
 	public:
