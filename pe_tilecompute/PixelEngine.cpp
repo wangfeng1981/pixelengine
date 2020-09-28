@@ -664,18 +664,18 @@ void PixelEngineColorRamp::copy2v8(Isolate* isolate , Local<v8::Value> obj)
 	Local<Object> crobj = obj->ToObject(context).ToLocalChecked() ;
 
 	//set use integer
-	crobj->Set(context , 
+	Maybe<bool> ok1 = crobj->Set(context , 
 		String::NewFromUtf8(isolate,"useInteger").ToLocalChecked() , 
 		Boolean::New(isolate,true)
 		) ;
 
 	//set color number
-	crobj->Set(context , 
+	Maybe<bool> ok2 = crobj->Set(context , 
 		String::NewFromUtf8(isolate,"numColors").ToLocalChecked() , 
 		Integer::New(isolate,this->numColors)
 		) ;
 	//set nodata
-	crobj->Set(context,
+	Maybe<bool> ok3 = crobj->Set(context,
 		String::NewFromUtf8(isolate,"Nodata").ToLocalChecked() , 
 		Number::New(isolate,this->Nodata)
 		) ;
@@ -986,66 +986,66 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 	Local<Value> forEachFuncInJs = global->Get(context 
     	,String::NewFromUtf8(isolate, "globalFunc_forEachPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;
 	Local<Object> ds = Object::New(isolate) ;
-	ds->Set(context
+	Maybe<bool> ok1 = ds->Set(context
 		,String::NewFromUtf8(isolate, "forEachPixel").ToLocalChecked(),
             forEachFuncInJs );
 
 
 	Local<Value> getPixelFuncInJs = global->Get(context 
     	,String::NewFromUtf8(isolate, "globalFunc_getPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;	
-	ds->Set(context
+	Maybe<bool> ok2 = ds->Set(context
 		,String::NewFromUtf8(isolate, "getPixel").ToLocalChecked(),
             getPixelFuncInJs );
 
-	ds->Set(context
+	Maybe<bool> ok3 = ds->Set(context
 		,String::NewFromUtf8(isolate, "renderGray").ToLocalChecked(),
             FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_RenderGrayCallBack)->GetFunction(context).ToLocalChecked() );
-	ds->Set(context
+	Maybe<bool> ok4 = ds->Set(context
 		,String::NewFromUtf8(isolate, "renderPsuedColor").ToLocalChecked(),
             FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_RenderPsuedColorCallBack)->GetFunction(context).ToLocalChecked() );
-	ds->Set(context
+	Maybe<bool> ok5 = ds->Set(context
 		,String::NewFromUtf8(isolate, "fillRange").ToLocalChecked(),
             FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_FillRangeCallBack)->GetFunction(context).ToLocalChecked() );
-	ds->Set(context
+	Maybe<bool> ok6 = ds->Set(context
 		,String::NewFromUtf8(isolate, "renderRGB").ToLocalChecked(),
             FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_RenderRGBCallBack)->GetFunction(context).ToLocalChecked() );
 	
 
-	ds->Set(context
+	Maybe<bool> ok7 = ds->Set(context
 		,String::NewFromUtf8(isolate, "width").ToLocalChecked()
 		,Integer::New(isolate,width) ) ;
-	ds->Set(context
+	Maybe<bool> ok8 = ds->Set(context
 		,String::NewFromUtf8(isolate, "height").ToLocalChecked()
 		,Integer::New(isolate,height) ) ;
-	ds->Set(context
+	Maybe<bool> ok9 = ds->Set(context
 		,String::NewFromUtf8(isolate, "nband").ToLocalChecked()
 		,Integer::New(isolate,nband) ) ;
-	ds->Set(context
+	Maybe<bool> ok10 = ds->Set(context
 		,String::NewFromUtf8(isolate, "dataType").ToLocalChecked()
 		,Integer::New(isolate,datatype) ) ;
 
 	//522
 	Local<ArrayBuffer> neighborLoadedAB = ArrayBuffer::New(isolate,9) ;
 	Local<Uint8Array> neighborLoadedU8 = Uint8Array::New(neighborLoadedAB,0,9) ;
-	ds->Set(context
+	Maybe<bool> ok11 = ds->Set(context
 		,String::NewFromUtf8(isolate, "nbloads").ToLocalChecked()
 		,neighborLoadedU8 ) ;//4 is current always 0.
-	ds->Set(context
+	Maybe<bool> ok12 = ds->Set(context
 		,String::NewFromUtf8(isolate, "nbdatas").ToLocalChecked()
 		,Array::New(isolate,9) ) ;// 4 is current always null.
-	ds->Set(context
+	Maybe<bool> ok13 = ds->Set(context
 		,String::NewFromUtf8(isolate, "dsName").ToLocalChecked()
 		,String::Empty(isolate) ) ;
-	ds->Set(context
+	Maybe<bool> ok14 = ds->Set(context
 		,String::NewFromUtf8(isolate, "dsDt").ToLocalChecked()
 		,Number::New(isolate,0) ) ;//long
-	ds->Set(context
+	Maybe<bool> ok15 = ds->Set(context
 		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
 		,Integer::New(isolate,0) ) ;
-	ds->Set(context
+	Maybe<bool> ok16 = ds->Set(context
 		,String::NewFromUtf8(isolate, "y").ToLocalChecked()
 		,Integer::New(isolate,0) ) ;
-	ds->Set(context
+	Maybe<bool> ok17 = ds->Set(context
 		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
 		,Integer::New(isolate,0) ) ;
 
@@ -1054,7 +1054,7 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 		int bsize = width*height*nband*2 ;
 		Local<ArrayBuffer> arrbuff = ArrayBuffer::New(isolate,bsize) ;
 		Local<Int16Array> i16array = Int16Array::New(arrbuff,0,bsize/2) ;
-		ds->Set(context
+		Maybe<bool> ok18 = ds->Set(context
 			,String::NewFromUtf8(isolate, "tiledata").ToLocalChecked()
 			,i16array ) ;
 	}else
@@ -1062,7 +1062,7 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 		int bsize = width*height*nband ;
 		Local<ArrayBuffer> arrbuff = ArrayBuffer::New(isolate,bsize) ;
 		Local<Uint8Array> u8array = Uint8Array::New(arrbuff,0,bsize) ;
-		ds->Set(context
+		Maybe<bool> ok19 = ds->Set(context
 			,String::NewFromUtf8(isolate, "tiledata").ToLocalChecked()
 			,u8array ) ;
 	}
@@ -1086,51 +1086,51 @@ Local<Object> PixelEngine::CPP_NewDatasetArray(Isolate* isolate,Local<Context>& 
 	Local<Value> forEachFuncInJs = global->Get(context 
     	,String::NewFromUtf8(isolate, "globalFunc_DA_forEachPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;
 	Local<Object> ds = Object::New(isolate) ;
-	ds->Set(context
+	Maybe<bool> ok1 = ds->Set(context
 		,String::NewFromUtf8(isolate, "forEachPixel").ToLocalChecked(),
             forEachFuncInJs );
 
-	ds->Set(context
+	Maybe<bool> ok2 = ds->Set(context
 		,String::NewFromUtf8(isolate, "width").ToLocalChecked()
 		,Integer::New(isolate,width) ) ;
-	ds->Set(context
+	Maybe<bool> ok3 = ds->Set(context
 		,String::NewFromUtf8(isolate, "height").ToLocalChecked()
 		,Integer::New(isolate,height) ) ;
-	ds->Set(context
+	Maybe<bool> ok4 = ds->Set(context
 		,String::NewFromUtf8(isolate, "nband").ToLocalChecked()
 		,Integer::New(isolate,nband) ) ;
-	ds->Set(context
+	Maybe<bool> ok5 = ds->Set(context
 		,String::NewFromUtf8(isolate, "dataType").ToLocalChecked()
 		,Integer::New(isolate,datatype) ) ;
-	ds->Set(context
+	Maybe<bool> ok6 = ds->Set(context
 		,String::NewFromUtf8(isolate, "numds").ToLocalChecked()
 		,Integer::New(isolate,numds) ) ;
-	ds->Set(context
+	Maybe<bool> ok7 = ds->Set(context
 		,String::NewFromUtf8(isolate, "dsName").ToLocalChecked()
 		,String::Empty(isolate) ) ;
-	ds->Set(context
+	Maybe<bool> ok8 = ds->Set(context
 		,String::NewFromUtf8(isolate, "fromdt").ToLocalChecked()
 		,String::Empty(isolate) ) ;
-	ds->Set(context
+	Maybe<bool> ok9 = ds->Set(context
 		,String::NewFromUtf8(isolate, "todt").ToLocalChecked()
 		,String::Empty(isolate) ) ;
-	ds->Set(context
+	Maybe<bool> ok10 = ds->Set(context
 		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
 		,Integer::New(isolate,0) ) ;
-	ds->Set(context
+	Maybe<bool> ok11 = ds->Set(context
 		,String::NewFromUtf8(isolate, "y").ToLocalChecked()
 		,Integer::New(isolate,0) ) ;
-	ds->Set(context
+	Maybe<bool> ok12 = ds->Set(context
 		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
 		,Integer::New(isolate,0) ) ;
 
 
 	Local<ArrayBuffer> timeArrayAB = ArrayBuffer::New(isolate,numds*8) ;
 	Local<BigInt64Array> timeArrayInt64 = BigInt64Array::New(timeArrayAB,0,numds) ;
-	ds->Set(context
+	Maybe<bool> ok13 = ds->Set(context
 		,String::NewFromUtf8(isolate, "timeArr").ToLocalChecked()
 		,timeArrayInt64 ) ;
-	ds->Set(context
+	Maybe<bool> ok14 = ds->Set(context
 		,String::NewFromUtf8(isolate, "dataArr").ToLocalChecked()
 		,Array::New(isolate,numds) ) ;// 4 is current always null.
 	
@@ -1289,7 +1289,7 @@ string PixelEngine::convertV8LocalValue2CppString(Isolate* isolate, Local<Value>
 	return string(*value);
 }
 
-/// ”√”⁄∞—C++µƒPeStyle∂‘œÛ¥Ú∞¸≥…v8∂‘œÛ
+/// √ì√É√ì√ö¬∞√ëC++¬µ√ÑPeStyle¬∂√î√è√≥¬¥√≤¬∞√º¬≥√âv8¬∂√î√è√≥
 Local<Value> PixelEngine::warpCppStyle2V8Object(Isolate* isolate, PeStyle& style  ) {
 	EscapableHandleScope scope(isolate);
 	Local<Context> context(isolate->GetCurrentContext());
@@ -2005,19 +2005,19 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 	short* backData = (short*) i16Array->Buffer()->GetBackingStore()->Data() ;
 	memcpy(backData , externalData.data(), externalData.size() );
 
-	ds->Set(context
+	Maybe<bool> ok1 = ds->Set(context
 		,String::NewFromUtf8(isolate, "dsName").ToLocalChecked()
 		,v8name ) ;
-	ds->Set(context
+	Maybe<bool> ok2 = ds->Set(context
 		,String::NewFromUtf8(isolate, "dsDt").ToLocalChecked()
 		,v8datetime ) ;
-	ds->Set(context
+	Maybe<bool> ok3 = ds->Set(context
 		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
 		,Integer::New(isolate,thisPePtr->tileInfo.x) ) ;
-	ds->Set(context
+	Maybe<bool> ok4 = ds->Set(context
 		,String::NewFromUtf8(isolate, "y").ToLocalChecked()
 		,Integer::New(isolate,thisPePtr->tileInfo.y) ) ;
-	ds->Set(context
+	Maybe<bool> ok5 = ds->Set(context
 		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
 		,Integer::New(isolate,thisPePtr->tileInfo.z) ) ;
 
@@ -2209,23 +2209,23 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 		,hei
 		,retnbands
 		,retnumds );
-	ds->Set(context
+	Maybe<bool> ok1 = ds->Set(context
 		,String::NewFromUtf8(isolate, "dsName").ToLocalChecked()
 		,v8name ) ;
-	ds->Set(context
+	Maybe<bool> ok2 = ds->Set(context
 		,String::NewFromUtf8(isolate, "fromdt").ToLocalChecked()
 		,v8from ) ;
-	ds->Set(context
+	Maybe<bool> ok3 = ds->Set(context
 		,String::NewFromUtf8(isolate, "todt").ToLocalChecked()
 		,v8to ) ;
 
-	ds->Set(context
+	Maybe<bool> ok4 = ds->Set(context
 		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
 		,Integer::New(isolate,thisPePtr->tileInfo.x) ) ;
-	ds->Set(context
+	Maybe<bool> ok5 = ds->Set(context
 		,String::NewFromUtf8(isolate, "y").ToLocalChecked()
 		,Integer::New(isolate,thisPePtr->tileInfo.y) ) ;
-	ds->Set(context
+	Maybe<bool> ok6 = ds->Set(context
 		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
 		,Integer::New(isolate,thisPePtr->tileInfo.z) ) ;
 
@@ -2244,7 +2244,7 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	for(int ids = 0 ; ids < retnumds ; ++ ids )
 	{
 		//set time
-		timeArrInt64->Set(context,ids,BigInt::New(isolate,externalTimeArr[ids]));
+		Maybe<bool> ok5 = timeArrInt64->Set(context,ids,BigInt::New(isolate,externalTimeArr[ids]));
 
 		//set data
 		vector<unsigned char>& indatavec = externalDataArr[ids] ;
@@ -2254,14 +2254,14 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 			Local<Uint8Array> u8arr = Uint8Array::New(arrbuf,0,indatavec.size()) ;
 			unsigned char* backData = (unsigned char*) u8arr->Buffer()->GetBackingStore()->Data() ;//here
 			memcpy(backData , indatavec.data(), indatavec.size() );
-			dataArrArray->Set(context,ids,u8arr) ;
+			Maybe<bool> ok6 = dataArrArray->Set(context,ids,u8arr) ;
 		}else if( dt==3 )
 		{
 			Local<ArrayBuffer> arrbuf = ArrayBuffer::New(isolate,indatavec.size()) ;
 			Local<Int16Array> i16arr = Int16Array::New(arrbuf,0,indatavec.size()/2) ;
 			short* backData = (short*) i16arr->Buffer()->GetBackingStore()->Data() ;//here
 			memcpy(backData , indatavec.data(), indatavec.size() );
-			dataArrArray->Set(context,ids,i16arr) ;
+			Maybe<bool> ok7 = dataArrArray->Set(context,ids,i16arr) ;
 		}else
 		{
 			printf("Error: unsupported data type:%d\n" , dt) ;
@@ -2272,7 +2272,7 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	args.GetReturnValue().Set(ds) ;
 }
 
-/// ∏√∑Ω∑®”√‘⁄ forEachPixel¿Ô√Ê◊ˆ¥∞ø⁄º∆À„£¨∑√Œ ¡ŸΩ¸Õﬂ∆¨ ˝æ›
+/// ¬∏√É¬∑¬Ω¬∑¬®√ì√É√î√ö forEachPixel√Ä√Ø√É√¶√ó√∂¬¥¬∞¬ø√ö¬º√Ü√ã√£¬£¬¨¬∑√É√é√ä√Å√ô¬Ω√º√ç√ü√Ü¬¨√ä√Ω¬æ√ù
 /// get external tile data only, return data array not dataset.
 /// PixelEngine.GetTileData(name,datetime,z,y,x)
 void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
@@ -2465,7 +2465,7 @@ void PixelEngine::GlobalFunc_LocalDatasetCallBack(const v8::FunctionCallbackInfo
 	vector<unsigned char> imgdata(wid*hei*nb0*2) ;
 	{
 		FILE* pf = fopen(*filename,"rb") ;
-		fread( imgdata.data() , 1 , wid*hei*nb0*2 , pf) ;
+		size_t readbytes = fread( imgdata.data() , 1 , wid*hei*nb0*2 , pf) ;
 		fclose(pf) ;
 	}
 
@@ -2576,7 +2576,7 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 		// Uint8Array* u8arr = Uint8Array::Cast(*tiledataValue) ;
 		// unsigned char* dataptr = (unsigned char*) u8arr->Buffer()->GetBackingStore()->Data() ;
 		now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	  	printf("get dataptr:%d ms \n", now1 - now);//1024*1024 use 340millisec
+	  	printf("get dataptr:%d ms \n", (int)(now1 - now) );//1024*1024 use 340millisec
 
 		
 		if( nband==4 )
@@ -2624,7 +2624,7 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 			return ;
 		}
 		now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	  	printf("get dataptr:%d ms \n", now1 - now);//1024*1024 use 340millisec
+	  	printf("get dataptr:%d ms \n", (int)(now1 - now) );//1024*1024 use 340millisec
 		if( nband==4 )
 		{
 			for (int it = 0; it < imgsize; ++it)
@@ -2659,7 +2659,7 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 	if( outimageOk )
 	{
 		unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	  	printf("forloop png:%d ms \n", now2 - now1);//1024*1024 use 340millisec
+	  	printf("forloop png:%d ms \n", (int)(now2 - now1) );//1024*1024 use 340millisec
 
 		retpngbinary.clear();
 		retpngbinary.reserve(1024*1024*4) ;
@@ -2677,7 +2677,7 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 		unsigned error = lodepng::encode(retpngbinary, rgbadata, width, height, state);
 		
 		unsigned long now3 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	  	printf("encode png:%d ms \n", now3 - now2);//1024*1024 use 340millisec
+	  	printf("encode png:%d ms \n", (int)(now3 - now2) );//1024*1024 use 340millisec
 	}else
 	{
 		printf("Error: outimageOk == false.");
@@ -2859,62 +2859,62 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	{
 		if(! PixelEngine::quietMode)cout<<"okpe is nothing."<<endl ;
 	}
-	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampRainbow").ToLocalChecked(),
+	Maybe<bool> ok1 = pe->Set(context,String::NewFromUtf8(isolate, "ColorRampRainbow").ToLocalChecked(),
 	   Integer::New(isolate,1));
-	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampBlues").ToLocalChecked(),
+	Maybe<bool> ok2 = pe->Set(context,String::NewFromUtf8(isolate, "ColorRampBlues").ToLocalChecked(),
 	   Integer::New(isolate,2));
-	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampReds").ToLocalChecked(),
+	Maybe<bool> ok3 = pe->Set(context,String::NewFromUtf8(isolate, "ColorRampReds").ToLocalChecked(),
 	   Integer::New(isolate,3));
-	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampGreens").ToLocalChecked(),
+	Maybe<bool> ok4 = pe->Set(context,String::NewFromUtf8(isolate, "ColorRampGreens").ToLocalChecked(),
 	   Integer::New(isolate,4));
-	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampGrays").ToLocalChecked(),
+	Maybe<bool> ok5 = pe->Set(context,String::NewFromUtf8(isolate, "ColorRampGrays").ToLocalChecked(),
 	   Integer::New(isolate,0));
-	pe->Set(context,String::NewFromUtf8(isolate, "DatetimeCurrent").ToLocalChecked(),
+	Maybe<bool> ok6 = pe->Set(context,String::NewFromUtf8(isolate, "DatetimeCurrent").ToLocalChecked(),
 	   Number::New(isolate,PE_CURRENTDATETIME));//modified 2020-6-20
-	pe->Set(context,String::NewFromUtf8(isolate, "Ignore").ToLocalChecked(),
+	Maybe<bool> ok7 = pe->Set(context,String::NewFromUtf8(isolate, "Ignore").ToLocalChecked(),
 	   Integer::New(isolate,-1));
 
 	//normal/inverse
-	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampNormal").ToLocalChecked(),
+	Maybe<bool> ok8 = pe->Set(context,String::NewFromUtf8(isolate, "ColorRampNormal").ToLocalChecked(),
 	Integer::New(isolate,0));
-	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampInverse").ToLocalChecked(),
+	Maybe<bool> ok9 = pe->Set(context,String::NewFromUtf8(isolate, "ColorRampInverse").ToLocalChecked(),
 	Integer::New(isolate,1));
 	//discrete/interpol
-	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampDiscrete").ToLocalChecked(),
+	Maybe<bool> ok10 = pe->Set(context,String::NewFromUtf8(isolate, "ColorRampDiscrete").ToLocalChecked(),
 	Integer::New(isolate,0));
-	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampInterpolate").ToLocalChecked(),
+	Maybe<bool> ok11 = pe->Set(context,String::NewFromUtf8(isolate, "ColorRampInterpolate").ToLocalChecked(),
 	Integer::New(isolate,1));
-	pe->Set(context,String::NewFromUtf8(isolate, "ColorRampExact").ToLocalChecked(),
+	Maybe<bool> ok12 = pe->Set(context,String::NewFromUtf8(isolate, "ColorRampExact").ToLocalChecked(),
 	Integer::New(isolate,2));//add 2020-6-20
-	pe->Set(context,String::NewFromUtf8(isolate, "pejs_version").ToLocalChecked(),
+	Maybe<bool> ok13 = pe->Set(context,String::NewFromUtf8(isolate, "pejs_version").ToLocalChecked(),
 		String::NewFromUtf8(isolate, PixelEngine::pejs_version.c_str()).ToLocalChecked()) ;
 
 
-	pe->Set(context
+	Maybe<bool> ok14 = pe->Set(context
 		,String::NewFromUtf8(isolate, "NewDataset").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_NewDatasetCallBack)->GetFunction(context).ToLocalChecked() );
 
-	pe->Set(context
+	Maybe<bool> ok15 = pe->Set(context
 		,String::NewFromUtf8(isolate, "Dataset").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_DatasetCallBack)->GetFunction(context).ToLocalChecked() );
-	pe->Set(context
+	Maybe<bool> ok16 = pe->Set(context
 		,String::NewFromUtf8(isolate, "GetTileData").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_GetTileDataCallBack)->GetFunction(context).ToLocalChecked() );
-	pe->Set(context
+	Maybe<bool> ok17 = pe->Set(context
 	,String::NewFromUtf8(isolate, "LocalDataset").ToLocalChecked(),
        FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_LocalDatasetCallBack)->GetFunction(context).ToLocalChecked() );
-	pe->Set(context
+	Maybe<bool> ok18 = pe->Set(context
 		,String::NewFromUtf8(isolate, "DatasetArray").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_DatasetArrayCallBack)->GetFunction(context).ToLocalChecked() );
 	//2020-9-13
-	pe->Set(context
+	Maybe<bool> ok19 = pe->Set(context
 		, String::NewFromUtf8(isolate, "getStyle").ToLocalChecked(),
 		FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_GetStyleCallBack)->GetFunction(context).ToLocalChecked());
 
 
 
 	//pe function log
-	pe->Set(context
+	Maybe<bool> ok20 = pe->Set(context
 		,String::NewFromUtf8(isolate, "log").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_Log)->GetFunction(context).ToLocalChecked() );
 
@@ -3147,12 +3147,12 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 
 
     //set globalFunc_newDatasetCallBack, this will be called in javascript ForEachPixel.
-    global->Set(context
+    Maybe<bool> ok21 = global->Set(context
 		,String::NewFromUtf8(isolate, "globalFunc_newDatasetCallBack").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_NewDatasetCallBack)->GetFunction(context).ToLocalChecked() );
 
     //set globalFunc_ColorRampCallBack, this will be c++ codes.
-    global->Set(context
+    Maybe<bool> ok22 = global->Set(context
 		,String::NewFromUtf8(isolate, "globalFunc_ColorRampCallBack").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_ColorRampCallBack)->GetFunction(context).ToLocalChecked() );
 
@@ -3228,13 +3228,13 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 					if(! PixelEngine::quietMode)cout << "in RunToGetStyleFromScript 4" << endl;
 
 					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-					printf("script run dura:%d ms \n", now1 - now);//
+					printf("script run dura:%d ms \n", (int)(now1 - now) );//
 
 					MaybeLocal<String> outStyleJson = JSON::Stringify(context, styleResult.ToLocalChecked());
 					Local<String> outStyleJson2;
 					
 					if (outStyleJson.ToLocal(& outStyleJson2)) {
-						//SetStyle∑µªÿµƒ «json∂‘œÛ
+						//SetStyle¬∑¬µ¬ª√ò¬µ√Ñ√ä√ájson¬∂√î√è√≥
 						Local<Value> styleV8Value  = outStyleJson2.As<Value>();
 						string cstrStyle = PixelEngine::convertV8LocalValue2CppString(isolate , styleV8Value);
 						if(! PixelEngine::quietMode)cout << "cstrStyle:" << cstrStyle << endl;//debug
@@ -3245,7 +3245,7 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 						}
 						else {
 							if(! PixelEngine::quietMode)cout << "Info : it seems return string from setStyle not be valid json, then try styleid..." << endl;
-							//jsonΩ‚Œˆ ß∞‹, ≤Èø¥◊÷∑˚¥Æ «∑Ò «“ª∏ˆ”––ßµƒ ˝◊÷£¨»Áπ˚ «”––ß ˝æ›‘ÚÕ®π˝ ˝æ›ø‚≤È’“‰÷»æ∑Ω∞∏
+							//json¬Ω√¢√é√∂√ä¬ß¬∞√ú, ¬≤√©¬ø¬¥√ó√ñ¬∑√ª¬¥¬Æ√ä√á¬∑√±√ä√á√í¬ª¬∏√∂√ì√ê√ê¬ß¬µ√Ñ√ä√Ω√ó√ñ¬£¬¨√à√ß¬π√ª√ä√á√ì√ê√ê¬ß√ä√Ω¬æ√ù√î√≤√ç¬®¬π√Ω√ä√Ω¬æ√ù¬ø√¢¬≤√©√ï√í√§√ñ√à¬æ¬∑¬Ω¬∞¬∏
 							//Local<String> localResultStr = styleResult.ToLocalChecked().As<String>() ;
 							//Local<Value> localResultValue = localResultStr.As<Value>();
 							Local<Value> localResultValue = styleResult.ToLocalChecked();
@@ -3288,7 +3288,7 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 						allOk = false;
 					}
 					unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-					printf("get style:%d ms \n", now2 - now1);
+					printf("get style:%d ms \n", (int)(now2 - now1) );
 				}
 			}
 		}
@@ -3373,14 +3373,14 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 					if(! PixelEngine::quietMode)cout<<"in RunScriptForTile 4"<<endl;
 
 					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-					printf("script run dura:%d ms \n", now1 - now);//
+					printf("script run dura:%d ms \n", (int)(now1 - now) );//
 
 					//tiledata to png
 					PixelEngine::Dataset2Png( isolate, context, peMainResult.ToLocalChecked()
 						, retbinary );
 
 					unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-					printf("encode png:%d ms \n", now2 - now1);
+					printf("encode png:%d ms \n", (int)(now2 - now1) );
 				}
 			}
 		}
@@ -3470,7 +3470,7 @@ bool PixelEngine::RunScriptForComputeOnce(void* extra, string& jsSource,long cur
 					if(! PixelEngine::quietMode)cout<<"in RunScriptForComputeOnce 4"<<endl;
 
 					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-					printf("script run dura:%d ms \n", now1 - now);//
+					printf("script run dura:%d ms \n", (int)(now1 - now) );//
 
 					MaybeLocal<String> coStr = coResult.ToLocalChecked()->ToString(context) ;
 					Local<String> coStr2 ;
@@ -3545,7 +3545,7 @@ string PixelEngine::CheckScriptOk(string& scriptSource)
 
 
 //2020-9-14
-//‘À––Ω≈±æ±£¡Ù ˝æ›£¨≤ª‰÷»æ
+//√î√ã√ê√ê¬Ω√Ö¬±¬æ¬±¬£√Å√¥√ä√Ω¬æ√ù¬£¬¨¬≤¬ª√§√ñ√à¬æ
 bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptContent, int64_t currentdt,
 	int z, int y, int x, PeTileData& tileData, string& logStr) {
 
@@ -3620,14 +3620,14 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 					if(! PixelEngine::quietMode)cout << "in RunScriptForTileWithoutRender step4" << endl;
 
 					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-					if (!PixelEngine::quietMode)printf("script run dura:%d ms \n", now1 - now);//
+					if (!PixelEngine::quietMode)printf("script run dura:%d ms \n", (int)(now1 - now) );//
 
 					// v8 dataset object 2 tileData
 					string errorText;
 					Local<Value> localMainResult = peMainResult.ToLocalChecked();
 					bool tiledataok = this->innerV8Dataset2TileData(isolate, context, localMainResult, tileData, errorText);
 					unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-					if(!PixelEngine::quietMode)printf("v8 value to tiledata dura:%d ms \n", now2 - now1);
+					if(!PixelEngine::quietMode)printf("v8 value to tiledata dura:%d ms \n", (int)(now2 - now1) );
 					if(! PixelEngine::quietMode)cout << "Info : innerV8Dataset2TileData return  " << tiledataok << endl;
 					allOk = tiledataok;
 				}
@@ -3646,7 +3646,7 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 
 	return allOk;
 }
-//‘À––Ω≈±æ≤¢‰÷»æpngÕº∆¨
+//√î√ã√ê√ê¬Ω√Ö¬±¬æ¬≤¬¢√§√ñ√à¬æpng√ç¬º√Ü¬¨
 bool PixelEngine::RunScriptForTileWithRender(void* extra, string& scriptContent,PeStyle& inStyle, int64_t currentDatetime,
 	int z, int y, int x, vector<unsigned char>& retPngBinary, string& logStr) {
 
@@ -3681,7 +3681,7 @@ bool PixelEngine::RunScriptForTileWithRender(void* extra, string& scriptContent,
 
 
 
-// π”√esprimaΩ‚ŒˆΩ≈±æ…˙≥…AST json∂‘œÛ 2020-9-19
+//√ä¬π√ì√Éesprima¬Ω√¢√é√∂¬Ω√Ö¬±¬æ√â√∫¬≥√âAST json¬∂√î√è√≥ 2020-9-19
 bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& retJsonStr, string& errorText) {
 	if(! PixelEngine::quietMode)cout << "in PixelEngine::RunScriptForAST" << endl;
 	string esprimaMinJs = "esprima.min.js";
@@ -3806,6 +3806,67 @@ bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& re
 }
 
 
+//Ëß£ÊûêDataset-Datetime Êï∞ÊçÆÈõÜÊó∂Èó¥Êó•ÊúüÂØπ
+bool PixelEngine::RunScriptForDatasetDatetimePairs(void* extra,
+	string& scriptContent,
+	vector<wDatasetDatetime>& retDsDtVec,
+	string& errorText)
+{
+	//vector<wDatasetDatetime> udsdtVec;
+    string retASTLog , retASTJsonText;
+    bool runASTok = this->RunScriptForAST(nullptr, scriptContent , retASTJsonText, retASTLog);
+    if (runASTok) {
+        wAST ast;
+        printf("parsing AST...\n");
+        ast.parse(retASTJsonText);
+        string retVal;
+
+        bool mainOk = ast.hasReturnableMainFunction(ast.rootNode.as<JsonObject>());
+        if (mainOk) {
+            printf("find dataset names ...\n");
+            vector<wDatasetDatetime> dsdtVec ;
+            ast.findObjectPropertyCallStatement(ast.rootNode.as<JsonObject>(), "pe", "Dataset", dsdtVec);
+            ast.findObjectPropertyCallStatement(ast.rootNode.as<JsonObject>(), "PixelEngine", "Dataset", dsdtVec);
+            ast.findObjectPropertyCallStatement(ast.rootNode.as<JsonObject>(), "pe", "DatasetArray", dsdtVec);
+            ast.findObjectPropertyCallStatement(ast.rootNode.as<JsonObject>(), "PixelEngine", "DatasetArray", dsdtVec);
+
+            //ÂéªÊéâdtdsÈáçÂ§çÈ°π
+            for (vector<wDatasetDatetime>::iterator iter = dsdtVec.begin(); iter != dsdtVec.end(); ++iter) {
+                bool hasone = false;
+                for (vector<wDatasetDatetime>::iterator iteru = retDsDtVec.begin(); 
+                	iteru != retDsDtVec.end(); ++iteru) 
+                {
+                    if (iteru->ds == iter->ds && iteru->dt0 == iter->dt0 && iteru->dt1 == iter->dt1) {
+                        hasone = true;
+                        break;
+                    }
+                }
+                if (hasone==false) {
+                    retDsDtVec.push_back(*iter);
+                }
+            }
+
+            if (retDsDtVec.size() > 0) {
+                //good
+            }
+            else {
+                printf("no dataset is found\n");
+            	return false;
+            }
+        }
+        else {
+            printf("script has no valid main function.\n");
+            return false;
+        }
+    }
+    else {
+        printf("parse AST failed: %s \n" , retASTLog.c_str() );
+        return false;
+    }
+
+	return true;
+}
+
 
 
 
@@ -3927,7 +3988,7 @@ unsigned char PixelEngine::clamp255(T val) {
 }
 
 
-/// ∏√∑Ω∑®÷∆◊˜Style‰÷»æ£¨±ÿ–Î±£÷§style «’˝»∑µƒ°£
+/// ¬∏√É¬∑¬Ω¬∑¬®√ñ√Ü√ó√∑Style√§√ñ√à¬æ¬£¬¨¬±√ò√ê√´¬±¬£√ñ¬§style√ä√á√ï√Ω√à¬∑¬µ√Ñ¬°¬£
 bool PixelEngine::innerRenderTileDataByPeStyle(PeTileData& tileData, PeStyle& style, vector<unsigned char>& retPngBinary, string& error) {
 	if (tileData.tiledata.size() == 0) {
 		if(! PixelEngine::quietMode)cout << "Error : innerRenderTileDataByPeStyle tileData is empty." << endl;
@@ -4069,11 +4130,11 @@ bool PixelEngine::innerRGBAData2Png(vector<unsigned char>& rgbaData, int width, 
 	unsigned error = lodepng::encode(retPngBinary, rgbaData, width, height, state);
 
 	unsigned long now3 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	printf("encode png:%d ms \n", now3 - now2);//1024*1024 use 340millisec
+	printf("encode png:%d ms \n", (int)(now3 - now2) );//1024*1024 use 340millisec
 	return true;
 }
 
-//’Î∂‘exact£¨discrete£¨linear»˝∏ˆ¿‡–Õ
+//√ï√´¬∂√îexact¬£¬¨discrete¬£¬¨linear√à√Ω¬∏√∂√Ä√†√ê√ç
 template<typename T>
 bool PixelEngine::innerData2RGBAByPeStyle(T* dataPtr, int width,int height,int nbands, PeStyle& style, vector<unsigned char>& retRGBAData, string& retLogStr) {
 	int dataLen = width * height;
@@ -4107,7 +4168,7 @@ bool PixelEngine::innerData2RGBAByPeStyle(T* dataPtr, int width,int height,int n
 	}
 }
 
-//’Î∂‘gray,rgb,rgba»˝∏ˆ‰÷»æ¿‡–Õ
+//√ï√´¬∂√îgray,rgb,rgba√à√Ω¬∏√∂√§√ñ√à¬æ√Ä√†√ê√ç
 template<typename T>
 bool PixelEngine::innerData2RGBAByPeStyle2(T* dataPtr, int width, int height, int nbands, PeStyle& style, vector<unsigned char>& retRGBAData, string& retLogStr) {
 	int dataLen = width * height;
@@ -4304,7 +4365,7 @@ PixelEngine::~PixelEngine()
 	
 }
 
-//÷ª–Ë“™µ˜”√“ª¥Œ
+//√ñ¬ª√ê√®√í¬™¬µ√∑√ì√É√í¬ª¬¥√é
 void PixelEngine::initV8() 
 {
 	// Initialize V8.

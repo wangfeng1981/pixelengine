@@ -8,9 +8,14 @@
 #include "PixelEngine.h"
 #include <random>
 #include "../JavaPixelEngineHelperInterface.h"
+#include "../wDatasetDatetime.h"
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "../ajson5.h"
 
 using namespace std;
-
+using namespace ArduinoJson;
 
 
 
@@ -26,14 +31,58 @@ jstring cstring2jstring(JNIEnv *env,
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    ParseScriptForDsDt
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
+{
+	"dsdtarr":[] ,
+	"error":"",
+	"status":0   //0 for good, 1 for error	
+}
+
  */
 JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ParseScriptForDsDt
   (JNIEnv * env, jobject object , jstring scriptContent ) 
 {
-	
+	printf("in Java_com_pixelengine_HBasePeHelperCppConnector_ParseScriptForDsDt()\n") ;
+	auto console_logger = spdlog::stdout_color_mt("log");
+	spdlog::set_default_logger(console_logger);
 
+	JavaPixelEngineHelperInterface helper ; 
+	helper.env = env;
 
-	return cstring2jstring( env, "{}" ) ;
+	PixelEngine::initV8() ;
+	PixelEngine pe ;
+	pe.helperPointer = &helper ;
+
+	string cscriptContent = JavaPixelEngineHelperInterface::jstring2cstring(env,scriptContent) ;
+
+	vector<wDatasetDatetime> retdsdtvec;
+	string errorText;
+	bool ok = pe.RunScriptForDatasetDatetimePairs( nullptr ,
+		cscriptContent,
+		retdsdtvec ,
+		errorText) ;
+	DynamicJsonBuffer jsonBuffer;
+	JsonObject& root = jsonBuffer.createObject();
+	if( ok ){
+		root["status"] = 0 ;//ok
+		root["error"] = "" ;
+		JsonArray& dsdtarr = root.createNestedArray("dsdtarr") ;
+		for(int ids = 0 ; ids < retdsdtvec.size(); ++ ids ){
+			JsonObject& dobj = dsdtarr.createNestedObject() ;
+			dobj["ds"] = retdsdtvec[ids].ds ;
+			dobj["dt0"] = retdsdtvec[ids].dt0 ;
+			dobj["dt1"] = retdsdtvec[ids].dt1 ;
+		}
+	}else{
+		root["status"] = 1 ; 
+		root["error"] = errorText ;
+		//root["dsdtarr"]
+		root.createNestedArray("dsdtarr") ;
+	}
+
+	string jsonstr ;
+	root.printTo(jsonstr) ;
+	jstring jstr = JavaPixelEngineHelperInterface::cstring2jstring(env, jsonstr.c_str() ) ;
+	return jstr ;
 }
 
 /*

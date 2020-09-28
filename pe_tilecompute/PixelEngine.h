@@ -25,10 +25,15 @@
 #include "PeTileData.h"
 #include "./sqlite_interface/webservice/wstringutil.h"
 #include "./sqlite_interface/webservice/wTextfilereader.h"
+#include "wDatasetDatetime.h"
+#include "wAST.h"
+
+
 
 using namespace v8;
 using namespace std;
 
+using pe::wAST;
 
 struct PixelEngineColorRamp;
 using pe::PeStyle;
@@ -36,10 +41,10 @@ using pe::PeTileData;
 
 //PixelEngineHelperInterface
 struct PixelEngineHelperInterface {
-	//通过pid获取瓦片数据
+	//脥篓鹿媒pid禄帽脠隆脥脽脝卢脢媒戮脻
 	//virtual bool getTileDataByPid(string& tbname,string& fami,long dt,int pid,vector<int> bandindices,int z,int y,int x,vector<unsigned char> retTileData,string& errorText);
 
-	//通过pdtname获取瓦片数据
+	//脥篓鹿媒pdtname禄帽脠隆脥脽脝卢脢媒戮脻
 	virtual bool getTileData(int64_t dt, string& dsName, vector<int> bandindices,
 		int z, int y, int x, vector<unsigned char>& retTileData, 
 		int& dataType,
@@ -48,7 +53,7 @@ struct PixelEngineHelperInterface {
 		int& nbands,
 		string& errorText)=0;
 
-	//获取时间段瓦片数据
+	//禄帽脠隆脢卤录盲露脦脥脽脝卢脢媒戮脻
 	virtual bool getTileDataArray( 
 		int64_t fromdtInclusive, int64_t todtInclusive,
 		string& dsName, vector<int> bandindices, int z, int y, int x,
@@ -62,13 +67,13 @@ struct PixelEngineHelperInterface {
 		int& nbands,
 		string& errorText)=0;
 
-	//获得颜色列表
+	//禄帽碌脙脩脮脡芦脕脨卤铆
 	virtual bool getColorRamp(string& crid , PixelEngineColorRamp& crobj , string& errorText)=0;
 
 	//get render style by id from system
 	virtual bool getStyle(string& styleid, PeStyle& retStyle, string& errorText) =0;
 
-	//保存瓦片数据到存储设备(这个接口不应该放在PixelEngineHelper里面 2020-9-24)
+	//卤拢麓忙脥脽脝卢脢媒戮脻碌陆麓忙麓垄脡猫卤赂(脮芒赂枚陆脫驴脷虏禄脫娄赂脙路脜脭脷PixelEngineHelper脌茂脙忙 2020-9-24)
 	//virtual bool writeTileData(string& tb,string& fami,int64_t col,int pid,int z,int y,int x, PeTileData& tileData) = 0;
 
 };
@@ -285,26 +290,29 @@ struct PixelEngine
 	PixelEngine() ;//one
 	~PixelEngine() ;//three
 
-	/// 老版本瓦片计算，为了保证以前业务可用保留，后续开发不再调用
+	/// 脌脧掳忙卤戮脥脽脝卢录脝脣茫拢卢脦陋脕脣卤拢脰陇脪脭脟掳脪碌脦帽驴脡脫脙卤拢脕么拢卢潞贸脨酶驴陋路垄虏禄脭脵碌梅脫脙
 	bool RunScriptForTile(void* extra,string& jsSource,long dt,int z,int y,int x, vector<unsigned char>& retbinary) ;
 
-	/// 老版本瓦片计算，为了保证以前业务可用保留，后续开发不再调用
+	/// 脌脧掳忙卤戮脥脽脝卢录脝脣茫拢卢脦陋脕脣卤拢脰陇脪脭脟掳脪碌脦帽驴脡脫脙卤拢脕么拢卢潞贸脨酶驴陋路垄虏禄脭脵碌梅脫脙
 	bool RunScriptForComputeOnce(void* extra, string& jsSource,long currentdt
                                             ,int z,int y,int x, string& retJsonStr ) ;
 
-	/// 检查脚本是否有语法错误
+	/// 录矛虏茅陆脜卤戮脢脟路帽脫脨脫茂路篓麓铆脦贸
 	string CheckScriptOk(string& scriptSource) ;
-	//2020-9-13 get style from script 从脚本获取PeStyle对象
+	//2020-9-13 get style from script 麓脫陆脜卤戮禄帽脠隆PeStyle露脭脧贸
 	bool RunToGetStyleFromScript(string& scriptContent, PeStyle& retstyle, string& retLogText);
 	//2020-9-13
-	//运行脚本保留数据，不渲染
+	//脭脣脨脨陆脜卤戮卤拢脕么脢媒戮脻拢卢虏禄盲脰脠戮
 	bool RunScriptForTileWithoutRender(void* extra, string& scriptContent, int64_t currentDatetime,
 		int z, int y, int x, PeTileData& tileData , string& logStr);
-	//运行脚本并渲染png图片，PeStyle从外部传入
+	//脭脣脨脨陆脜卤戮虏垄盲脰脠戮png脥录脝卢拢卢PeStyle麓脫脥芒虏驴麓芦脠毛
 	bool RunScriptForTileWithRender(void* extra, string& scriptContent, PeStyle& inStyle, int64_t currentDatetime,
 		int z, int y, int x, vector<unsigned char>& retPngBinary, string& logStr);//
-	//使用esprima解析脚本生成AST json对象 2020-9-19
+	//脢鹿脫脙esprima陆芒脦枚陆脜卤戮脡煤鲁脡AST json露脭脧贸 2020-9-19
 	bool RunScriptForAST(void* extra, string& scriptContent, string& retJsonStr, string& errorText);
+	//瑙ｆ瀽Dataset-Datetime 鏁版嵁闆嗘椂闂存棩鏈熷
+	bool RunScriptForDatasetDatetimePairs(void* extra,
+		string& scriptContent,vector<wDatasetDatetime>& retDsDtVec,string& errorText);
 
 
 
