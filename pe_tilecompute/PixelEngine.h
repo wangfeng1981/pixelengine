@@ -23,8 +23,8 @@
 #include  <algorithm>
 #include "PeStyle.h"
 #include "PeTileData.h"
-#include "./sqlite_interface/webservice/wstringutil.h"
-#include "./sqlite_interface/webservice/wTextfilereader.h"
+#include "wstringutil.h"
+#include "wTextfilereader.h"
 #include "wDatasetDatetime.h"
 #include "wAST.h"
 
