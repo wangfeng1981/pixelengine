@@ -290,6 +290,10 @@ struct PixelEngine
 	PixelEngine() ;//one
 	~PixelEngine() ;//three
 
+
+	////////////////////////////////////////////////////////////////////////////
+	/// below methods would be called by outsider
+
 	/// ÀÏ°æ±¾ÍßÆ¬¼ÆËã£¬ÎªÁË±£Ö¤ÒÔÇ°ÒµÎñ¿ÉÓÃ±£Áô£¬ºóÐø¿ª·¢²»ÔÙµ÷ÓÃ
 	bool RunScriptForTile(void* extra,string& jsSource,long dt,int z,int y,int x, vector<unsigned char>& retbinary) ;
 
@@ -299,6 +303,7 @@ struct PixelEngine
 
 	/// ¼ì²é½Å±¾ÊÇ·ñÓÐÓï·¨´íÎó
 	string CheckScriptOk(string& scriptSource) ;
+	inline string GetVersion() { return PixelEngine::pejs_version; }
 	//2020-9-13 get style from script ´Ó½Å±¾»ñÈ¡PeStyle¶ÔÏó
 	bool RunToGetStyleFromScript(string& scriptContent, PeStyle& retstyle, string& retLogText);
 	//2020-9-13
@@ -307,12 +312,16 @@ struct PixelEngine
 		int z, int y, int x, PeTileData& tileData , string& logStr);
 	//ÔËÐÐ½Å±¾²¢äÖÈ¾pngÍ¼Æ¬£¬PeStyle´ÓÍâ²¿´«Èë
 	bool RunScriptForTileWithRender(void* extra, string& scriptContent, PeStyle& inStyle, int64_t currentDatetime,
-		int z, int y, int x, vector<unsigned char>& retPngBinary, string& logStr);//
+		int z, int y, int x, vector<unsigned char>& retPngBinary, int& pngwid,int& pnghei, string& logStr);//
 	//Ê¹ÓÃesprima½âÎö½Å±¾Éú³ÉAST json¶ÔÏó 2020-9-19
 	bool RunScriptForAST(void* extra, string& scriptContent, string& retJsonStr, string& errorText);
 	//解析Dataset-Datetime 数据集时间日期对
 	bool RunScriptForDatasetDatetimePairs(void* extra,
 		string& scriptContent,vector<wDatasetDatetime>& retDsDtVec,string& errorText);
+
+
+	///
+	////////////////////////////////////////////////////////////////////////////////
 
 
 

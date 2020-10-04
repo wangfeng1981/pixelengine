@@ -1,6 +1,12 @@
 #include "JavaPixelEngineHelperInterface.h"
 
 
+JavaPixelEngineHelperInterface::JavaPixelEngineHelperInterface(JNIEnv* env0,string javaHelperClassName):env(env0)
+	,javaPixelEngineHelperClassName(javaHelperClassName)
+{
+
+}
+
 bool JavaPixelEngineHelperInterface::getTileData(int64_t dt, string& dsName, vector<int> bandindices,
 	int z, int y, int x, vector<unsigned char>& retTileData, 
 	int& dataType,
@@ -8,7 +14,7 @@ bool JavaPixelEngineHelperInterface::getTileData(int64_t dt, string& dsName, vec
 	int& hei,
 	int& nbands,
 	string& errorText)
-{
+{ 
 	cout<<"JavaPixelEngineHelperInterface::getTileData"<<endl;
 	JNIEnv *env = this->env	 ;
 	if( env==0 ){
@@ -593,5 +599,52 @@ bool JavaPixelEngineHelperInterface::unwrapRangeElement(jobject obj,pe::PeVRange
 {
 	this->getJavaObjectDoubleField(obj,"minval",retval.minval) ;
 	this->getJavaObjectDoubleField(obj,"maxval",retval.maxval) ;
+	return true;
+}
+
+
+bool JavaPixelEngineHelperInterface::setJavaObjectIntField(jobject obj,const char* fieldname,int val)
+{
+	cout<<"debug in cpp setJavaObjectIntField "<<endl;
+	JNIEnv *env = this->env	 ;
+	jclass someClass = env->GetObjectClass(obj);
+	jfieldID fid = env->GetFieldID( someClass, fieldname, "I");
+	if (NULL == fid) {
+			cout<<"Error : failed to get field "<<fieldname<< " from java object."<<endl;
+			return false;
+	}
+
+	env->SetIntField(obj,fid, (jint)val) ;
+	return true;
+}
+bool JavaPixelEngineHelperInterface::setJavaObjectStringField(jobject obj,const char* fieldname,const char* val)
+{
+	cout<<"debug in cpp setJavaObjectStringField "<<endl;
+	JNIEnv *env = this->env	 ;
+	jclass someClass = env->GetObjectClass(obj);
+	jfieldID fid = env->GetFieldID( someClass, fieldname, "Ljava/lang/String;");
+	if (NULL == fid) {
+			cout<<"Error : failed to get field "<<fieldname<< " from java object."<<endl;
+			return false;
+	}
+	jstring jstr = JavaPixelEngineHelperInterface::cstring2jstring(env,val) ;
+	env->SetObjectField(obj,fid, (jobject)jstr) ;
+	return true;
+}
+bool JavaPixelEngineHelperInterface::setJavaObjectByteArrField(jobject obj,const char* fieldname,vector<unsigned char>& val)
+{
+	cout<<"debug in cpp setJavaObjectByteArrField "<<endl;
+	JNIEnv *env = this->env	 ;
+	jclass someClass = env->GetObjectClass(obj);
+	jfieldID fid = env->GetFieldID( someClass, fieldname, "[B");
+	if (NULL == fid) {
+			cout<<"Error : failed to get field "<<fieldname<< " from java object."<<endl;
+			return false;
+	}
+
+	jbyteArray jarr = env->NewByteArray(val.size());
+	const signed char* sptr = (signed char*)val.data();
+	env->SetByteArrayRegion(jarr ,0, val.size() , sptr );
+	env->SetObjectField( obj, fid, jarr ) ;
 	return true;
 }

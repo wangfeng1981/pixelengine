@@ -10,20 +10,58 @@ extern "C" {
 /*
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    ParseScriptForDsDt
- * Signature: (Ljava/lang/String;)Ljava/lang/String;
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ParseScriptForDsDt
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jstring, jstring);
 
 /*
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    RunScriptForTileWithoutRender
- * Signature: (Ljava/lang/String;JIII)Lcom/pixelengine/TileComputeResult;
+ * Signature: (Ljava/lang/String;Ljava/lang/String;JIII)Lcom/pixelengine/TileComputeResult;
  */
 JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRender
-  (JNIEnv *, jobject, jstring, jlong, jint, jint, jint);
+  (JNIEnv *, jobject, jstring, jstring, jlong, jint, jint, jint);
+
+
+/*
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RunScriptForTileWithRender
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JIII)Lcom/pixelengine/TileComputeResult;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithRender
+  (JNIEnv *, jobject, jstring, jstring, jstring, jlong, jint, jint, jint);
+
+/*
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    CheckScriptOk
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_CheckScriptOk
+  (JNIEnv *, jobject, jstring, jstring);
+
+/*
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    GetVersion
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_GetVersion
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RunToGetStyleFromScript
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunToGetStyleFromScript
+  (JNIEnv *, jobject, jstring, jstring);
+  
 
 #ifdef __cplusplus
 }
 #endif
 #endif
+
+ 
+
+

@@ -7,6 +7,10 @@
 #include "PeStyle.h"
 #include "PixelEngine.h"
 
+/// 这个类用于实例化一个对象与java中的PixelEngineHelperClassName相互对应，
+/// 用于从java请求遥感瓦片数据和原信息。
+/// 这个类是用在C++里，c++主动调用Java中对应的Helper对象。
+
 using std::string;
 using std::cout;
 using std::endl;
@@ -16,7 +20,9 @@ struct JavaPixelEngineHelperInterface : PixelEngineHelperInterface
 {
 public:
  	JNIEnv * env;
- 	inline JavaPixelEngineHelperInterface():env(0){}
+ 	string javaPixelEngineHelperClassName ;//should not be empty.
+
+ 	JavaPixelEngineHelperInterface(JNIEnv* env0,string javaHelperClassName);
 
 	virtual bool getTileData(int64_t dt, string& dsName, vector<int> bandindices,
 		int z, int y, int x, vector<unsigned char>& retTileData, 
@@ -84,6 +90,11 @@ private:
 public :
 	static std::string jstring2cstring(JNIEnv *env,jstring jStr);
 	static jstring cstring2jstring(JNIEnv *env,	const char* str);
+
+	bool setJavaObjectIntField(jobject obj,const char* fieldname,int val);
+	bool setJavaObjectStringField(jobject obj,const char* fieldname,const char* val);
+	bool setJavaObjectByteArrField(jobject obj,const char* fieldname,vector<unsigned char>& val);
+
 } ;
 
 

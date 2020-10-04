@@ -15,7 +15,7 @@ PixelEngine_GetColorRampFromExternal_FunctionPointer PixelEngine::GetExternalCol
 std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
 //string PixelEngine::pejs_version = string("2.2") ;
-string PixelEngine::pejs_version = string("2.3"); //2020-9-13
+string PixelEngine::pejs_version = string("2.4 2020-10-1"); //2020-9-13
 
 
 //// mapreduce not used yet.
@@ -3648,27 +3648,34 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 }
 //ÔËÐÐ½Å±¾²¢äÖÈ¾pngÍ¼Æ¬
 bool PixelEngine::RunScriptForTileWithRender(void* extra, string& scriptContent,PeStyle& inStyle, int64_t currentDatetime,
-	int z, int y, int x, vector<unsigned char>& retPngBinary, string& logStr) {
+	int z, int y, int x, vector<unsigned char>& retPngBinary, int& pngwid,int& pnghei, string& logStr) {
 
 	if(! PixelEngine::quietMode)cout << "in PixelEngine::RunScriptForTileWithRender" << endl;
-	PeTileData retTileData;
+
+	PeTileData retTileData0 ;
 	string retLogText;
 	bool tiledataok = this->RunScriptForTileWithoutRender(extra, scriptContent, currentDateTime, z, y, x,
-		retTileData, logStr);
+		retTileData0, logStr);
+
 	if (tiledataok) {
 		//do render staff
+		pngwid = retTileData0.width;
+		pnghei = retTileData0.height;
+
 		if (inStyle.type == "") {
 			//do not use style
 			if(! PixelEngine::quietMode)cout << "Info : a empty inStyle, so do not use input style." << endl;
 			string renderError;
-			bool renderok = innerRenderTileDataWithoutStyle(retTileData, retPngBinary, renderError);
+			bool renderok = innerRenderTileDataWithoutStyle(retTileData0, retPngBinary , renderError);
+			logStr += renderError;
 			return renderok;
 		}
 		else {
 			//use input style
 			if(! PixelEngine::quietMode)cout << "Info : use input style" << endl;
 			string renderError;
-			bool renderok = this->innerRenderTileDataByPeStyle(retTileData, inStyle,  retPngBinary, renderError);
+			bool renderok = this->innerRenderTileDataByPeStyle(retTileData0, inStyle,  retPngBinary, renderError);
+			logStr += renderError;
 			return renderok;
 		}
 		return true;
