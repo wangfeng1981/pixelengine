@@ -4164,22 +4164,6 @@ bool PixelEngine::innerData2RGBAByPeStyle(T* dataPtr, int width,int height,int n
 				retRGBAData[it1 + 1],
 				retRGBAData[it1 + 2],
 				retRGBAData[it1 + 3]);
-			//debug 2020-10-11
-			static int debug_val0 = -99999;
-			if( debug_val0 != newDataPtr[it] )
-			{
-				debug_val0 = newDataPtr[it];
-				printf("debug for style color, val:%d r:%d g:%d b:%d a:%d \n",
-				newDataPtr[it] , 
-				retRGBAData[it1],
-				retRGBAData[it1 + 1],
-				retRGBAData[it1 + 2],
-				retRGBAData[it1 + 3]
-				) ;
-			}
-
-
-			//debug end
 		}
 		return true;
 	}
