@@ -15,7 +15,7 @@ PixelEngine_GetColorRampFromExternal_FunctionPointer PixelEngine::GetExternalCol
 std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
 //string PixelEngine::pejs_version = string("2.2") ;
-string PixelEngine::pejs_version = string("2.4 2020-10-1"); //2020-9-13
+string PixelEngine::pejs_version = string("2.4.1.1 2020-10-11"); //2020-9-13
 
 
 //// mapreduce not used yet.
@@ -4164,6 +4164,22 @@ bool PixelEngine::innerData2RGBAByPeStyle(T* dataPtr, int width,int height,int n
 				retRGBAData[it1 + 1],
 				retRGBAData[it1 + 2],
 				retRGBAData[it1 + 3]);
+			//debug 2020-10-11
+			static int debug_val0 = -99999;
+			if( debug_val0 != newDataPtr[it] )
+			{
+				debug_val0 = newDataPtr[it];
+				printf("debug for style color, val:%d r:%d g:%d b:%d a:%d \n",
+				newDataPtr[it] , 
+				retRGBAData[it1],
+				retRGBAData[it1 + 1],
+				retRGBAData[it1 + 2],
+				retRGBAData[it1 + 3]
+				) ;
+			}
+
+
+			//debug end
 		}
 		return true;
 	}

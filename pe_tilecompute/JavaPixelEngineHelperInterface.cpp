@@ -15,7 +15,7 @@ bool JavaPixelEngineHelperInterface::getTileData(int64_t dt, string& dsName, vec
 	int& nbands,
 	string& errorText)
 { 
-	cout<<"JavaPixelEngineHelperInterface::getTileData"<<endl;
+	cout<<"in c++ JavaPixelEngineHelperInterface::getTileData"<<endl;
 	JNIEnv *env = this->env	 ;
 	if( env==0 ){
 		cout<<"Error : JavaPixelEngineHelperInterface::getTileData env is null"<<endl ;
@@ -75,6 +75,15 @@ bool JavaPixelEngineHelperInterface::getTileData(int64_t dt, string& dsName, vec
 	cout<<"w,h,nb,nds,dt:"<<wid<<","<<hei<<","<<nbands<<","<<numds<<","<<dataType<<endl;
 	cout<<"z,y,x:"<<z<<","<<y<<","<<x<<endl ;
 	cout<<"data[1]:"<<(int)dataVecOfVec[0][1]<<endl ;
+
+	//2020-10-11 没有吧java数据写入返回数据的vector中
+	int onebandbytesize = (int)dataVecOfVec[0].size() ;
+	retTileData.resize( nbands * onebandbytesize ) ;
+	for(int iband=0;iband<nbands;++iband)
+	{
+		unsigned char* destptr = retTileData.data() + iband * onebandbytesize;
+		memcpy(destptr , dataVecOfVec[iband].data() , onebandbytesize ) ;
+	}
 
 	env->DeleteLocalRef(javaHelperObject);
     env->DeleteLocalRef(javaHelperClass);
