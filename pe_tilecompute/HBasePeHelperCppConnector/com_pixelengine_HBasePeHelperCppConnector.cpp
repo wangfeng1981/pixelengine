@@ -41,7 +41,7 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_GetVers
   (JNIEnv * env, jobject object)
 {
 	PixelEngine pe;
-	string ver  = string("connector_version:0.1")+";core_version:" + pe.GetVersion() ;
+	string ver  = string("connector_version:0.1.1")+";core_version:" + pe.GetVersion() ;
 	return JavaPixelEngineHelperInterface::cstring2jstring(env, ver.c_str()) ;
 }
 
@@ -295,6 +295,7 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_CheckSc
 		return JavaPixelEngineHelperInterface::cstring2jstring( env , "Error: source is empty." ) ;
 	}else
 	{
+		PixelEngine::initV8() ;
 		PixelEngine pe ;
 		string errorinfo = pe.CheckScriptOk(jsSource) ;
 		return JavaPixelEngineHelperInterface::cstring2jstring( env , errorinfo.c_str() ) ;
