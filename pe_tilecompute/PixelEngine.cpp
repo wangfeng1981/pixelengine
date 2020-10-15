@@ -15,7 +15,8 @@ PixelEngine_GetColorRampFromExternal_FunctionPointer PixelEngine::GetExternalCol
 std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
 //string PixelEngine::pejs_version = string("2.2") ;
-string PixelEngine::pejs_version = string("2.4.1.1 2020-10-11"); //2020-9-13
+//string PixelEngine::pejs_version = string("2.4.1.1 2020-10-11"); //2020-9-13
+string PixelEngine::pejs_version = string("2.4.2.0 2020-10-15");
 
 
 //// mapreduce not used yet.
@@ -4387,5 +4388,142 @@ void PixelEngine::initV8()
 		v8::V8::InitializePlatform(v8Platform.get());
 		v8::V8::Initialize();
 	}
+
+}
+
+//将V8 MaybeLocal<Value>转换为double
+bool PixelEngine::convertV8MaybeLocalValue2Double(MaybeLocal<Value>& maybeVal,
+			double& retval)
+{
+	if( maybeVal.IsEmpty() == false )
+	{
+		Local<Number> localNum ;
+		if( maybeVal.ToLocal(&localNum) )
+		{
+			retval = localNum->Value() ;
+			return true ;
+		}else
+		{
+			return false;
+		}
+	}else
+	{
+		return false;
+	}
+}
+
+
+/// unwrap js multipolygon object into c++ object.
+bool PixelEngine::unwarpMultiPolygon(Isolate* isolate,Local<Value>& jsMulPoly,
+			PeMultiPolygon& retMPoly )
+{
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	if( jsMulPoly->isArray() )
+	{
+		v8::Array* array0 = v8::Array::Cast( * jsMulPoly ) ;
+		
+		retMPoly.polys.resize( array0.Length() ) ;
+
+		for(int i0 =0 ; i0 < array0.Length() ; ++ i0 )
+		{
+			MaybeLocal<Value> poly1maybe = array0->Get( context, i0) ;
+			Local<Array> poly1array;
+			if( poly1maybe.ToLocal(&poly1array) )
+			{
+				int len1 = poly1array->Length() ;
+				if(! PixelEngine::quietMode)cout<<"Info : item-"<<i0<<" point count:"<<len1 <<endl;
+				retMPoly.polys[i0].resize( (size_t)len1 ) ;
+				for(int ipt = 0 ; ipt < len1; ++ ipt )
+				{
+					MaybeLocal<Value> arr2maybe = poly1array->Get(context,ipt) ;
+					Local<Array> arr2local;
+					if( arr2maybe.ToLocal(&arr2local) )
+					{
+						if( arr2local->Length() >= 2 )
+						{
+							MaybeLocal<Value> maybe0 = arr2local->Get(context,0);
+							MaybeLocal<Value> maybe1 = arr2local->Get(context,1);
+							if( convertV8MaybeLocalValue2Double( maybe0, retMPoly.polys[i0][ipt].v0 )==false )
+							{
+								if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<"-"<<ipt<<" in jsMulPoly [0] is not a number"<<endl; 
+								return false ;
+							}
+							if( convertV8MaybeLocalValue2Double( maybe1, retMPoly.polys[i0][ipt].v1 )==false )
+							{
+								if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<"-"<<ipt<<" in jsMulPoly [1] is not a number"<<endl; 
+								return false ;
+							}
+							cout<<"debug good pt:"<<retMPoly.polys[i0][ipt].v0
+								<<","<<retMPoly.polys[i0][ipt].v1<<endl;
+						}else{
+							if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<"-"<<ipt<<" in jsMulPoly length lower than 2"<<endl; 
+							return false ;
+						}
+					}else
+					{
+						if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<"-"<<ipt<<" in jsMulPoly is not a Array"<<endl; 
+						return false ;
+					}
+				}
+			}else
+			{
+				if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<" in jsMulPoly is not a Array"<<endl; 
+				return false ;
+			}
+		}
+
+		return true;
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error : jsMulPoly is not Array"<<endl; 
+		return false;
+	}
+}
+
+//pixelengine.roi(multiPoly, zlevel, proj) 通过MultiPolygon对象生产ROI对象
+void PixelEngine::GlobalFunc_RoiCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+{
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_RoiCallBack"<<endl; 
+	if (args.Length() < 2 ){
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length < 2 "<<endl ;
+		return;
+	}
+	PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> multiPoly = args[0];
+	PeMultiPolygon retMPoly;
+	bool polyok = unwarpMultiPolygon(isolate, multiPoly ,retMPoly );
+	if( polyok==false )
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: failed unwrap multipolygon. "<<endl ;
+		return ;
+	}
+
+	int zlevel = args[1]->ToInteger(context).ToLocalChecked()->Value() ;
+
+	string proj = "EPSG:4326";
+	if( args.Length() > 2)
+	{
+		proj = PixelEngine::convertV8LocalValue2CppString(isolate, args[2] );
+	}
+
+	PeRoi roi ;
+	roi.zlevel = zlevel;
+	roi.proj = proj;
+	roi.buildRoiByMulPolys( retMPoly , zlevel) ;
+
+
+}
+
+
+//dataset.clip() 瓦片数据集裁剪，返回新的瓦片数据集
+void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+{
 
 }

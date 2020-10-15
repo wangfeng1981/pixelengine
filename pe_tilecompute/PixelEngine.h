@@ -27,6 +27,8 @@
 #include "wTextfilereader.h"
 #include "wDatasetDatetime.h"
 #include "wAST.h"
+#include "pemultipolygon.h"//2020-10-15
+#include "peroi.h"
 
 
 
@@ -224,6 +226,8 @@ struct PixelEngine
 	static void GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 	//2020-9-13
 	static void GlobalFunc_GetStyleCallBack(const v8::FunctionCallbackInfo<v8::Value>& args);
+	//pixelengine.roi()
+	static void GlobalFunc_RoiCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 
 
 	//Dataset methods:
@@ -233,6 +237,8 @@ struct PixelEngine
 	static void GlobalFunc_FillRangeCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 	static void GlobalFunc_RenderRGBCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 	static void GlobalFunc_ColorRampCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+	//dataset.clip()
+	static void GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 
 	//global methods:
 	static void GlobalFunc_Log(const v8::FunctionCallbackInfo<v8::Value>& args) ;
@@ -283,6 +289,7 @@ struct PixelEngine
 	void* extraPointer ;//do not release.
 	string pe_logs ;//max length 1k bytes.
 	PixelEngineMapReduceContainer mapredContainer ;//not used yet,20200722
+	vector<PeRoi> roiVector ;
 
 
 	Global<Value> GlobalFunc_ForEachPixelCallBack ;//not static, need Reset
@@ -334,10 +341,25 @@ struct PixelEngine
 	//2020-9-12
 	PixelEngineHelperInterface* helperPointer;
 
+
+	////////////////////////// STATIC tools methods.
 	//2020-9-13
 	static PixelEngine* getPixelEnginePointer(const v8::FunctionCallbackInfo<v8::Value>& args);
 	static string convertV8LocalValue2CppString(Isolate* isolate, Local<Value>& v8value);
 	static Local<Value> warpCppStyle2V8Object(Isolate* isolate, PeStyle& style);
+
+	//private static tool methods
+	private:
+		static bool unwarpMultiPolygon(Isolate* isolate,Local<Value>& jsMulPoly,
+			PeMultiPolygon& retMPoly );
+		static bool convertV8MaybeLocalValue2Double(MaybeLocal<Value>& maybeVal,
+			double& retval);
+
+
+
+
+
+
 
 	//2020-9-19
 	static bool quietMode;
@@ -361,6 +383,8 @@ struct PixelEngine
 		bool innerV8Dataset2TileData(Isolate* isolate, Local<Context>& context, Local<Value>& v8dsValue, PeTileData& retTileData, string& error);
 		template<typename T>
 		static unsigned char clamp255(T val);
+
+	
 } ;
 
 
