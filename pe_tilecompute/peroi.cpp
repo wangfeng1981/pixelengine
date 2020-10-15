@@ -137,6 +137,10 @@ bool PeRoi::buildRoiByMulPolys( PeMultiPolygon& mpoly,int z)
 		}//end if
 		cout<<"debug hsegs.size:"<<hsegs.size()<<endl ;
 	}//end each poly
+
+	//need sort all by y
+	//here
+
 	return true;
 }
 

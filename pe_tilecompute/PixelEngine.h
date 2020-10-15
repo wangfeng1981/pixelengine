@@ -354,6 +354,7 @@ struct PixelEngine
 			PeMultiPolygon& retMPoly );
 		static bool convertV8MaybeLocalValue2Double(MaybeLocal<Value>& maybeVal,
 			double& retval);
+		static bool convertV8LocalValue2Int(Local<Value>& v8Val,int& retval) ;
 
 
 
@@ -383,6 +384,13 @@ struct PixelEngine
 		bool innerV8Dataset2TileData(Isolate* isolate, Local<Context>& context, Local<Value>& v8dsValue, PeTileData& retTileData, string& error);
 		template<typename T>
 		static unsigned char clamp255(T val);
+
+		bool innerTileOutsideRoi(PeRoi& roi,int tilez,int tiley,int tilex,
+			int wid,int hei);
+
+		template<typename T>
+		bool innerCopyRoiData(T* source,T* target,PeRoi& roi,int fillval,
+			int tilez,int tiley,int tilex,int wid,int hei,int nbands) ;
 
 	
 } ;

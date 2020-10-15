@@ -1067,6 +1067,14 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 			,String::NewFromUtf8(isolate, "tiledata").ToLocalChecked()
 			,u8array ) ;
 	}
+
+	//dataset.clip() 2020-10-16
+	Maybe<bool> ok20 = ds->Set(context
+		,String::NewFromUtf8(isolate, "clip").ToLocalChecked(),
+           FunctionTemplate::New(isolate,
+           	PixelEngine::GlobalFunc_ClipCallBack)->GetFunction(context).ToLocalChecked() );
+
+
 	return handle_scope.Escape(ds);
 }
 
@@ -2919,6 +2927,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 		,String::NewFromUtf8(isolate, "log").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_Log)->GetFunction(context).ToLocalChecked() );
 
+
 	//set globalFunc_forEachPixelCallBack in javascript
 	string sourceforEachPixelFunction = R"(
 		const PixelEngine=PixelEngineObject;
@@ -3157,6 +3166,12 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 		,String::NewFromUtf8(isolate, "globalFunc_ColorRampCallBack").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_ColorRampCallBack)->GetFunction(context).ToLocalChecked() );
 
+
+	//pe.roi() 2020-10-16
+	Maybe<bool> ok23 = pe->Set(context
+		,String::NewFromUtf8(isolate, "roi").ToLocalChecked(),
+           FunctionTemplate::New(isolate,
+           	PixelEngine::GlobalFunc_RoiCallBack)->GetFunction(context).ToLocalChecked() );
 
 	// //global function globalFunc_renderGrayCallBack
 	// global->Set(context
@@ -4516,14 +4531,338 @@ void PixelEngine::GlobalFunc_RoiCallBack(const v8::FunctionCallbackInfo<v8::Valu
 	PeRoi roi ;
 	roi.zlevel = zlevel;
 	roi.proj = proj;
-	roi.buildRoiByMulPolys( retMPoly , zlevel) ;
+	thisPePtr->roiVector.push_back(roi) ;
+	int roiIndex = thisPePtr->roiVector.size()-1;
+	thisPePtr->roiVector[roiIndex].buildRoiByMulPolys(retMPoly,zlevel);
+	cout<<"debug roiindex:"<<roiindex<<endl;
+
+	Local<Object> roiobj=Object::New(isolate);
+	roiobj->Set(context, 
+		String::NewFromUtf8(isolate,"roiindex").ToLocalChecked(),
+		Integer::New(isolate,roiIndex)
+		);
+
+	/// return {roiindex:roiindex} object
+	args.GetReturnValue().Set(roiobj) ;
+}
+
+
+bool PixelEngine::convertV8LocalValue2Int(Local<Value>& v8Val,int& retval) 
+{
+	if( v8val->IsNumber() ){
+		Integer* ptr = Integer::Cast(*v8Val) ;
+		retval =(int) ptr->Value() ;
+		return true;
+	}else
+	{
+		return false;
+	}
+}
+
+
+//dataset.clip() 瓦片数据集裁剪，返回新的瓦片数据集
+/// dataset.clip(roi,filldata); if all pixel outside roi return null;
+void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+{
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_ClipCallBack"<<endl; 
+	if (args.Length() != 2 ){
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 2 "<<endl ;
+		return;
+	}
+	PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> roiValue = args[0];
+	Local<Value> fillValue = args[1] ;
+
+	MaybeLocal<Object> maybeobj = roiValue->ToObject(context);
+	Local<Object> lclobj;
+	if( maybeobj.ToLoca(&lclobj) == false ){
+		cout<<"Error : failed to convert Object from args[0]"<<endl ;
+		return ;
+	}
+	MaybeLocal<Value> mayberoiindex = obj->Get(context,
+		String::NewFromUtf8(isolate,"roiindex").ToLocalChecked()
+		) ;
+	Local<Value> lclroiindex;
+	if( mayberoiindex.ToLocal(&lclroiindex)==false )
+	{
+		cout<<"Error : Object has no roiindex"<<endl ;
+		return ;
+	}
+	int roiIndex =0;
+	bool roiok = convertV8LocalValue2Int(lclroiindex,roiIndex) ;
+	if( roiok==false )
+	{
+		cout<<"Error : failed to convert int from roiindex"<<endl ;
+		return ;
+	}
+	if( roiIndex < 0 && roiIndex >= thisPePtr->roiVector.size() ){
+		cout<<"Error : roiindex is out of range."<<endl;
+		return ;
+	}
+
+	int retFillValue = 0;
+	bool fillok = convertV8LocalValue2Int(fillValue,retFillValue) ;
+	if( fillok==false ){
+		cout<<"Error : failed to convert int from args[1]"<<endl ;
+		return ;
+	}
+
+	Local<Object> thisobj =  args.This() ;
+	int retdatatype=0;
+	int retwid=0;
+	int rethei=0;
+	int retnbands=0;
+
+	bool okdt = V8ObjectGetIntValue(isolate,thisobj,"dataType",retdatatype);
+ 	bool okwid= V8ObjectGetIntValue(isolate,thisobj,"width",retwid);
+ 	bool okhei= V8ObjectGetIntValue(isolate,thisobj,"height",rethei);
+ 	bool oknbands= V8ObjectGetIntValue(isolate,thisobj,"nband",retnbands);
+
+	if( okdt && okwid && okhei && oknbands ){
+		//allok
+	}else{
+		cout<<"Error : failed to get some of dataType, width, height, nband."<<endl ;
+		return ;
+	}
+
+	int tilez = thisPePtr->tileInfo.z  ;
+	int tiley = thisPePtr->tileInfo.y  ; 
+	int tilex = thisPePtr->tileInfo.x  ; 
+
+	int tilefully0 = tiley * rethei;
+	int tilefully1 = fully0 + rethei;
+
+	int tilefullx0 = tilex * retwid;
+	int tilefullx1 = tilefullx0 + retwid;
+
+	PeRoi& roi1 = thisPePtr->roiVector[roiIndex];
+	
+	bool tileOutsideRoi=innerTileOutsideRoi(roi1, tilez, tiley, tilex,
+		retwid,rethei);
+	if( tileOutsideRoi==false )
+	{
+		//tile does have part inside roi
+		//output
+		Local<Object> outds = PixelEngine::CPP_NewDataset(isolate,context
+			,retdatatype
+			,retwid
+			,rethei
+			,retnbands );
+		Local<Value> tiledataValue = thisobj->Get(context,
+			String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
+			.ToLocalChecked() ;
+		//here copy datas
+
+
+		//return dataset
+
+	}else
+	{
+		//return null in js.
+		return ;
+	}
+	
+
+
+
+
+
+
+
+	//output
+	Local<Object> outds = PixelEngine::CPP_NewDataset(isolate,context
+		,1
+		,width
+		,height
+		,4 );
+	Local<Value> outDataValue = outds->Get(context,
+		String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
+		.ToLocalChecked() ;
+	Uint8Array* outU8Array = Uint8Array::Cast(*outDataValue) ;
+	unsigned char* outbackData = (unsigned char*) outU8Array->Buffer()->GetBackingStore()->Data() ;
+
+
+	Local<Value> tiledataValue = thisobj->Get(context,
+		String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
+		.ToLocalChecked() ;
+
+	int asize = width * height ;
+	float theK = 255.f/(vmax-vmin) ;
+	if( thisDataType==3 )
+	{//short
+		
+		Int16Array* i16Array = Int16Array::Cast(*tiledataValue) ;
+		short* backData = (short*) i16Array->Buffer()->GetBackingStore()->Data() ;
+		short* backDataOffset = backData + iband * asize;
+		
+		for(int it = 0 ; it < asize ; ++ it )
+		{
+			if( backDataOffset[it] == nodata ){
+				outbackData[it] = nodataColor[0] ;
+				outbackData[asize+it] = nodataColor[1] ;
+				outbackData[asize*2+it] = nodataColor[2] ;
+				outbackData[asize*3+it] = nodataColor[3] ;
+			}else
+			{
+				int gray = (backDataOffset[it]-vmin) * theK ;
+				if( gray < 0 ) gray = 0 ;
+				else if( gray > 255 ) gray = 255 ;
+				outbackData[it] = gray ;
+				outbackData[asize+it] = gray;
+				outbackData[asize*2+it] = gray ;
+				outbackData[asize*3+it] = 255;
+			}
+		}
+	}else
+	{//byte
+		Uint8Array* u8Array = Uint8Array::Cast(*tiledataValue) ;
+		unsigned char* backData = (unsigned char*) u8Array->Buffer()->GetBackingStore()->Data() ;
+		unsigned char* backDataOffset = backData + iband * asize;
+	
+		for(int it = 0 ; it < asize ; ++ it )
+		{
+			if( backDataOffset[it] == nodata ){
+				outbackData[it] = nodataColor[0] ;
+				outbackData[asize+it] = nodataColor[1] ;
+				outbackData[asize*2+it] = nodataColor[2] ;
+				outbackData[asize*3+it] = nodataColor[3] ;
+			}else
+			{
+				int gray = (backDataOffset[it]-vmin) * theK ;
+				if( gray < 0 ) gray = 0 ;
+				else if( gray > 255 ) gray = 255 ;
+				outbackData[it] = gray ;
+				outbackData[asize+it] = gray;
+				outbackData[asize*2+it] = gray ;
+				outbackData[asize*3+it] = 255;
+			}
+		}
+	}
+	
+	//info.GetReturnValue().Set(i16arr);
+	args.GetReturnValue().Set(outds) ;
+
 
 
 }
 
 
-//dataset.clip() 瓦片数据集裁剪，返回新的瓦片数据集
-void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+bool PixelEngine::innerTileOutsideRoi(PeRoi& roi,int tilez,int tiley,int tilex,
+	int wid,int hei)
 {
+	bool tileOutsideRoi=true;
+	int tilefully0 = tiley * hei;
+	int tilefully1 = fully0 + hei;
 
+	int tilefullx0 = tilex * wid;
+	int tilefullx1 = tilefullx0 + wid;
+
+	if( roi.hsegs.size()>0 ){
+		int nseg = roi1.hsegs.size()/3;
+		roitopy = roi.hsegs[1];
+		roibottomy = roi.hsegs[(nseg-1)*3+1];
+		if( roitopy >= tilefully1 ){
+			//outside
+			tileOutsideRoi=true;
+		}else if( roibottomy < tilefully0 ){
+			//outside
+			tileOutsideRoi=true;
+		}
+		else
+		{
+			int cursorsegindex = 0;
+			for(int curtiley=tilefully0; curtiley<tilefully1;++curtiley )
+			{
+				for(int iseg=cursorsegindex; iseg<nseg;++iseg ){
+					cursorsegindex=iseg;
+					int currsegy = roi.hsegs[iseg*3+1]; 
+					if( currsegy == curtiley ){
+						int currsegx0 = roi.hsegs[iseg*3];
+						int currsegx1 = roi.hsegs[iseg*3+2];
+						if( currsegx0 >= tilefullx1 ){
+							//outside
+						}else if( currsegx1 < tilefullx0 ){
+							//outside
+						}else{
+							//inside
+							tileOutsideRoi=false;
+							break;
+						}
+					}else if( currsegy > curtiley ){
+						break;
+					}
+				}
+			}
+			if( tileOutsideRoi==false ){
+				break;
+			}
+		}
+	}
+	return tileOutsideRoi;
+}
+
+template<typename T>
+bool PixelEngine::innerCopyRoiData(T* source,T* target,PeRoi& roi,int fillval,
+	int tilez,int tiley,int tilex,int wid,int hei,int nbands) 
+{
+	int bandsize = wid*hei;
+	int fullsize = nbands*bandsize;
+	for(int it=0;it <fullsize;++it ){
+		target[it] = fillval;
+	}
+
+	int tilefully0 = tiley * hei;
+	int tilefully1 = fully0 + hei;
+
+	int tilefullx0 = tilex * wid;
+	int tilefullx1 = tilefullx0 + wid;
+
+	if( roi.hsegs.size()>0 ){
+		int nseg = roi1.hsegs.size()/3;
+		roitopy = roi.hsegs[1];
+		roibottomy = roi.hsegs[(nseg-1)*3+1];
+		if( roitopy >= tilefully1 ){
+			//outside
+		}else if( roibottomy < tilefully0 ){
+			//outside
+		}
+		else
+		{
+			int cursorsegindex = 0;
+			for(int curtiley=tilefully0; curtiley<tilefully1;++curtiley )
+			{
+				for(int iseg=cursorsegindex; iseg<nseg;++iseg ){
+					cursorsegindex=iseg;
+					int currsegy = roi.hsegs[iseg*3+1]; 
+					if( currsegy == curtiley ){
+						int currsegx0 = roi.hsegs[iseg*3];
+						int currsegx1 = roi.hsegs[iseg*3+2];
+						if( currsegx0 >= tilefullx1 ){
+							//outside
+						}else if( currsegx1 < tilefullx0 ){
+							//outside
+						}else{
+							//inside
+							int startx = MAX(tilefullx0,currsegx0) - tilefullx0;//0~(wid-1)
+							int stopx  = MIN(tilefullx1,currsegx1) - tilefullx0;//0~(wid-1)
+							int insideTiley = curtiley - tilefully0;
+							for(int insideTilex=startx; insideTilex <= stopx; ++ insideTilex ){
+								for(int ib=0;ib<nbands;++ib){
+									int insideTileit=ib*bandsize+insideTiley*wid+insideTilex;
+									target[insideTileit]=source[insideTileit];
+								}
+							}
+						}
+					}else if( currsegy > curtiley ){
+						break;
+					}
+				}
+			}
+		}
+	}
 }
