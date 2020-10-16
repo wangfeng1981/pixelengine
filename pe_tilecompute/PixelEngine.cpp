@@ -2007,12 +2007,10 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 		,wid
 		,hei
 		,retnbands );
-	Local<Value> tiledataValue = ds->Get(context,
-		String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
-		.ToLocalChecked() ;
-	Int16Array* i16Array = Int16Array::Cast(*tiledataValue) ;//here maybe byte data in future.
-	short* backData = (short*) i16Array->Buffer()->GetBackingStore()->Data() ;
-	memcpy(backData , externalData.data(), externalData.size() );
+
+    //copy for TypedArray
+    void* targetDataPtr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,ds,context,"tiledata") ;
+	memcpy(targetDataPtr , externalData.data(), externalData.size() );
 
 	Maybe<bool> ok1 = ds->Set(context
 		,String::NewFromUtf8(isolate, "dsName").ToLocalChecked()
@@ -2258,14 +2256,14 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 		//set data
 		vector<unsigned char>& indatavec = externalDataArr[ids] ;
 		if( dt == 1 )
-		{
+		{//byte
 			Local<ArrayBuffer> arrbuf = ArrayBuffer::New(isolate,indatavec.size()) ;
 			Local<Uint8Array> u8arr = Uint8Array::New(arrbuf,0,indatavec.size()) ;
 			unsigned char* backData = (unsigned char*) u8arr->Buffer()->GetBackingStore()->Data() ;//here
 			memcpy(backData , indatavec.data(), indatavec.size() );
 			Maybe<bool> ok6 = dataArrArray->Set(context,ids,u8arr) ;
 		}else if( dt==3 )
-		{
+		{//short
 			Local<ArrayBuffer> arrbuf = ArrayBuffer::New(isolate,indatavec.size()) ;
 			Local<Int16Array> i16arr = Int16Array::New(arrbuf,0,indatavec.size()/2) ;
 			short* backData = (short*) i16arr->Buffer()->GetBackingStore()->Data() ;//here
@@ -4412,11 +4410,17 @@ bool PixelEngine::convertV8MaybeLocalValue2Double(MaybeLocal<Value>& maybeVal,
 {
 	if( maybeVal.IsEmpty() == false )
 	{
-		Local<Number> localNum ;
+		Local<Value> localNum ;
 		if( maybeVal.ToLocal(&localNum) )
 		{
-			retval = localNum->Value() ;
-			return true ;
+			if( localNum->IsNumber() )
+			{
+				retval = Number::Cast( *localNum )->Value() ;
+				return true ;
+			}else
+			{
+				return false;
+			}
 		}else
 		{
 			return false;
@@ -4435,27 +4439,38 @@ bool PixelEngine::unwarpMultiPolygon(Isolate* isolate,Local<Value>& jsMulPoly,
 	v8::HandleScope handle_scope(isolate);
 	Local<Context> context(isolate->GetCurrentContext()) ;
 
-	if( jsMulPoly->isArray() )
+	if( jsMulPoly->IsArray() )
 	{
 		v8::Array* array0 = v8::Array::Cast( * jsMulPoly ) ;
 		
-		retMPoly.polys.resize( array0.Length() ) ;
+		retMPoly.polys.resize( array0->Length() ) ;
 
-		for(int i0 =0 ; i0 < array0.Length() ; ++ i0 )
+		for(int i0 =0 ; i0 < array0->Length() ; ++ i0 )
 		{
 			MaybeLocal<Value> poly1maybe = array0->Get( context, i0) ;
-			Local<Array> poly1array;
-			if( poly1maybe.ToLocal(&poly1array) )
+			Local<Value> polylocal;
+			if( poly1maybe.ToLocal(&polylocal) )
 			{
+				if( polylocal->IsArray()==false )
+				{
+					return false;
+				}
+				Array* poly1array = Array::Cast( *polylocal ) ;
+
 				int len1 = poly1array->Length() ;
 				if(! PixelEngine::quietMode)cout<<"Info : item-"<<i0<<" point count:"<<len1 <<endl;
 				retMPoly.polys[i0].resize( (size_t)len1 ) ;
 				for(int ipt = 0 ; ipt < len1; ++ ipt )
 				{
 					MaybeLocal<Value> arr2maybe = poly1array->Get(context,ipt) ;
-					Local<Array> arr2local;
-					if( arr2maybe.ToLocal(&arr2local) )
+					Local<Value> arr2lcl ;
+					if( arr2maybe.ToLocal(&arr2lcl) )
 					{
+						if( arr2lcl->IsArray() ==false ){
+							return false;
+						}
+						Array* arr2local = Array::Cast( *arr2lcl );
+
 						if( arr2local->Length() >= 2 )
 						{
 							MaybeLocal<Value> maybe0 = arr2local->Get(context,0);
@@ -4470,8 +4485,6 @@ bool PixelEngine::unwarpMultiPolygon(Isolate* isolate,Local<Value>& jsMulPoly,
 								if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<"-"<<ipt<<" in jsMulPoly [1] is not a number"<<endl; 
 								return false ;
 							}
-							cout<<"debug good pt:"<<retMPoly.polys[i0][ipt].v0
-								<<","<<retMPoly.polys[i0][ipt].v1<<endl;
 						}else{
 							if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<"-"<<ipt<<" in jsMulPoly length lower than 2"<<endl; 
 							return false ;
@@ -4501,8 +4514,8 @@ bool PixelEngine::unwarpMultiPolygon(Isolate* isolate,Local<Value>& jsMulPoly,
 void PixelEngine::GlobalFunc_RoiCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
 	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_RoiCallBack"<<endl; 
-	if (args.Length() < 2 ){
-		if(! PixelEngine::quietMode)cout<<"Error: args.Length < 2 "<<endl ;
+	if (args.Length() < 1 ){
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length < 1 "<<endl ;
 		return;
 	}
 	PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
@@ -4520,24 +4533,31 @@ void PixelEngine::GlobalFunc_RoiCallBack(const v8::FunctionCallbackInfo<v8::Valu
 		return ;
 	}
 
-	int zlevel = args[1]->ToInteger(context).ToLocalChecked()->Value() ;
+	int zlevel = thisPePtr->tileInfo.z ;
 
 	string proj = "EPSG:4326";
-	if( args.Length() > 2)
-	{
-		proj = PixelEngine::convertV8LocalValue2CppString(isolate, args[2] );
+	if( args.Length() > 1)
+	{	
+		Local<Value> args2 = args[1] ;
+		proj = PixelEngine::convertV8LocalValue2CppString(isolate, args2);
 	}
 
 	PeRoi roi ;
 	roi.zlevel = zlevel;
+	cout<<"debug zlevel:"<<zlevel<<endl;
+	roi.zlevel = zlevel;
 	roi.proj = proj;
 	thisPePtr->roiVector.push_back(roi) ;
 	int roiIndex = thisPePtr->roiVector.size()-1;
-	thisPePtr->roiVector[roiIndex].buildRoiByMulPolys(retMPoly,zlevel);
-	cout<<"debug roiindex:"<<roiindex<<endl;
+
+	int temptilesize = 256;//here maybe changed in future.2020-10-16
+
+	thisPePtr->roiVector[roiIndex].buildRoiByMulPolys(retMPoly,temptilesize,
+		zlevel, thisPePtr->tileInfo.y , thisPePtr->tileInfo.x );
+	cout<<"debug roiindex:"<<roiIndex<<endl;
 
 	Local<Object> roiobj=Object::New(isolate);
-	roiobj->Set(context, 
+	Maybe<bool> setok1 = roiobj->Set(context, 
 		String::NewFromUtf8(isolate,"roiindex").ToLocalChecked(),
 		Integer::New(isolate,roiIndex)
 		);
@@ -4549,7 +4569,7 @@ void PixelEngine::GlobalFunc_RoiCallBack(const v8::FunctionCallbackInfo<v8::Valu
 
 bool PixelEngine::convertV8LocalValue2Int(Local<Value>& v8Val,int& retval) 
 {
-	if( v8val->IsNumber() ){
+	if( v8Val->IsNumber() ){
 		Integer* ptr = Integer::Cast(*v8Val) ;
 		retval =(int) ptr->Value() ;
 		return true;
@@ -4580,11 +4600,11 @@ void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Val
 
 	MaybeLocal<Object> maybeobj = roiValue->ToObject(context);
 	Local<Object> lclobj;
-	if( maybeobj.ToLoca(&lclobj) == false ){
+	if( maybeobj.ToLocal(&lclobj) == false ){
 		cout<<"Error : failed to convert Object from args[0]"<<endl ;
 		return ;
 	}
-	MaybeLocal<Value> mayberoiindex = obj->Get(context,
+	MaybeLocal<Value> mayberoiindex = lclobj->Get(context,
 		String::NewFromUtf8(isolate,"roiindex").ToLocalChecked()
 		) ;
 	Local<Value> lclroiindex;
@@ -4618,13 +4638,15 @@ void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Val
 	int rethei=0;
 	int retnbands=0;
 
-	bool okdt = V8ObjectGetIntValue(isolate,thisobj,"dataType",retdatatype);
- 	bool okwid= V8ObjectGetIntValue(isolate,thisobj,"width",retwid);
- 	bool okhei= V8ObjectGetIntValue(isolate,thisobj,"height",rethei);
- 	bool oknbands= V8ObjectGetIntValue(isolate,thisobj,"nband",retnbands);
+	bool okdt = V8ObjectGetIntValue(isolate,thisobj,context,"dataType",retdatatype);
+ 	bool okwid= V8ObjectGetIntValue(isolate,thisobj,context,"width",retwid);
+ 	bool okhei= V8ObjectGetIntValue(isolate,thisobj,context,"height",rethei);
+ 	bool oknbands= V8ObjectGetIntValue(isolate,thisobj,context,"nband",retnbands);
 
 	if( okdt && okwid && okhei && oknbands ){
 		//allok
+		cout<<"debug thisobj datatype,w,h,nbands:"<<retdatatype<<","<<
+			retwid<<","<<rethei<<","<<retnbands<<endl;
 	}else{
 		cout<<"Error : failed to get some of dataType, width, height, nband."<<endl ;
 		return ;
@@ -4635,7 +4657,7 @@ void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Val
 	int tilex = thisPePtr->tileInfo.x  ; 
 
 	int tilefully0 = tiley * rethei;
-	int tilefully1 = fully0 + rethei;
+	int tilefully1 = tilefully0 + rethei;
 
 	int tilefullx0 = tilex * retwid;
 	int tilefullx1 = tilefullx0 + retwid;
@@ -4652,103 +4674,97 @@ void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Val
 			,retdatatype
 			,retwid
 			,rethei
-			,retnbands );
-		Local<Value> tiledataValue = thisobj->Get(context,
-			String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
-			.ToLocalChecked() ;
-		//here copy datas
-
-
+			,retnbands );   
+        
+        void* sourceDataPtr = V8ObjectGetTypedArrayBackPtr(isolate,thisobj,context,"tiledata");
+        void* targetDataPtr = V8ObjectGetTypedArrayBackPtr(isolate,outds,context,"tiledata") ;
+        
+        if( sourceDataPtr==nullptr ){
+            cout<<"Error : sourceDataPtr is null"<<endl;
+            return ;
+        }
+        
+        if( targetDataPtr==nullptr ){
+            cout<<"Error : targetDataPtr is null"<<endl;
+            return ;
+        }
+        
+            
+		//copy datas
+        switch( retdatatype )
+        {
+            case 1:{
+                PixelEngine::innerCopyRoiData((unsigned char*)sourceDataPtr,
+                    (unsigned char*)targetDataPtr , 
+                    roi1,
+                    retFillValue,
+                    tilez,tiley,tilex,
+                    retwid,rethei,retnbands) ;
+                break;
+            }
+            case 2:{
+                PixelEngine::innerCopyRoiData((unsigned short*)sourceDataPtr,
+                    (unsigned short*)targetDataPtr , 
+                    roi1,
+                    retFillValue,
+                    tilez,tiley,tilex,
+                    retwid,rethei,retnbands) ;
+                break;
+            }
+            case 3:{
+                PixelEngine::innerCopyRoiData((short*)sourceDataPtr,
+                    (short*)targetDataPtr , 
+                    roi1,
+                    retFillValue,
+                    tilez,tiley,tilex,
+                    retwid,rethei,retnbands) ;
+                break;
+            }
+            case 4:{
+                PixelEngine::innerCopyRoiData((unsigned int*)sourceDataPtr,
+                    (unsigned int*)targetDataPtr , 
+                    roi1,
+                    retFillValue,
+                    tilez,tiley,tilex,
+                    retwid,rethei,retnbands) ;
+                break;
+            }
+            case 5:{
+                PixelEngine::innerCopyRoiData((int*)sourceDataPtr,
+                    (int*)targetDataPtr , 
+                    roi1,
+                    retFillValue,
+                    tilez,tiley,tilex,
+                    retwid,rethei,retnbands) ;
+                break;
+            }
+            case 6:{
+                PixelEngine::innerCopyRoiData((float*)sourceDataPtr,
+                    (float*)targetDataPtr , 
+                    roi1,
+                    retFillValue,
+                    tilez,tiley,tilex,
+                    retwid,rethei,retnbands) ;
+                break;
+            }
+            case 7:{
+                PixelEngine::innerCopyRoiData((double*)sourceDataPtr,
+                    (double*)targetDataPtr , 
+                    roi1,
+                    retFillValue,
+                    tilez,tiley,tilex,
+                    retwid,rethei,retnbands) ;
+                break;
+            }            
+        }
 		//return dataset
-
+        args.GetReturnValue().Set(outds) ;
 	}else
 	{
+		cout<<"debug tile outside roi"<<endl ;
 		//return null in js.
 		return ;
 	}
-	
-
-
-
-
-
-
-
-	//output
-	Local<Object> outds = PixelEngine::CPP_NewDataset(isolate,context
-		,1
-		,width
-		,height
-		,4 );
-	Local<Value> outDataValue = outds->Get(context,
-		String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
-		.ToLocalChecked() ;
-	Uint8Array* outU8Array = Uint8Array::Cast(*outDataValue) ;
-	unsigned char* outbackData = (unsigned char*) outU8Array->Buffer()->GetBackingStore()->Data() ;
-
-
-	Local<Value> tiledataValue = thisobj->Get(context,
-		String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
-		.ToLocalChecked() ;
-
-	int asize = width * height ;
-	float theK = 255.f/(vmax-vmin) ;
-	if( thisDataType==3 )
-	{//short
-		
-		Int16Array* i16Array = Int16Array::Cast(*tiledataValue) ;
-		short* backData = (short*) i16Array->Buffer()->GetBackingStore()->Data() ;
-		short* backDataOffset = backData + iband * asize;
-		
-		for(int it = 0 ; it < asize ; ++ it )
-		{
-			if( backDataOffset[it] == nodata ){
-				outbackData[it] = nodataColor[0] ;
-				outbackData[asize+it] = nodataColor[1] ;
-				outbackData[asize*2+it] = nodataColor[2] ;
-				outbackData[asize*3+it] = nodataColor[3] ;
-			}else
-			{
-				int gray = (backDataOffset[it]-vmin) * theK ;
-				if( gray < 0 ) gray = 0 ;
-				else if( gray > 255 ) gray = 255 ;
-				outbackData[it] = gray ;
-				outbackData[asize+it] = gray;
-				outbackData[asize*2+it] = gray ;
-				outbackData[asize*3+it] = 255;
-			}
-		}
-	}else
-	{//byte
-		Uint8Array* u8Array = Uint8Array::Cast(*tiledataValue) ;
-		unsigned char* backData = (unsigned char*) u8Array->Buffer()->GetBackingStore()->Data() ;
-		unsigned char* backDataOffset = backData + iband * asize;
-	
-		for(int it = 0 ; it < asize ; ++ it )
-		{
-			if( backDataOffset[it] == nodata ){
-				outbackData[it] = nodataColor[0] ;
-				outbackData[asize+it] = nodataColor[1] ;
-				outbackData[asize*2+it] = nodataColor[2] ;
-				outbackData[asize*3+it] = nodataColor[3] ;
-			}else
-			{
-				int gray = (backDataOffset[it]-vmin) * theK ;
-				if( gray < 0 ) gray = 0 ;
-				else if( gray > 255 ) gray = 255 ;
-				outbackData[it] = gray ;
-				outbackData[asize+it] = gray;
-				outbackData[asize*2+it] = gray ;
-				outbackData[asize*3+it] = 255;
-			}
-		}
-	}
-	
-	//info.GetReturnValue().Set(i16arr);
-	args.GetReturnValue().Set(outds) ;
-
-
-
 }
 
 
@@ -4757,15 +4773,15 @@ bool PixelEngine::innerTileOutsideRoi(PeRoi& roi,int tilez,int tiley,int tilex,
 {
 	bool tileOutsideRoi=true;
 	int tilefully0 = tiley * hei;
-	int tilefully1 = fully0 + hei;
+	int tilefully1 = tilefully0 + hei;
 
 	int tilefullx0 = tilex * wid;
 	int tilefullx1 = tilefullx0 + wid;
 
 	if( roi.hsegs.size()>0 ){
-		int nseg = roi1.hsegs.size()/3;
-		roitopy = roi.hsegs[1];
-		roibottomy = roi.hsegs[(nseg-1)*3+1];
+		int nseg = roi.hsegs.size();
+		int roitopy = roi.hsegs[0].y ;
+		int roibottomy = roi.hsegs[nseg-1].y ;
 		if( roitopy >= tilefully1 ){
 			//outside
 			tileOutsideRoi=true;
@@ -4780,10 +4796,10 @@ bool PixelEngine::innerTileOutsideRoi(PeRoi& roi,int tilez,int tiley,int tilex,
 			{
 				for(int iseg=cursorsegindex; iseg<nseg;++iseg ){
 					cursorsegindex=iseg;
-					int currsegy = roi.hsegs[iseg*3+1]; 
+					int currsegy = roi.hsegs[iseg].y; 
 					if( currsegy == curtiley ){
-						int currsegx0 = roi.hsegs[iseg*3];
-						int currsegx1 = roi.hsegs[iseg*3+2];
+						int currsegx0 = roi.hsegs[iseg].x0;
+						int currsegx1 = roi.hsegs[iseg].x1;
 						if( currsegx0 >= tilefullx1 ){
 							//outside
 						}else if( currsegx1 < tilefullx0 ){
@@ -4797,9 +4813,9 @@ bool PixelEngine::innerTileOutsideRoi(PeRoi& roi,int tilez,int tiley,int tilex,
 						break;
 					}
 				}
-			}
-			if( tileOutsideRoi==false ){
-				break;
+				if( tileOutsideRoi==false ){
+					break;
+				}
 			}
 		}
 	}
@@ -4817,15 +4833,15 @@ bool PixelEngine::innerCopyRoiData(T* source,T* target,PeRoi& roi,int fillval,
 	}
 
 	int tilefully0 = tiley * hei;
-	int tilefully1 = fully0 + hei;
+	int tilefully1 = tilefully0 + hei;
 
 	int tilefullx0 = tilex * wid;
 	int tilefullx1 = tilefullx0 + wid;
 
 	if( roi.hsegs.size()>0 ){
-		int nseg = roi1.hsegs.size()/3;
-		roitopy = roi.hsegs[1];
-		roibottomy = roi.hsegs[(nseg-1)*3+1];
+		int nseg = roi.hsegs.size();
+		int roitopy = roi.hsegs[0].y;
+		int roibottomy = roi.hsegs[nseg-1].y;
 		if( roitopy >= tilefully1 ){
 			//outside
 		}else if( roibottomy < tilefully0 ){
@@ -4838,20 +4854,22 @@ bool PixelEngine::innerCopyRoiData(T* source,T* target,PeRoi& roi,int fillval,
 			{
 				for(int iseg=cursorsegindex; iseg<nseg;++iseg ){
 					cursorsegindex=iseg;
-					int currsegy = roi.hsegs[iseg*3+1]; 
+					int currsegy = roi.hsegs[iseg].y; 
 					if( currsegy == curtiley ){
-						int currsegx0 = roi.hsegs[iseg*3];
-						int currsegx1 = roi.hsegs[iseg*3+2];
+						int currsegx0 = roi.hsegs[iseg].x0;
+						int currsegx1 = roi.hsegs[iseg].x1;
 						if( currsegx0 >= tilefullx1 ){
 							//outside
 						}else if( currsegx1 < tilefullx0 ){
 							//outside
 						}else{
 							//inside
-							int startx = MAX(tilefullx0,currsegx0) - tilefullx0;//0~(wid-1)
-							int stopx  = MIN(tilefullx1,currsegx1) - tilefullx0;//0~(wid-1)
+							int startx = max(tilefullx0,currsegx0) - tilefullx0;//0~(wid-1)
+							int stopx  = min(tilefullx1,currsegx1) - tilefullx0;//0~(wid-1)
+
 							int insideTiley = curtiley - tilefully0;
-							for(int insideTilex=startx; insideTilex <= stopx; ++ insideTilex ){
+
+							for(int insideTilex=startx; insideTilex < stopx; ++ insideTilex ){
 								for(int ib=0;ib<nbands;++ib){
 									int insideTileit=ib*bandsize+insideTiley*wid+insideTilex;
 									target[insideTileit]=source[insideTileit];
@@ -4865,4 +4883,39 @@ bool PixelEngine::innerCopyRoiData(T* source,T* target,PeRoi& roi,int fillval,
 			}
 		}
 	}
+    return true;
+}
+
+void* PixelEngine::V8ObjectGetTypedArrayBackPtr(Isolate* isolate, 
+    Local<Object>& obj, 
+    Local<Context>& context, 
+    string key)
+{
+	MaybeLocal<Value> maybe1 = obj->Get(context,
+		String::NewFromUtf8(isolate, key.c_str()).ToLocalChecked()
+	);
+	if (maybe1.IsEmpty()) {
+		return nullptr;
+	}
+	else
+	{
+		Local<Value> local1 = maybe1.ToLocalChecked();
+		if (local1->IsTypedArray())
+		{
+            TypedArray* typedArrPtr = TypedArray::Cast(*local1) ;
+            if( typedArrPtr != nullptr )
+            {
+                Local<ArrayBuffer> arrbuff = typedArrPtr->Buffer();
+                ArrayBuffer* arrbuffPtr = *arrbuff;
+                return arrbuffPtr->GetBackingStore()->Data();
+            }else{
+                return nullptr;
+            }
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+    return nullptr;
 }

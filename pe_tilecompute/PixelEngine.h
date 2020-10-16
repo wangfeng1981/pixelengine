@@ -29,6 +29,7 @@
 #include "wAST.h"
 #include "pemultipolygon.h"//2020-10-15
 #include "peroi.h"
+#include <memory>
 
 
 
@@ -261,6 +262,7 @@ struct PixelEngine
 	static bool V8ObjectGetUint16Array(Isolate* isolate, Local<Object>& obj, Local<Context>& context, string key, int shouldElementNumber, void* copyToPtr);
 	static bool V8ObjectGetUint32Array(Isolate* isolate, Local<Object>& obj, Local<Context>& context, string key, int shouldElementNumber, void* copyToPtr);
 	static bool V8ObjectGetFloat64Array(Isolate* isolate, Local<Object>& obj, Local<Context>& context, string key, int shouldElementNumber, void* copyToPtr);
+    static void* V8ObjectGetTypedArrayBackPtr(Isolate* isolate, Local<Object>& obj, Local<Context>& context, string key);
  
 
 
@@ -361,7 +363,7 @@ struct PixelEngine
 
 
 
-
+	public:
 	//2020-9-19
 	static bool quietMode;
 
@@ -385,13 +387,15 @@ struct PixelEngine
 		template<typename T>
 		static unsigned char clamp255(T val);
 
-		bool innerTileOutsideRoi(PeRoi& roi,int tilez,int tiley,int tilex,
+		static bool innerTileOutsideRoi(PeRoi& roi,int tilez,int tiley,int tilex,
 			int wid,int hei);
 
 		template<typename T>
-		bool innerCopyRoiData(T* source,T* target,PeRoi& roi,int fillval,
+		static bool innerCopyRoiData(T* source,T* target,PeRoi& roi,int fillval,
 			int tilez,int tiley,int tilex,int wid,int hei,int nbands) ;
-
+        
+            
+        
 	
 } ;
 

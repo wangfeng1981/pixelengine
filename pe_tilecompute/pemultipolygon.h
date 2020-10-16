@@ -10,7 +10,7 @@ using std::vector;
 struct PeMultiPolygonPoint
 {
 	double v0,v1;//long,lat
-}
+};
 
 struct PeMultiPolygon
 {

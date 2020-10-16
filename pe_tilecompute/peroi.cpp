@@ -55,8 +55,9 @@ bool PeRoi::horiLineInterLineSeg(const double horiY ,
 
 
 
-bool PeRoi::buildRoiByMulPolys( PeMultiPolygon& mpoly,int z)
+bool PeRoi::buildRoiByMulPolys( PeMultiPolygon& mpoly,int tilesize,int z,int y,int x)
 {
+	cout<<"debug in buildRoiByMulPolys"<<endl;
 	this->hsegs.clear() ;
 	this->hsegs.reserve(1024*3) ;//guess 1k segs
 
@@ -64,11 +65,15 @@ bool PeRoi::buildRoiByMulPolys( PeMultiPolygon& mpoly,int z)
 	int fullwid=0;
 	int fullhei=0;
 	this->zlevel = z;
-	this->computeLevelInfo(z ,256 , reso,fullwid,fullhei );
+	this->computeLevelInfo(z ,tilesize , reso,fullwid,fullhei );
+	cout<<"debug reso,fullwid,fullhei:"<<reso<<","<<fullwid<<","<<fullhei<<endl;
 
 	double topY = 90.0 - reso/2.0 ;
 	double resoY = -reso ;
 	double leftX = -180.0 ;
+
+	double tileTopLat = topY - y*tilesize*reso;
+	double tileBottomLat = tileTopLat - tilesize*reso;
 
 	vector<double> crossPointXVector ;
 
@@ -88,13 +93,21 @@ bool PeRoi::buildRoiByMulPolys( PeMultiPolygon& mpoly,int z)
 			this->polyMinMaxY( polypoints, polyminlat , polymaxlat );
 
 			cout<<"debug ipoly-"<<ipoly<<" minlat:"<<polyminlat<<" maxlat:"<<polymaxlat<<endl ;
+			cout<<"debug tile minlat:"<<tileBottomLat<<" maxlat:"<<tileTopLat<<endl ;
 
-			int starterY = (90 - polymaxlat)/reso ;
-			int stopperY = (90 - polyminlat)/reso + 1 ;
+			double useminlat = max( tileBottomLat, polyminlat) ;
+			double usemaxlat = min( tileTopLat, polymaxlat);
+
+			cout<<"debug used minlat:"<<useminlat<<" maxlat:"<<usemaxlat<<endl ;
+
+			int starterY = (90 - usemaxlat)/reso ;
+			int stopperY = (90 - useminlat)/reso + 1 ;
 			if( starterY<0 ) starterY=0;
 
 			for(int curY = starterY ; curY < stopperY; ++ curY )
 			{
+				crossPointXVector.clear();
+
 				double horiLat = 90.0 - curY * reso ;
 				double xprev = (polypoints.end()-2)->v0;
 				double yprev = (polypoints.end()-2)->v1;
@@ -127,19 +140,31 @@ bool PeRoi::buildRoiByMulPolys( PeMultiPolygon& mpoly,int z)
 							//outside
 						}
 						else {
-							hsegs.push_back(tx0);
-							hsegs.push_back(curY) ;
-							hsegs.push_back(tx1) ;
+                            HSeg tempSeg;
+                            tempSeg.x0 = tx0;
+                            tempSeg.y = curY ;
+                            tempSeg.x1 = tx1 ;
+							hsegs.push_back(tempSeg);
 						}
 					}
 				}
 			}//end one hori line
 		}//end if
 		cout<<"debug hsegs.size:"<<hsegs.size()<<endl ;
+
+		//debug
+		{
+			for(int ih = 0 ; ih <hsegs.size(); ++ ih )
+			{
+				cout<<"debug ih-"<<ih<<" x0,y,x1:"<<hsegs[ih].x0<<","<<hsegs[ih].y
+					<<","<<hsegs[ih].x1<<endl ;
+			}
+		}
+		//enddebug
 	}//end each poly
 
-	//need sort all by y
-	//here
+	//need sort all by y   
+	std::sort(hsegs.begin() , hsegs.end(), PeRoi::compareFunc);
 
 	return true;
 }
@@ -157,7 +182,7 @@ void PeRoi::computeLevelInfo(int z,int tilesize,double& reso,int& fullwid,int& f
 
 void PeRoi::polyMinMaxY( vector<PeMultiPolygonPoint>& poly, double& ymin,double& ymax) 
 {
-	if( poly.size() > 9 ){
+	if( poly.size() > 3 ){
 		ymin = poly[0].v1;
 		ymax = ymin;
 		for(int i = 1 ; i< poly.size() ; ++ i )
@@ -172,4 +197,11 @@ void PeRoi::polyMinMaxY( vector<PeMultiPolygonPoint>& poly, double& ymin,double&
 		}
 	}
 
+}
+
+
+bool PeRoi::compareFunc( HSeg& s1, HSeg& s2)
+{
+    if( s1.y < s2.y ) return true ;
+    else return false;
 }
