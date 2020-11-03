@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CodeLite_Workspace Name="peworkspace" Database="" Version="10.0.0">
-  <Project Name="peproject" Path="peproject/peproject.project" Active="Yes"/>
+  <Project Name="tempcpp_proj" Path="../../../tempcpp_proj/tempcpp_proj.project" Active="Yes"/>
   <BuildMatrix>
     <WorkspaceConfiguration Name="Debug" Selected="yes">
       <Environment/>
-      <Project Name="peproject" ConfigName="Debug"/>
+      <Project Name="tempcpp_proj" ConfigName="Debug"/>
     </WorkspaceConfiguration>
     <WorkspaceConfiguration Name="Release" Selected="yes">
       <Environment/>
-      <Project Name="peproject" ConfigName="Release"/>
+      <Project Name="tempcpp_proj" ConfigName="Release"/>
     </WorkspaceConfiguration>
   </BuildMatrix>
 </CodeLite_Workspace>

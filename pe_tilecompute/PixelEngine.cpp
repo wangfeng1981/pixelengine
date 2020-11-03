@@ -16,7 +16,10 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
 //string PixelEngine::pejs_version = string("2.2") ;
 //string PixelEngine::pejs_version = string("2.4.1.1 2020-10-11"); //2020-9-13
-string PixelEngine::pejs_version = string("2.4.2.0 2020-10-15");
+//string PixelEngine::pejs_version = string("2.4.2.0 2020-10-15");
+//string PixelEngine::pejs_version = string("2.4.2.1 2020-10-27");//debug for AST not valid main
+//string PixelEngine::pejs_version = string("2.4.3.0 2020-10-30");//add pe.Datafile(...)
+string PixelEngine::pejs_version = string("2.4.4.0 2020-11-03");//add map reduce procedure.
 
 
 //// mapreduce not used yet.
@@ -2035,6 +2038,130 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 
 
 
+/// create a Dataset from java.
+/// create a dataset from filekey or filepath
+/// pe.Datafile("/some/dir/file");
+void PixelEngine::GlobalFunc_DatafileCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+{
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_DatafileCallBack"<<endl; 
+	if(args.Length() == 1 )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 3 or !=6 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> v8filekey = args[0]; 
+
+	String::Utf8Value filekeyutf8( isolate , v8filekey) ;
+	string filekey( *filekeyutf8 ) ;
+
+	if(! PixelEngine::quietMode)cout<<"filekey:"<<filekey<<endl ;
+
+	vector<unsigned char> externalData ;
+	int dt = 0 ;
+	int wid = 0 ;
+	int hei = 0 ; 
+	int retnbands = 0 ;
+
+	Local<Object> global = context->Global() ;
+	Local<Value> peinfo = global->Get( context
+		,String::NewFromUtf8(isolate, "PixelEnginePointer").ToLocalChecked())
+		.ToLocalChecked() ;
+	Object* peinfoObj = Object::Cast( *peinfo ) ;
+	Local<Value> thisPePtrValue = peinfoObj->GetInternalField(0) ;
+	External* thisPePtrEx = External::Cast(*thisPePtrValue);
+	PixelEngine* thisPePtr = static_cast<PixelEngine*>(thisPePtrEx->Value() );
+
+	int tilez = thisPePtr->tileInfo.z  ;
+	int tiley = thisPePtr->tileInfo.y  ; 
+	int tilex = thisPePtr->tileInfo.x  ; 
+    vector<int> wantBands ;//empty vector
+    string datetimeStr = "" ;
+
+	if (PixelEngine::GetExternalTileDataCallBack != nullptr) {
+		bool externalOk = PixelEngine::GetExternalTileDataCallBack(
+			thisPePtrEx->Value(),// pointer to PixelEngine Object.
+			filekey, datetimeStr, wantBands,
+			tilez,
+			tiley,
+			tilex,
+			externalData,
+			dt,
+			wid,
+			hei,
+			retnbands);
+		if (externalOk == false)
+		{
+			if(! PixelEngine::quietMode)cout << "Error: PixelEngine::GetExternalTileDataCallBack failed." << endl;
+			return;//return null in javascript.
+		}
+	}
+	else if (thisPePtr->helperPointer != nullptr) {
+		string errorText;
+        int64_t datetime = 0L;
+		bool dataok = thisPePtr->helperPointer->getTileData(
+			datetime,
+			filekey,
+			wantBands,
+			tilez, tiley, tilex,
+			externalData,
+			dt,
+			wid,
+			hei,
+			retnbands,
+			errorText
+		);
+		if (dataok==false) {
+			if(! PixelEngine::quietMode)cout << "Error: PixelEngine::helperPointer getTileData failed." << endl;
+			return;//return null in javascript.
+		}
+	}
+	else
+	{
+		if(! PixelEngine::quietMode)cout << "Error: PixelEngine::GetExternalTileDataCallBack is null and helper is null too." << endl;
+		return;//return null in javascript.
+	}
+	
+
+	Local<Object> ds = PixelEngine::CPP_NewDataset( isolate
+		,context
+		,dt
+		,wid
+		,hei
+		,retnbands );
+
+    //copy for TypedArray
+    void* targetDataPtr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,ds,context,"tiledata") ;
+	memcpy(targetDataPtr , externalData.data(), externalData.size() );
+
+	Maybe<bool> ok1 = ds->Set(context
+		,String::NewFromUtf8(isolate, "dsName").ToLocalChecked()
+		,v8filekey ) ;
+	Maybe<bool> ok2 = ds->Set(context
+		,String::NewFromUtf8(isolate, "dsDt").ToLocalChecked()
+		,Number::New(isolate,0L) ) ;
+	Maybe<bool> ok3 = ds->Set(context
+		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
+		,Integer::New(isolate,thisPePtr->tileInfo.x) ) ;
+	Maybe<bool> ok4 = ds->Set(context
+		,String::NewFromUtf8(isolate, "y").ToLocalChecked()
+		,Integer::New(isolate,thisPePtr->tileInfo.y) ) ;
+	Maybe<bool> ok5 = ds->Set(context
+		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
+		,Integer::New(isolate,thisPePtr->tileInfo.z) ) ;
+
+	//info.GetReturnValue().Set(i16arr);
+	args.GetReturnValue().Set(ds) ;
+}
+
+
+
 
 
 
@@ -2904,6 +3031,10 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	Maybe<bool> ok15 = pe->Set(context
 		,String::NewFromUtf8(isolate, "Dataset").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_DatasetCallBack)->GetFunction(context).ToLocalChecked() );
+    Maybe<bool> ok15_1 = pe->Set(context
+		,String::NewFromUtf8(isolate, "Datafile").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_DatafileCallBack)->GetFunction(context).ToLocalChecked() );
+           
 	Maybe<bool> ok16 = pe->Set(context
 		,String::NewFromUtf8(isolate, "GetTileData").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_GetTileDataCallBack)->GetFunction(context).ToLocalChecked() );
@@ -3833,6 +3964,11 @@ bool PixelEngine::RunScriptForDatasetDatetimePairs(void* extra,
 	vector<wDatasetDatetime>& retDsDtVec,
 	string& errorText)
 {
+    cout<<"in RunScriptForDatasetDatetimePairs()"<<endl;
+    cout<<"scriptContent:"<<endl;
+    cout<<scriptContent<<endl;
+    cout<<"scriptContent end."<<endl;
+    
 	//vector<wDatasetDatetime> udsdtVec;
     string retASTLog , retASTJsonText;
     bool runASTok = this->RunScriptForAST(nullptr, scriptContent , retASTJsonText, retASTLog);
@@ -4580,6 +4716,79 @@ bool PixelEngine::convertV8LocalValue2Int(Local<Value>& v8Val,int& retval)
 }
 
 
+bool PixelEngine::convertV8LocalValue2IntArray(Local<Context>& context, Local<Value>& v8Val,vector<int>& retvec) 
+{
+    if( v8Val->IsArray() )
+    {
+        Array* tarray = Array::Cast(*v8Val) ;
+        int num = tarray->Length() ;
+        retvec.clear();
+        for(int ib = 0 ; ib<num ; ++ ib )
+        {
+            MaybeLocal<Value> mbval = tarray->Get(context,ib);
+            if( mbval.IsEmpty() == false ){
+                Maybe<int32_t> maybeIntval= mbval.ToLocalChecked()->Int32Value(context) ;
+                if( maybeIntval.IsNothing() == false)
+                {
+                    retvec.push_back( maybeIntval.ToChecked() ) ;
+                }else{
+                    if(! PixelEngine::quietMode)cout<<
+                        "convertV8LocalValue2IntArray mbval->Int32Value is nothing"<<endl;
+                    return false;
+                }
+                
+            }else
+            {
+                if(! PixelEngine::quietMode)cout<<"convertV8LocalValue2IntArray tarray->Get() failed."<<endl;
+                return false;
+            }
+        }
+        return true;
+    }else{
+        if(! PixelEngine::quietMode)cout<<"v8Val is not array."<<endl;
+        return false;
+    }
+}
+
+
+
+bool PixelEngine::convertV8LocalValue2DoubleArray(
+    Local<Context>&context,
+    Local<Value>& v8Val,
+    vector<double>& retvec) 
+{
+    retvec.clear();
+    if( v8Val->IsArray() )
+    {
+        Array* tarray = Array::Cast(*v8Val) ;
+        int num = tarray->Length() ;
+        for(int ib = 0 ; ib<num ; ++ ib )
+        {
+            MaybeLocal<Value> mbval = tarray->Get(context,ib);
+            if( mbval.IsEmpty() == false ){
+                Maybe<double> maybeDoubleval= mbval.ToLocalChecked()->NumberValue(context) ;
+                if( maybeDoubleval.IsNothing() == false)
+                {
+                    retvec.push_back( maybeDoubleval.ToChecked() ) ;
+                }else{
+                    if(! PixelEngine::quietMode)cout<<"convertV8LocalValue2DoubleArray mbval->NumberValue is nothing"<<endl;
+                    return false;
+                }
+                
+            }else
+            {
+                if(! PixelEngine::quietMode)cout<<"convertV8LocalValue2DoubleArray tarray->Get() failed."<<endl;
+                return false;
+            }
+        }
+        return true;
+    }else{
+        if(! PixelEngine::quietMode)cout<<"convertV8LocalValue2DoubleArray v8Val is not array."<<endl;
+        return false;
+    }
+}
+
+
 //dataset.clip() 瓦片数据集裁剪，返回新的瓦片数据集
 /// dataset.clip(roi,filldata); if all pixel outside roi return null;
 void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
@@ -4919,3 +5128,332 @@ void* PixelEngine::V8ObjectGetTypedArrayBackPtr(Isolate* isolate,
 	}
     return nullptr;
 }
+
+
+
+//mapreduce框架 获取目标zlevel
+bool PixelEngine::MapRedRunScriptForZlevel(void* extra,
+    string& scriptContent,int& retZlevel, string& error)
+{
+    if(! PixelEngine::quietMode)cout<<"in MapRedRunScriptForZlevel"<<endl;
+    retZlevel=0;
+    
+    string tempVariableName = "TEMP_VAR_temp_var_zlevel" ;
+    string script2 = scriptContent 
+        +"; var " + tempVariableName + "=JSON.stringify(zlevelFunc());" ;
+    string retResultJsonText, retError;
+    bool getok = this->RunScriptAndGetVariableJsonText(
+        extra , 
+        script2,
+        0L,
+        0,0,0,
+        tempVariableName,
+        retResultJsonText,
+        retError
+        ) ;
+    if( getok )
+    {
+        DynamicJsonBuffer jsonBuffer;
+        JsonVariant variant = jsonBuffer.parse(retResultJsonText);
+        cout<<"debug "<<retResultJsonText<<endl;
+        retZlevel = variant.as<int>() ;
+        return true;
+    }else
+    {
+        error = retError;
+        return false;
+    }
+}
+
+//mapreduce框架 获取目标extent
+bool PixelEngine::MapRedRunScriptForExtent(void* extra,
+    string& scriptContent,double& left,double& right,double& up,double& down, string& error)
+{
+    if(! PixelEngine::quietMode)cout<<"in MapRedRunScriptForExtent"<<endl;
+    left = -180.0 ;
+    right = 180.0;
+    up=90.0;
+    down=-90.0;
+    
+    string tempVariableName = "TEMP_VAR_temp_var_extent" ;
+    string script2 = scriptContent 
+        +"; var " + tempVariableName + "=JSON.stringify(extentFunc());" ;
+    string retResultJsonText, retError;
+    bool getok = this->RunScriptAndGetVariableJsonText(
+        extra , 
+        script2,
+        0L,
+        0,0,0,
+        tempVariableName,
+        retResultJsonText,
+        retError
+        ) ;
+    if( getok )
+    {
+        DynamicJsonBuffer jsonBuffer;
+        JsonVariant variant = jsonBuffer.parse(retResultJsonText);
+        
+        JsonArray& temparr = variant.as<JsonArray>() ;
+        if( temparr.size() == 4 ){
+            left = temparr[0].as<double>();
+            right = temparr[1].as<double>();
+            up = temparr[2].as<double>();
+            down = temparr[3].as<double>();
+            return true;
+        }else{
+            error ="result is not 4 elements array." ;
+            return false;
+        }
+    }else
+    {
+        error = retError;
+        return false;
+    }
+}
+
+//mapreduce框架 获取目标sharedobject json text
+bool PixelEngine::MapRedRunScriptForSharedObj(void* extra,
+    string& scriptContent,string& retJsonText, string& error)
+{
+    if(! PixelEngine::quietMode)cout<<"in MapRedRunScriptForSharedObj"<<endl;
+    retJsonText = "";
+    string tempVariableName = "TEMP_VAR_temp_var_shareobj" ;
+    string script2 = scriptContent 
+        +"; var " + tempVariableName + "=JSON.stringify(sharedObjectFunc());" ;
+    string retResultJsonText, retError;
+    bool getok = this->RunScriptAndGetVariableJsonText(
+        extra , 
+        script2,
+        0L,
+        0,0,0,
+        tempVariableName,
+        retResultJsonText,
+        retError
+        ) ;
+    if( getok )
+    {
+        retJsonText = retResultJsonText;
+    }else
+    {
+        error = retError;
+        return false;
+    }
+}
+    
+//mapreduce框架 运行map function
+bool PixelEngine::MapRedRunScriptForMapFunc(void* extra,
+    string& scriptContent,int64_t dt,int z,int y,int x,
+    string& sharedObjJsonText, string& retJsonText, string& error)
+{
+    if(! PixelEngine::quietMode)cout<<"in MapRedRunScriptForMapFunc"<<endl;
+    retJsonText = "";
+    string tempVariableName = "TEMP_VAR_temp_var_mapres" ;
+    string script2 = scriptContent 
+        +"; var " + tempVariableName 
+        + "=JSON.stringify(mapFunc(JSON.parse('"+sharedObjJsonText+"')));" ;
+    string retResultJsonText, retError;
+    bool getok = this->RunScriptAndGetVariableJsonText(
+        extra , 
+        script2,
+        dt,
+        z,y,x,
+        tempVariableName,
+        retResultJsonText,
+        retError
+        ) ;
+    if( getok )
+    {
+        retJsonText = retResultJsonText;
+        return true;
+    }else
+    {
+        error = retError;
+        return false;
+    }
+}
+
+ 
+//mapreduce框架 运行reduce function
+/// reduceFunc( sharedObj, key, obj1, obj2 )
+bool PixelEngine::MapRedRunScriptForReduceFunc(void* extra,
+    string& scriptContent,
+    string& sharedObjJsonText,
+    string& keystr, 
+    string& obj1JsonText,
+    string& obj2JsonText, 
+    string& retJsonText, 
+    string& error)
+{
+    if(! PixelEngine::quietMode)cout<<"in MapRedRunScriptForReduceFunc"<<endl;
+    retJsonText = "";
+    string tempVariableName = "TEMP_VAR_temp_var_reduceres" ;
+    string script2 = scriptContent 
+        +"; var " + tempVariableName 
+        + "=JSON.stringify(reduceFunc("
+            +"JSON.parse('"+sharedObjJsonText+"'),'"
+            + keystr 
+            +"',JSON.parse('"+obj1JsonText
+            +"'),JSON.parse('"+obj2JsonText+"') " 
+            + ") "
+            + ");" ;
+    string retResultJsonText, retError;
+    bool getok = this->RunScriptAndGetVariableJsonText(
+        extra , 
+        script2,
+        0L,
+        0,0,0,
+        tempVariableName,
+        retResultJsonText,
+        retError
+        ) ;
+    if( getok )
+    {
+        retJsonText = retResultJsonText;
+        return true;
+    }else
+    {
+        error = retError;
+        return false;
+    }
+}
+    
+    //mapreduce框架 运行main function
+bool PixelEngine::MapRedRunScriptForMainFunc(void* extra,
+    string& scriptContent,string& sharedObjJsonText,
+    string& objCollectionJsonText , 
+    string& retJsonText, string& error)
+{
+    if(! PixelEngine::quietMode)cout<<"in MapRedRunScriptForMainFunc"<<endl;
+    retJsonText = "";
+    string tempVariableName = "TEMP_VAR_temp_var_main_res" ;
+    string script2 = scriptContent 
+        +"; var " + tempVariableName 
+        + "=JSON.stringify(main("
+            +"JSON.parse('"+sharedObjJsonText+"'),"
+            +"JSON.parse('"+objCollectionJsonText
+            +"') " 
+            + ") "
+            + ");" ;
+    string retResultJsonText, retError;
+    bool getok = this->RunScriptAndGetVariableJsonText(
+        extra , 
+        script2,
+        0L,
+        0,0,0,
+        tempVariableName,
+        retResultJsonText,
+        retError
+        ) ;
+    if( getok )
+    {
+        retJsonText = retResultJsonText;
+        return true;
+    }else
+    {
+        error = retError;
+        return false;
+    }
+}
+
+
+/**
+ * @brief 通用执行js脚本程序，通过关键字获取该变量的值，这个值必须是字符串格式的，一般使用json的文本。
+ * @param extra 保留关键字
+ * @param scriptContent 脚本文本
+ * @param dt 当前传入日期时间
+ * @param z 瓦片z
+ * @param y 瓦片y
+ * @param x 瓦片x
+ * @param variableName 需要获取变量的名字
+ * @param retJsonText 返回的变量结果，需要是字符串格式
+ * @param retError 返回错误信息，如果有错误
+ * @return 返回true、false
+ */
+bool PixelEngine::RunScriptAndGetVariableJsonText(void* extra,
+        string& scriptContent, 
+        int64_t dt,int z,int y,int x,
+        string variableName, 
+        string& retJsonText,
+        string& retError)
+{//返回的结果必须是json化的。
+            
+    if(! PixelEngine::quietMode)cout<<"in RunScriptAndGetVariableJsonText"<<endl;
+	this->pe_logs.reserve(2048);//max 1k bytes.
+	this->tileInfo.x = x ;
+	this->tileInfo.y = y ;
+	this->tileInfo.z = z ;
+	this->extraPointer = extra ;
+	this->currentDateTime = dt ;
+	bool allOk = false ;
+
+	this->create_params.array_buffer_allocator =
+	v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+	this->isolate = v8::Isolate::New(create_params);
+	{
+		v8::Isolate::Scope isolate_scope(this->isolate);
+		v8::HandleScope handle_scope(this->isolate);
+
+		v8::Local<v8::Context> context = v8::Context::New(this->isolate );
+		v8::Context::Scope context_scope(context);// enter scope
+		PixelEngine::initTemplate(  this , this->isolate , context) ;
+		this->m_context.Reset( this->isolate , context);
+		TryCatch try_catch(this->isolate);
+		string source = scriptContent ;
+		v8::Local<v8::Script> script ;
+		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
+		  		source.c_str()).ToLocalChecked()).ToLocal(&script)) {
+			String::Utf8Value error(this->isolate, try_catch.Exception());
+			if(! PixelEngine::quietMode)cout<<"compile exception:"<<*error<<endl;
+            retError = string("compile exception:") + (*error);
+			allOk = false ;
+		}else
+		{
+			unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                    std::chrono::system_clock::now().time_since_epoch()).count();
+			// Run the script to get the result.
+			Local<v8::Value> result ;
+			if (!script->Run(context).ToLocal(&result)) {
+				String::Utf8Value error( this->isolate, try_catch.Exception());
+				string exceptionstr = string("run exception:")+(*error) ;
+				retError = exceptionstr;
+                if(! PixelEngine::quietMode)cout<<retError<<endl;
+				allOk = false ;
+			}else
+			{
+				MaybeLocal<Value> tempResult = context->Global()->Get(context 
+		    		,String::NewFromUtf8(isolate, variableName.c_str()).ToLocalChecked() ) ;
+				if( PixelEngine::IsMaybeLocalOK(tempResult) == false) //IsNullOrUndefined() )
+				{
+					string error1("Error: get result of the key is null or undefined.") ;
+					if(! PixelEngine::quietMode)cout<<error1<<endl ;
+					//this->log(error1) ;
+                    retError = error1;
+					allOk = false ;
+				}else
+				{
+					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count();
+					printf("script run dura:%d ms \n", (int)(now1 - now) );//
+
+					//
+                    Local<Value> localresult = tempResult.ToLocalChecked() ;
+                    
+                    retJsonText = PixelEngine::convertV8LocalValue2CppString(
+                        this->isolate,
+                        localresult);
+                    cout<<"good result:"<< retJsonText<<endl;
+                    allOk = true ;
+					unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count();
+					printf("dura:%d ms \n", (int)(now2 - now1) );
+				}
+			}
+		}
+	}
+	this->m_context.Reset() ;
+	this->GlobalFunc_ForEachPixelCallBack.Reset() ;
+	this->GlobalFunc_GetPixelCallBack.Reset() ;
+	this->isolate->Dispose();
+	return allOk ;
+}
+   

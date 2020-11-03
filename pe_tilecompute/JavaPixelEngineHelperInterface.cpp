@@ -77,13 +77,13 @@ bool JavaPixelEngineHelperInterface::getTileData(int64_t dt, string& dsName, vec
 	cout<<"data[1]:"<<(int)dataVecOfVec[0][1]<<endl ;
 
 	//2020-10-11 没有吧java数据写入返回数据的vector中
-	int onebandbytesize = (int)dataVecOfVec[0].size() ;
-	retTileData.resize( nbands * onebandbytesize ) ;
-	for(int iband=0;iband<nbands;++iband)
-	{
-		unsigned char* destptr = retTileData.data() + iband * onebandbytesize;
-		memcpy(destptr , dataVecOfVec[iband].data() , onebandbytesize ) ;
-	}
+	int onedsbytesize = (int)dataVecOfVec[0].size() ;
+    cout<<"onedsbytesize:"<<onedsbytesize<<endl;
+	retTileData.resize( onedsbytesize ) ;
+    
+    unsigned char* destptr = retTileData.data();
+    memcpy(destptr , dataVecOfVec[0].data() , onedsbytesize ) ;
+	
 
 	env->DeleteLocalRef(javaHelperObject);
     env->DeleteLocalRef(javaHelperClass);

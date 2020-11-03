@@ -30,11 +30,13 @@
 #include "pemultipolygon.h"//2020-10-15
 #include "peroi.h"
 #include <memory>
+#include "ajson5.h"
 
 
 
 using namespace v8;
 using namespace std;
+using namespace ArduinoJson;
 
 using pe::wAST;
 
@@ -220,6 +222,7 @@ struct PixelEngine
 
 	//PixelEngine
 	static void GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//from exteranl
+    static void GlobalFunc_DatafileCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//2020-10-30
 	static void GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//load a datetime range dataset.
 	static void GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//from exteranl
 	
@@ -327,6 +330,61 @@ struct PixelEngine
 	//解析Dataset-Datetime 数据集时间日期对
 	bool RunScriptForDatasetDatetimePairs(void* extra,
 		string& scriptContent,vector<wDatasetDatetime>& retDsDtVec,string& errorText);
+        
+
+    /**
+     * @brief 通用执行js脚本程序，通过关键字获取该变量的值，这个值必须是字符串格式的，一般使用json的文本。
+     * @param extra 保留关键字,jni pointer
+     * @param scriptContent 脚本文本
+     * @param dt 当前传入日期时间
+     * @param z 瓦片z
+     * @param y 瓦片y
+     * @param x 瓦片x
+     * @param variableName 需要获取变量的名字
+     * @param retJsonText 返回的变量结果，需要是字符串格式
+     * @param retError 返回错误信息，如果有错误
+     * @return 返回true、false
+     */
+    bool RunScriptAndGetVariableJsonText(void* extra,
+                string& scriptContent, 
+                int64_t dt,int z,int y,int x,
+                string variableName, 
+                string& retJsonText,
+                string& retError) ;
+
+
+    //mapreduce框架 获取目标zlevel
+	bool MapRedRunScriptForZlevel(void* extra,
+		string& scriptContent,int& retZlevel, string& error);
+    
+    //mapreduce框架 获取目标extent
+	bool MapRedRunScriptForExtent(void* extra,
+		string& scriptContent,double& left,double& right,double& up,double& down, string& error);
+    
+    //mapreduce框架 获取目标sharedobject json text
+	bool MapRedRunScriptForSharedObj(void* extra,
+		string& scriptContent,string& retJsonText, string& error);
+        
+    //mapreduce框架 运行map function
+	bool MapRedRunScriptForMapFunc(void* extra,
+		string& scriptContent,int64_t dt,int z,int y,int x,
+        string& sharedObjJsonText, string& retJsonText, string& error);
+        
+    //mapreduce框架 运行reduce function
+	bool MapRedRunScriptForReduceFunc(void* extra,
+		string& scriptContent,string& sharedObjJsonText,
+        string& keystr, string& obj1JsonText
+        , string& obj2JsonText, 
+        string& retJsonText, string& error);
+        
+    //mapreduce框架 运行main function
+	bool MapRedRunScriptForMainFunc(void* extra,
+		string& scriptContent,string& sharedObjJsonText,
+        string& objCollectionJsonText , 
+        string& retJsonText, string& error);
+        
+
+        
 
 
 	///
@@ -357,6 +415,8 @@ struct PixelEngine
 		static bool convertV8MaybeLocalValue2Double(MaybeLocal<Value>& maybeVal,
 			double& retval);
 		static bool convertV8LocalValue2Int(Local<Value>& v8Val,int& retval) ;
+        static bool convertV8LocalValue2IntArray(Local<Context>&context,Local<Value>& v8Val,vector<int>& retvec) ;
+        static bool convertV8LocalValue2DoubleArray(Local<Context>&context,Local<Value>& v8Val,vector<double>& retvec) ;
 
 
 

@@ -4,30 +4,9 @@
   <wxString Value="/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/peworkspace/peworkspace.workspace" Name="m_workspaceName"/>
   <TabInfoArray Name="TabInfoArray">
     <TabInfo>
-      <wxString Value="/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.cpp" Name="FileName"/>
-      <int Value="4530" Name="FirstVisibleLine"/>
-      <int Value="4560" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks"/>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
-      <wxString Value="/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.h" Name="FileName"/>
-      <int Value="219" Name="FirstVisibleLine"/>
-      <int Value="230" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks"/>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
-      <wxString Value="/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/peroi.cpp" Name="FileName"/>
-      <int Value="145" Name="FirstVisibleLine"/>
-      <int Value="136" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks"/>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
-      <wxString Value="/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/peroi.h" Name="FileName"/>
-      <int Value="30" Name="FirstVisibleLine"/>
-      <int Value="29" Name="CurrentLine"/>
+      <wxString Value="/home/hadoop/IdeaProjects/vis_ir_mos_projects/dq1043_ir/dq1043_ir.cpp" Name="FileName"/>
+      <int Value="613" Name="FirstVisibleLine"/>
+      <int Value="641" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
