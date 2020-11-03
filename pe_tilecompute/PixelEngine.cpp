@@ -3986,6 +3986,8 @@ bool PixelEngine::RunScriptForDatasetDatetimePairs(void* extra,
             ast.findObjectPropertyCallStatement(ast.rootNode.as<JsonObject>(), "PixelEngine", "Dataset", dsdtVec);
             ast.findObjectPropertyCallStatement(ast.rootNode.as<JsonObject>(), "pe", "DatasetArray", dsdtVec);
             ast.findObjectPropertyCallStatement(ast.rootNode.as<JsonObject>(), "PixelEngine", "DatasetArray", dsdtVec);
+            ast.findObjectPropertyCallStatement(ast.rootNode.as<JsonObject>(), "PixelEngine", "Datafile", dsdtVec);
+            ast.findObjectPropertyCallStatement(ast.rootNode.as<JsonObject>(), "pe", "Datafile", dsdtVec);
 
             //去掉dtds重复项
             for (vector<wDatasetDatetime>::iterator iter = dsdtVec.begin(); iter != dsdtVec.end(); ++iter) {

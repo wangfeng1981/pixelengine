@@ -124,7 +124,12 @@ namespace pe {
 		return false;
 	}
 
-	void wAST::findObjectPropertyCallStatement(JsonObject& node, const char* objName, const char* propName, vector<string>& firstArgumentsVec) {
+	void wAST::findObjectPropertyCallStatement(
+        JsonObject& node, 
+        const char* objName, 
+        const char* propName, 
+        vector<string>& firstArgumentsVec) 
+    {
 		for (ArduinoJson::Internals::ListConstIterator<ArduinoJson::JsonPair> iter = node.begin(); iter != node.end(); ++iter) {
 			if (strcmp(iter->key, "callee") == 0) {
 				if (iter->value.as<JsonObject>().containsKey("object") && iter->value.as<JsonObject>().containsKey("property")) {
@@ -174,8 +179,12 @@ namespace pe {
 	}//end
 
 
-	void wAST::findObjectPropertyCallStatement(JsonObject& node, const char* objName, const char* propName, 
-		vector<wDatasetDatetime>& dsdtvec) {
+	void wAST::findObjectPropertyCallStatement(
+        JsonObject& node, 
+        const char* objName, 
+        const char* propName, 
+		vector<wDatasetDatetime>& dsdtvec) 
+    {
 		for (ArduinoJson::Internals::ListConstIterator<ArduinoJson::JsonPair> iter = node.begin(); iter != node.end(); ++iter) {
 			if (strcmp(iter->key, "callee") == 0) {
 				if (iter->value.as<JsonObject>().containsKey("object") && iter->value.as<JsonObject>().containsKey("property")) {
@@ -187,12 +196,27 @@ namespace pe {
 						if ((object1name.compare(objName) == 0)
 							&&
 							(ppt1name.compare(propName) == 0)
-							) {
-							//find pe.Dataset or pe.DatasetArray
+							) 
+                        {
+							//find pe.Dataset or pe.DatasetArray or pe.Datafile
 							if (node.containsKey("arguments")) {
 								//callee:{...} , arguments:[]
 								JsonArray& arr1 = node["arguments"].as<JsonArray>();
-								if (arr1.size() > 2) {
+                                if( arr1.size()== 1 )
+                                {//pe.Datafile('somefile');
+                                    JsonObject& arg0 = arr1[0];
+                                    if (arg0.containsKey("type") && arg0.containsKey("value") )
+                                    {
+                                        string arg0type = arg0["type"].as<char*>();
+										string arg0value = arg0["value"].as<char*>();
+                                        if (arg0type.compare("Literal") == 0 ) {
+											wDatasetDatetime dtds;
+											dtds.ds = arg0value;
+											dtds.dt0 = 0;
+											dsdtvec.push_back(dtds);
+										}
+                                    }
+                                }else if (arr1.size() > 2) {
 									JsonObject& arg0 = arr1[0];
 									JsonObject& arg1 = arr1[1];
 									if (arg0.containsKey("type") && arg0.containsKey("value")

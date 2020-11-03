@@ -96,9 +96,6 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ParseSc
   	jstring scriptContent ) 
 {
 	printf("in Java_com_pixelengine_HBasePeHelperCppConnector_ParseScriptForDsDt()\n") ;
-	auto console_logger = spdlog::stdout_color_mt("log");
-	spdlog::set_default_logger(console_logger);
-
 
 	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
 	JavaPixelEngineHelperInterface helper(env, helperclassname) ; 
