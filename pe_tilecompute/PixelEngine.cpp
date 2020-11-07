@@ -19,7 +19,8 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 //string PixelEngine::pejs_version = string("2.4.2.0 2020-10-15");
 //string PixelEngine::pejs_version = string("2.4.2.1 2020-10-27");//debug for AST not valid main
 //string PixelEngine::pejs_version = string("2.4.3.0 2020-10-30");//add pe.Datafile(...)
-string PixelEngine::pejs_version = string("2.4.4.0 2020-11-03");//add map reduce procedure.
+//string PixelEngine::pejs_version = string("2.4.4.0 2020-11-03");//add map reduce procedure.
+string PixelEngine::pejs_version = string("2.4.4.1 2020-11-07");//2020-11-07.
 
 
 //// mapreduce not used yet.
@@ -982,7 +983,8 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 	,const int height
 	,const int nband )
 {
-	if(! PixelEngine::quietMode)cout<<"inside CPP_NewDataset"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside CPP_NewDataset datatype,w,h,nb:"
+        <<datatype<<","<<width<<","<<height<<","<<nband<<endl; 
 	v8::EscapableHandleScope handle_scope(isolate);
 
 	Local<Object> global = context->Global() ;
@@ -1052,8 +1054,26 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 	Maybe<bool> ok17 = ds->Set(context
 		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
 		,Integer::New(isolate,0) ) ;
-
-	if( datatype == 3 )
+    
+    if( datatype==1 )
+    {//byte
+		int bsize = width*height*nband ;
+		Local<ArrayBuffer> arrbuff = ArrayBuffer::New(isolate,bsize) ;
+		Local<Uint8Array> u8array = Uint8Array::New(arrbuff,0,bsize) ;
+		Maybe<bool> ok19 = ds->Set(context
+			,String::NewFromUtf8(isolate, "tiledata").ToLocalChecked()
+			,u8array ) ;
+	}
+    else if( datatype== 2)
+    {//uint16
+        int bsize = width*height*nband*2 ;
+		Local<ArrayBuffer> arrbuff = ArrayBuffer::New(isolate,bsize) ;
+		Local<Uint16Array> i16array = Uint16Array::New(arrbuff,0,bsize/2) ;
+		Maybe<bool> ok18 = ds->Set(context
+			,String::NewFromUtf8(isolate, "tiledata").ToLocalChecked()
+			,i16array ) ;
+    }
+	else if( datatype == 3 )
 	{//short
 		int bsize = width*height*nband*2 ;
 		Local<ArrayBuffer> arrbuff = ArrayBuffer::New(isolate,bsize) ;
@@ -1061,14 +1081,44 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 		Maybe<bool> ok18 = ds->Set(context
 			,String::NewFromUtf8(isolate, "tiledata").ToLocalChecked()
 			,i16array ) ;
-	}else
-	{//byte
-		int bsize = width*height*nband ;
+	}
+    else if( datatype==4 )
+    {//uint32
+        int bsize = width*height*nband*4 ;
 		Local<ArrayBuffer> arrbuff = ArrayBuffer::New(isolate,bsize) ;
-		Local<Uint8Array> u8array = Uint8Array::New(arrbuff,0,bsize) ;
-		Maybe<bool> ok19 = ds->Set(context
+		Local<Uint32Array> i16array = Uint32Array::New(arrbuff,0,bsize/4) ;
+		Maybe<bool> ok18 = ds->Set(context
 			,String::NewFromUtf8(isolate, "tiledata").ToLocalChecked()
-			,u8array ) ;
+			,i16array ) ;
+    }else if( datatype==5 )
+    {//int32
+        int bsize = width*height*nband*4 ;
+		Local<ArrayBuffer> arrbuff = ArrayBuffer::New(isolate,bsize) ;
+		Local<Int32Array> i16array = Int32Array::New(arrbuff,0,bsize/4) ;
+		Maybe<bool> ok18 = ds->Set(context
+			,String::NewFromUtf8(isolate, "tiledata").ToLocalChecked()
+			,i16array ) ;
+    }else if( datatype==6 )
+    {//float
+        int bsize = width*height*nband*4 ;
+		Local<ArrayBuffer> arrbuff = ArrayBuffer::New(isolate,bsize) ;
+		Local<Float32Array> i16array = Float32Array::New(arrbuff,0,bsize/4) ;
+		Maybe<bool> ok18 = ds->Set(context
+			,String::NewFromUtf8(isolate, "tiledata").ToLocalChecked()
+			,i16array ) ;
+    }else if( datatype==7 )
+    {//double
+        int bsize = width*height*nband*8 ;
+		Local<ArrayBuffer> arrbuff = ArrayBuffer::New(isolate,bsize) ;
+		Local<Float64Array> i16array = Float64Array::New(arrbuff,0,bsize/8) ;
+		Maybe<bool> ok18 = ds->Set(context
+			,String::NewFromUtf8(isolate, "tiledata").ToLocalChecked()
+			,i16array ) ;
+    }
+    else
+	{//unknow data type 
+        cout<<"Error : unknow datatype"<<endl;
+        
 	}
 
 	//dataset.clip() 2020-10-16
@@ -2411,7 +2461,7 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 /// PixelEngine.GetTileData(name,datetime,z,y,x)
 void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
-	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_GetTileDataCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside C++ GlobalFunc_GetTileDataCallBack"<<endl; 
 	if (args.Length() != 5 ){
 		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 5 "<<endl ;
 		return;
@@ -2508,14 +2558,40 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 	Local<ArrayBuffer> exArrBuff = ArrayBuffer::New(isolate,externalData.size()) ;
 	unsigned char* exArrBuffDataPtr =(unsigned char*) exArrBuff->GetBackingStore()->Data() ;
 	memcpy(exArrBuffDataPtr , externalData.data(), externalData.size() );
-	if( dt == 3 )
-	{
-		Local<Int16Array> i16Array = Int16Array::New(exArrBuff, 0 , externalData.size()/2 ) ;
-		args.GetReturnValue().Set(i16Array) ;
-	}else
+    if( dt==1 )
 	{
 		Local<Uint8Array> u8Array = Uint8Array::New(exArrBuff, 0 , externalData.size() ) ;
 		args.GetReturnValue().Set(u8Array) ;
+	}
+	else if( dt == 2 )
+	{
+		Local<Uint16Array> i16Array = Uint16Array::New(exArrBuff, 0 , externalData.size()/2 ) ;
+		args.GetReturnValue().Set(i16Array) ;
+	}
+    else if( dt == 3 )
+	{
+		Local<Int16Array> i16Array = Int16Array::New(exArrBuff, 0 , externalData.size()/2 ) ;
+		args.GetReturnValue().Set(i16Array) ;
+	}
+    else if( dt == 4 )
+	{
+		Local<Uint32Array> i16Array = Uint32Array::New(exArrBuff, 0 , externalData.size()/4 ) ;
+		args.GetReturnValue().Set(i16Array) ;
+	}
+    else if( dt == 5 )
+	{
+		Local<Int32Array> i16Array = Int32Array::New(exArrBuff, 0 , externalData.size()/4 ) ;
+		args.GetReturnValue().Set(i16Array) ;
+	}
+    else if( dt == 6 )
+	{
+		Local<Float32Array> i16Array = Float32Array::New(exArrBuff, 0 , externalData.size()/4 ) ;
+		args.GetReturnValue().Set(i16Array) ;
+	}
+    else if( dt == 7 )
+	{
+		Local<Float64Array> i16Array = Float64Array::New(exArrBuff, 0 , externalData.size()/8 ) ;
+		args.GetReturnValue().Set(i16Array) ;
 	}
 }
 
@@ -3806,6 +3882,11 @@ bool PixelEngine::RunScriptForTileWithRender(void* extra, string& scriptContent,
 		//do render staff
 		pngwid = retTileData0.width;
 		pnghei = retTileData0.height;
+        printf("C++ RunScriptForTileWithRender dtype:%d,wid:%d,hei:%d,nb:%d\n",
+            retTileData0.dataType,
+            retTileData0.width,
+            retTileData0.height,
+            retTileData0.nbands ) ;
 
 		if (inStyle.type == "") {
 			//do not use style
@@ -4132,8 +4213,8 @@ void PixelEngine::innerData2RGBAWithoutStyle(T* data, int width,int height, int 
 		for (int it = 0; it < dataLen; ++it) {
 			int it1 = it * 4;
 			rgbaData[it1] = PixelEngine::clamp255(data[it]) ;
-			rgbaData[it1+1] = rgbaData[it];
-			rgbaData[it1+2] = rgbaData[it];
+			rgbaData[it1+1] = rgbaData[it1];//bugfixed 2020-11-07
+			rgbaData[it1+2] = rgbaData[it1];
 			rgbaData[it1+3] = 255;
 		}
 	}
