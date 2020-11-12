@@ -20,7 +20,8 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 //string PixelEngine::pejs_version = string("2.4.2.1 2020-10-27");//debug for AST not valid main
 //string PixelEngine::pejs_version = string("2.4.3.0 2020-10-30");//add pe.Datafile(...)
 //string PixelEngine::pejs_version = string("2.4.4.0 2020-11-03");//add map reduce procedure.
-string PixelEngine::pejs_version = string("2.4.4.1 2020-11-07");//2020-11-07.
+//string PixelEngine::pejs_version = string("2.4.4.1 2020-11-07");//2020-11-07.
+string PixelEngine::pejs_version = string("2.4.4.2 2020-11-12 renderGray fit all datatype");//2020-11-07.
 
 
 //// mapreduce not used yet.
@@ -1203,6 +1204,7 @@ Local<Object> PixelEngine::CPP_NewDatasetArray(Isolate* isolate,Local<Context>& 
 
 /// dataset.renderGray() , return a new Dataset
 /// iband,vmin,vmax,nodata,nodataColor
+/// fit all data type 2020-11-12
 void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
 	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_RenderGrayCallBack"<<endl; 
@@ -1272,6 +1274,31 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
 
 	int asize = width * height ;
 	float theK = 255.f/(vmax-vmin) ;
+    if( thisDataType==2 )
+    {//uint16
+        Uint16Array* i16Array = Uint16Array::Cast(*tiledataValue) ;
+		unsigned short* backData = (unsigned short*) i16Array->Buffer()->GetBackingStore()->Data() ;
+		unsigned short* backDataOffset = backData + iband * asize;
+		
+		for(int it = 0 ; it < asize ; ++ it )
+		{
+			if( backDataOffset[it] == nodata ){
+				outbackData[it] = nodataColor[0] ;
+				outbackData[asize+it] = nodataColor[1] ;
+				outbackData[asize*2+it] = nodataColor[2] ;
+				outbackData[asize*3+it] = nodataColor[3] ;
+			}else
+			{
+				int gray = (backDataOffset[it]-vmin) * theK ;
+				if( gray < 0 ) gray = 0 ;
+				else if( gray > 255 ) gray = 255 ;
+				outbackData[it] = gray ;
+				outbackData[asize+it] = gray;
+				outbackData[asize*2+it] = gray ;
+				outbackData[asize*3+it] = 255;
+			}
+		}
+    }
 	if( thisDataType==3 )
 	{//short
 		
@@ -1297,7 +1324,106 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
 				outbackData[asize*3+it] = 255;
 			}
 		}
-	}else
+	}
+    else if( thisDataType==4 )
+    {//uint32
+        Uint32Array* i16Array = Uint32Array::Cast(*tiledataValue) ;
+		unsigned int* backData = (unsigned int*) i16Array->Buffer()->GetBackingStore()->Data() ;
+		unsigned int* backDataOffset = backData + iband * asize;
+		
+		for(int it = 0 ; it < asize ; ++ it )
+		{
+			if( backDataOffset[it] == nodata ){
+				outbackData[it] = nodataColor[0] ;
+				outbackData[asize+it] = nodataColor[1] ;
+				outbackData[asize*2+it] = nodataColor[2] ;
+				outbackData[asize*3+it] = nodataColor[3] ;
+			}else
+			{
+				int gray = (backDataOffset[it]-vmin) * theK ;
+				if( gray < 0 ) gray = 0 ;
+				else if( gray > 255 ) gray = 255 ;
+				outbackData[it] = gray ;
+				outbackData[asize+it] = gray;
+				outbackData[asize*2+it] = gray ;
+				outbackData[asize*3+it] = 255;
+			}
+		}
+    }
+    else if( thisDataType==5 )
+    {//int32
+        Int32Array* i16Array = Int32Array::Cast(*tiledataValue) ;
+		int* backData = (int*) i16Array->Buffer()->GetBackingStore()->Data() ;
+		int* backDataOffset = backData + iband * asize;
+		
+		for(int it = 0 ; it < asize ; ++ it )
+		{
+			if( backDataOffset[it] == nodata ){
+				outbackData[it] = nodataColor[0] ;
+				outbackData[asize+it] = nodataColor[1] ;
+				outbackData[asize*2+it] = nodataColor[2] ;
+				outbackData[asize*3+it] = nodataColor[3] ;
+			}else
+			{
+				int gray = (backDataOffset[it]-vmin) * theK ;
+				if( gray < 0 ) gray = 0 ;
+				else if( gray > 255 ) gray = 255 ;
+				outbackData[it] = gray ;
+				outbackData[asize+it] = gray;
+				outbackData[asize*2+it] = gray ;
+				outbackData[asize*3+it] = 255;
+			}
+		}
+    }else if( thisDataType==6 )
+    {//float
+        Float32Array* i16Array = Float32Array::Cast(*tiledataValue) ;
+		float* backData = (float*) i16Array->Buffer()->GetBackingStore()->Data() ;
+		float* backDataOffset = backData + iband * asize;
+		
+		for(int it = 0 ; it < asize ; ++ it )
+		{
+			if( backDataOffset[it] == nodata ){
+				outbackData[it] = nodataColor[0] ;
+				outbackData[asize+it] = nodataColor[1] ;
+				outbackData[asize*2+it] = nodataColor[2] ;
+				outbackData[asize*3+it] = nodataColor[3] ;
+			}else
+			{
+				int gray = (backDataOffset[it]-vmin) * theK ;
+				if( gray < 0 ) gray = 0 ;
+				else if( gray > 255 ) gray = 255 ;
+				outbackData[it] = gray ;
+				outbackData[asize+it] = gray;
+				outbackData[asize*2+it] = gray ;
+				outbackData[asize*3+it] = 255;
+			}
+		}
+    }else if( thisDataType==7 )
+    {//double
+        Float64Array* i16Array = Float64Array::Cast(*tiledataValue) ;
+		double* backData = (double*) i16Array->Buffer()->GetBackingStore()->Data() ;
+		double* backDataOffset = backData + iband * asize;
+		
+		for(int it = 0 ; it < asize ; ++ it )
+		{
+			if( backDataOffset[it] == nodata ){
+				outbackData[it] = nodataColor[0] ;
+				outbackData[asize+it] = nodataColor[1] ;
+				outbackData[asize*2+it] = nodataColor[2] ;
+				outbackData[asize*3+it] = nodataColor[3] ;
+			}else
+			{
+				int gray = (backDataOffset[it]-vmin) * theK ;
+				if( gray < 0 ) gray = 0 ;
+				else if( gray > 255 ) gray = 255 ;
+				outbackData[it] = gray ;
+				outbackData[asize+it] = gray;
+				outbackData[asize*2+it] = gray ;
+				outbackData[asize*3+it] = 255;
+			}
+		}
+    }
+    else
 	{//byte
 		Uint8Array* u8Array = Uint8Array::Cast(*tiledataValue) ;
 		unsigned char* backData = (unsigned char*) u8Array->Buffer()->GetBackingStore()->Data() ;
@@ -2914,6 +3040,7 @@ bool PixelEngine::innerV8Dataset2TileData(Isolate* isolate, Local<Context>& cont
 	int nband = 0;
 
 	bool ok1 = PixelEngine::V8ObjectGetIntValue(isolate, dsObj2, context, "dataType", dt);
+    cout<<"c++ innerV8Dataset2TileData dt:"<<dt<<endl;
 	if (ok1 == false) {
 		if(! PixelEngine::quietMode)cout << "Error : failed to get dataType of output object." << endl;
 		return false;
