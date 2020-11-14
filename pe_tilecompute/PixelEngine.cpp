@@ -21,7 +21,8 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 //string PixelEngine::pejs_version = string("2.4.3.0 2020-10-30");//add pe.Datafile(...)
 //string PixelEngine::pejs_version = string("2.4.4.0 2020-11-03");//add map reduce procedure.
 //string PixelEngine::pejs_version = string("2.4.4.1 2020-11-07");//2020-11-07.
-string PixelEngine::pejs_version = string("2.4.4.2 2020-11-12 renderGray fit all datatype");//2020-11-07.
+//string PixelEngine::pejs_version = string("2.4.4.2 2020-11-12 renderGray fit all datatype");//2020-11-07.
+string PixelEngine::pejs_version = string("2.4.4.3 2020-11-14 renderGray bugfix");//2020-11-07.
 
 
 //// mapreduce not used yet.
@@ -1289,6 +1290,8 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
 				outbackData[asize*3+it] = nodataColor[3] ;
 			}else
 			{
+                
+                
 				int gray = (backDataOffset[it]-vmin) * theK ;
 				if( gray < 0 ) gray = 0 ;
 				else if( gray > 255 ) gray = 255 ;
@@ -1296,10 +1299,15 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
 				outbackData[asize+it] = gray;
 				outbackData[asize*2+it] = gray ;
 				outbackData[asize*3+it] = 255;
+                
+                if( it==0 ){
+                    cout<<"debug 1726  "<<backDataOffset[it]<<endl;
+                    cout<<"debug 1726 grey "<<gray<<endl;
+                }
 			}
 		}
     }
-	if( thisDataType==3 )
+	else if( thisDataType==3 )//bug fixed , add else 2020-11-14
 	{//short
 		
 		Int16Array* i16Array = Int16Array::Cast(*tiledataValue) ;
