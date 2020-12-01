@@ -243,6 +243,13 @@ struct PixelEngine
 	static void GlobalFunc_ColorRampCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 	//dataset.clip()
 	static void GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+    
+    //2020-12-01 convert dataset into other datatype, 
+    //in js var newds = dataset.convertToDataType(pe.DataTypeFloat32);
+    static void GlobalFunc_ConvertToDataType(const v8::FunctionCallbackInfo<v8::Value>& args);
+    
+    
+    
 
 	//global methods:
 	static void GlobalFunc_Log(const v8::FunctionCallbackInfo<v8::Value>& args) ;
@@ -266,6 +273,8 @@ struct PixelEngine
 	static bool V8ObjectGetUint32Array(Isolate* isolate, Local<Object>& obj, Local<Context>& context, string key, int shouldElementNumber, void* copyToPtr);
 	static bool V8ObjectGetFloat64Array(Isolate* isolate, Local<Object>& obj, Local<Context>& context, string key, int shouldElementNumber, void* copyToPtr);
     static void* V8ObjectGetTypedArrayBackPtr(Isolate* isolate, Local<Object>& obj, Local<Context>& context, string key);
+    //获取数组指针，同时获取字节长度
+    static void* V8ObjectGetTypedArrayBackPtr2(Isolate* isolate, Local<Object>& obj, Local<Context>& context, string key,size_t& byteLen);
  
 
 
@@ -453,6 +462,12 @@ struct PixelEngine
 		template<typename T>
 		static bool innerCopyRoiData(T* source,T* target,PeRoi& roi,int fillval,
 			int tilez,int tiley,int tilex,int wid,int hei,int nbands) ;
+            
+        //2020-12-01 copy array data from source to target
+        static bool innerCopyArrayData(void* srcDataPtr,int srcType,size_t srcElementCount, void* tarDataPtr,int tarType) ;
+        template<typename T, typename U>
+        static void innerCopyArrayData(T* srcDataPtr,size_t srcElementCount, U* tarDataPtr) ;
+        
         
             
         

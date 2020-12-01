@@ -22,7 +22,22 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 //string PixelEngine::pejs_version = string("2.4.4.0 2020-11-03");//add map reduce procedure.
 //string PixelEngine::pejs_version = string("2.4.4.1 2020-11-07");//2020-11-07.
 //string PixelEngine::pejs_version = string("2.4.4.2 2020-11-12 renderGray fit all datatype");//2020-11-07.
-string PixelEngine::pejs_version = string("2.4.4.3 2020-11-14 renderGray bugfix");//2020-11-07.
+//string PixelEngine::pejs_version = string("2.4.4.3 2020-11-14 renderGray bugfix");//2020-11-07.
+
+
+//2020.12.01
+//1.forEachPixel支持多种数据类型，涉及修改函数 globalFunc_forEachPixelCallBack, Done
+//2.Dataset增加数据格式转换的方法, Dataset.toByte() .toUint16() .toInt16() .toUint32() .toInt32() .toFloat32() toFloat64() , Done
+//3.DatasetArray.forEachPixel 支持多种数据类型，涉及修改函数 globalFunc_DA_forEachPixelCallBack , Done
+//4.修改globalFunc_getPixelCallBack函数，不再使用固定256x256瓦片尺寸，动态获取瓦片尺寸,Done
+//5.增加pe数据类型常量 
+//  pe.DataTypeByte, pe.DataTypeUint16 pe.DataTypeInt16 pe.DataTypeUint32 pe.DataTypeInt32 pe.DataTypeFloat32 pe.DataTypeFloat64
+//  ,Done
+//6.增加数据集转换函数 C++ : GlobalFunc_ConvertToDataType , js:var newds = dataset.convertToDataType(pe.DataTypeFloat32); Done
+//7.增加函数获取数组指针与字节长度 V8ObjectGetTypedArrayBackPtr2() , Done
+//8.增加不同类型数组值复制功能，涉及新加两个重载函数innerCopyArrayData(..1..) innerCopyArrayData(..2..) , Done
+string PixelEngine::pejs_version = string("2.4.5.0 2020-12-01");
+
 
 
 //// mapreduce not used yet.
@@ -1128,6 +1143,47 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 		,String::NewFromUtf8(isolate, "clip").ToLocalChecked(),
            FunctionTemplate::New(isolate,
            	PixelEngine::GlobalFunc_ClipCallBack)->GetFunction(context).ToLocalChecked() );
+            
+    //convert datatype methods
+    Maybe<bool> ok21 = ds->Set(context
+		,String::NewFromUtf8(isolate, "convertToDataType").ToLocalChecked(),
+           FunctionTemplate::New(isolate,
+           	PixelEngine::GlobalFunc_ConvertToDataType)->GetFunction(context).ToLocalChecked() );
+    {
+        Local<Value> tempFuncJs1 = global->Get(context,String::NewFromUtf8(isolate, "globalFunc_ds_toByteCallBack")
+            .ToLocalChecked() ).ToLocalChecked() ;
+        Maybe<bool> ok22 = ds->Set(context,String::NewFromUtf8(isolate, "toByte").ToLocalChecked(),tempFuncJs1 );
+    }
+    {
+        Local<Value> tempFuncJs1 = global->Get(context,String::NewFromUtf8(isolate, "globalFunc_ds_toUint16CallBack")
+            .ToLocalChecked() ).ToLocalChecked() ;
+        Maybe<bool> ok22 = ds->Set(context,String::NewFromUtf8(isolate, "toUint16").ToLocalChecked(),tempFuncJs1 );
+    }
+    {
+        Local<Value> tempFuncJs1 = global->Get(context,String::NewFromUtf8(isolate, "globalFunc_ds_toInt16CallBack")
+            .ToLocalChecked() ).ToLocalChecked() ;
+        Maybe<bool> ok22 = ds->Set(context,String::NewFromUtf8(isolate, "toInt16").ToLocalChecked(),tempFuncJs1 );
+    }
+    {
+        Local<Value> tempFuncJs1 = global->Get(context,String::NewFromUtf8(isolate, "globalFunc_ds_toUint32CallBack")
+            .ToLocalChecked() ).ToLocalChecked() ;
+        Maybe<bool> ok22 = ds->Set(context,String::NewFromUtf8(isolate, "toUint32").ToLocalChecked(),tempFuncJs1 );
+    }
+    {
+        Local<Value> tempFuncJs1 = global->Get(context,String::NewFromUtf8(isolate, "globalFunc_ds_toInt32CallBack")
+            .ToLocalChecked() ).ToLocalChecked() ;
+        Maybe<bool> ok22 = ds->Set(context,String::NewFromUtf8(isolate, "toInt32").ToLocalChecked(),tempFuncJs1 );
+    }
+    {
+        Local<Value> tempFuncJs1 = global->Get(context,String::NewFromUtf8(isolate, "globalFunc_ds_toFloat32CallBack")
+            .ToLocalChecked() ).ToLocalChecked() ;
+        Maybe<bool> ok22 = ds->Set(context,String::NewFromUtf8(isolate, "toFloat32").ToLocalChecked(),tempFuncJs1 );
+    }
+    {
+        Local<Value> tempFuncJs1 = global->Get(context,String::NewFromUtf8(isolate, "globalFunc_ds_toFloat64CallBack")
+            .ToLocalChecked() ).ToLocalChecked() ;
+        Maybe<bool> ok22 = ds->Set(context,String::NewFromUtf8(isolate, "toFloat64").ToLocalChecked(),tempFuncJs1 );
+    }
 
 
 	return handle_scope.Escape(ds);
@@ -1460,6 +1516,94 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
 	//info.GetReturnValue().Set(i16arr);
 	args.GetReturnValue().Set(outds) ;
 }
+
+
+
+/// 数据集格式转换，返回新的数据集 2020-12-01
+/// dataset.convertToDataType(newDataType) , return a new Dataset
+/// newDataType:pe.DataTypeByte, pe.DataTypeUint16 pe.DataTypeInt16 
+///             pe.DataTypeUint32 pe.DataTypeInt32 pe.DataTypeFloat32 pe.DataTypeFloat64
+void PixelEngine::GlobalFunc_ConvertToDataType(const v8::FunctionCallbackInfo<v8::Value>& args) 
+{
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_ConvertToDataType"<<endl; 
+	if (args.Length() != 1 ){
+		cout<<"Error: args.Length != 1 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> v8_newDataType = args[0];
+    int retNewDataType = 0 ;
+    bool newDataTypeOk = convertV8LocalValue2Int(v8_newDataType,retNewDataType) ;
+    if( newDataTypeOk==false ){
+        cout<<"Error : failed to get newDataType."<<endl ;
+        return ;
+    }else if( retNewDataType<1 || retNewDataType > 7 ){
+        cout<<"Error : invalid newDataType:"<<retNewDataType<<endl ;
+        return ;
+    }
+    
+	Local<Object> thisobj =  args.This() ;
+    int thisDataType = 0 ;
+    bool thisDataTypeOk = V8ObjectGetIntValue(isolate,thisobj,context,"dataType",thisDataType) ;
+    if( thisDataTypeOk==false ){
+        cout<<"Error : failed to get this.dataType." ;
+        return ;
+    }
+    
+    cout<<"Info : try to convert "<<thisDataType<<" to "<<retNewDataType<<endl ;
+    
+    int width(0) , height(0) , nband(0) ;
+    bool widok = V8ObjectGetIntValue(isolate,thisobj,context,"width",width) ;
+    if( widok==false ){
+        cout<<"Error : failed to get this.width." ;
+        return ;
+    }
+    bool heiok = V8ObjectGetIntValue(isolate,thisobj,context,"height",height) ;
+    if( heiok==false ){
+        cout<<"Error : failed to get this.height." ;
+        return ;
+    }
+    bool nbandok = V8ObjectGetIntValue(isolate,thisobj,context,"nband",nband) ;
+    if( nbandok==false ){
+        cout<<"Error : failed to get this.nband." ;
+        return ;
+    }
+
+	//output
+	Local<Object> outds = PixelEngine::CPP_NewDataset(isolate,context
+		,retNewDataType
+		,width
+		,height
+		,nband);
+
+    size_t oldByteLen(0) , newByteLen(0) ;
+    void* oldDataPtr = V8ObjectGetTypedArrayBackPtr2(isolate,thisobj,context,"tiledata",oldByteLen) ;
+    if( oldDataPtr==nullptr ){
+        cout<<"Error : failed to get oldDataPtr." ;
+        return ;
+    }
+    
+    void* newDataPtr = V8ObjectGetTypedArrayBackPtr2(isolate,outds  ,context,"tiledata",newByteLen) ;
+    if( newDataPtr==nullptr ){
+        cout<<"Error : failed to get newDataPtr." ;
+        return ;
+    }
+    
+	size_t elementCount = (size_t)width * height * nband ;
+    bool iscopyok = innerCopyArrayData(oldDataPtr , thisDataType , elementCount , newDataPtr , retNewDataType) ;
+    if(iscopyok==false )
+    {
+        cout<<"Error : innerCopyArrayData failed , maybe caused by invalid datatype."<<endl ;
+        return ;
+    }
+	
+	//info.GetReturnValue().Set(i16arr);
+	args.GetReturnValue().Set(outds) ;
+}
+
 
 
 
@@ -3233,6 +3377,8 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	Integer::New(isolate,2));//add 2020-6-20
 	Maybe<bool> ok13 = pe->Set(context,String::NewFromUtf8(isolate, "pejs_version").ToLocalChecked(),
 		String::NewFromUtf8(isolate, PixelEngine::pejs_version.c_str()).ToLocalChecked()) ;
+        
+
 
 
 	Maybe<bool> ok14 = pe->Set(context
@@ -3260,18 +3406,53 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 		, String::NewFromUtf8(isolate, "getStyle").ToLocalChecked(),
 		FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_GetStyleCallBack)->GetFunction(context).ToLocalChecked());
 
-
-
 	//pe function log
 	Maybe<bool> ok20 = pe->Set(context
 		,String::NewFromUtf8(isolate, "log").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_Log)->GetFunction(context).ToLocalChecked() );
+           
+
+    {//DataTypes
+        //pe.DataTypeByte  pe.DataTypeUint16 pe.DataTypeInt16 pe.DataTypeUint32 
+        //pe.DataTypeInt32 pe.DataTypeFloat32 pe.DataTypeFloat64
+    	Maybe<bool> ok31 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeByte").ToLocalChecked(),
+        Integer::New(isolate,1)); 
+        Maybe<bool> ok32 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeUint16").ToLocalChecked(),
+        Integer::New(isolate,2)); 
+        Maybe<bool> ok33 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeInt16").ToLocalChecked(),
+        Integer::New(isolate,3)); 
+        Maybe<bool> ok34 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeUint32").ToLocalChecked(),
+        Integer::New(isolate,4)); 
+        Maybe<bool> ok35 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeInt32").ToLocalChecked(),
+        Integer::New(isolate,5)); 
+        Maybe<bool> ok36 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeFloat32").ToLocalChecked(),
+        Integer::New(isolate,6)); 
+        Maybe<bool> ok37 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeFloat64").ToLocalChecked(),
+        Integer::New(isolate,7)); 
+    }
 
 
 	//set globalFunc_forEachPixelCallBack in javascript
 	string sourceforEachPixelFunction = R"(
 		const PixelEngine=PixelEngineObject;
 		const pe=PixelEngineObject ;
+        function globalFunc_makeArrayOfDataType(dt,n){
+            if( dt==1 ) return new Uint8Array(n);
+            else if( dt==2 ) return new Uint16Array(n) ;
+            else if( dt==3 ) return new Int16Array(n) ;
+            else if( dt==4 ) return new Uint32Array(n) ;
+            else if( dt==5 ) return new Int32Array(n) ;
+            else if( dt==6 ) return new Float32Array(n) ;
+            else if( dt==7 ) return new Float64Array(n) ;
+            else return Float32Array(n) ;
+        } ;
+        var globalFunc_ds_toByteCallBack  =function(){return this.convertToDataType(1);} ;
+        var globalFunc_ds_toUint16CallBack=function(){return this.convertToDataType(2);} ;
+        var globalFunc_ds_toInt16CallBack =function(){return this.convertToDataType(3);} ;
+        var globalFunc_ds_toUint32CallBack=function(){return this.convertToDataType(4);} ;
+        var globalFunc_ds_toInt32CallBack =function(){return this.convertToDataType(5);} ;
+        var globalFunc_ds_toFloat32CallBack=function(){return this.convertToDataType(6);} ;
+        var globalFunc_ds_toFloat64CallBack=function(){return this.convertToDataType(7);} ;
 		var globalFunc_forEachPixelCallBack = function(pxfunc){
 			var outds = null ; 
 			var outtiledata = null ;
@@ -3279,7 +3460,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 			var height = this.height ;
 			var asize = width*height ;
 			var nband = this.nband ;
-			var pxvals = new Int16Array(nband) ;
+			var pxvals = globalFunc_makeArrayOfDataType(this.dataType, nband) ;
 			var ib = 0 ;
 			var intiledata = this.tiledata ;
 			var outband = 0 ;
@@ -3297,13 +3478,13 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 					{
 						isResArray = true ;
 						outband = res.length ;
-						outds = globalFunc_newDatasetCallBack(3,width,height,outband) ;
+						outds = globalFunc_newDatasetCallBack( this.dataType ,width,height,outband) ;
 						outtiledata = outds.tiledata ;
 					}else
 					{
 						isResArray = false ;
 						outband = 1 ;
-						outds = globalFunc_newDatasetCallBack(3,width,height,outband) ;
+						outds = globalFunc_newDatasetCallBack( this.dataType ,width,height,outband) ;
 						outtiledata = outds.tiledata ;
 					}
 				}
@@ -3329,7 +3510,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 			var asize = width*height ;
 			var nband = this.nband ;
 			var nds = this.numds ;
-			var tbvals = new Int16Array(nband*nds) ;
+			var tbvals = globalFunc_makeArrayOfDataType(this.dataType, nband*nds);
 			var ib = 0 ;var ids=0; var itb=0;var bit=0;
 			var tdarr = this.dataArr ;
 			var outband = 0 ;
@@ -3351,13 +3532,13 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 					{
 						isResArray = true ;
 						outband = res.length ;
-						outds = globalFunc_newDatasetCallBack(3,width,height,outband) ;
+						outds = globalFunc_newDatasetCallBack( this.dataType ,width,height,outband) ;
 						outtiledata = outds.tiledata ;
 					}else
 					{
 						isResArray = false ;
 						outband = 1 ;
-						outds = globalFunc_newDatasetCallBack(3,width,height,outband) ;
+						outds = globalFunc_newDatasetCallBack( this.dataType ,width,height,outband) ;
 						outtiledata = outds.tiledata ;
 					}
 				}
@@ -3379,27 +3560,30 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 			if(this.dsName==null || this.dsName=="" ) return nodata ;
 			var gy = 0 ;
 			var gx = 0 ;
+            var twidth = this.width;
+            var theight = this.height;
+            var tasize = twidth*theight;
 			var newsample = isample ;
 			var newline = iline ;
 			if( isample< 0 ){
 				gx -= 1 ;
-				newsample += 256 ;
-			}else if(isample>255 ){
+				newsample += twidth ;
+			}else if(isample> twidth ){
 				gx += 1 ;
-				newsample -= 256 ;
+				newsample -= twidth ;
 			}
 			if(iline<0 )
 			{
 				gy -= 1;
-				newline += 256 ;
-			}else if( iline>255 ){
+				newline += theight ;
+			}else if( iline>theight ){
 				gy += 1 ;
-				newline -= 256 ;
+				newline -= theight ;
 			}
 
 			if( gy==0 && gx==0 )
 			{
-				return this.tiledata[iband*65536+newline*256+newsample] ;
+				return this.tiledata[iband * tasize +newline * twidth +newsample] ;
 			}else
 			{
 				var nbi = (1+gy)*3 + 1 + gx ; 
@@ -3407,7 +3591,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 				{
 					if( this.nbdatas[nbi] != null )
 					{
-						return this.nbdatas[nbi][iband*65536+newline*256+newsample] ;
+						return this.nbdatas[nbi][iband*tasize+newline*twidth+newsample] ;
 					}else
 					{
 						return nodata ;
@@ -3419,7 +3603,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 					this.nbdatas[nbi] = newloadedData ;
 					if( this.nbdatas[nbi] != null )
 					{
-						return this.nbdatas[nbi][iband*65536+newline*256+newsample] ;
+						return this.nbdatas[nbi][iband*tasize+newline*twidth+newsample] ;
 					}else
 					{
 						return nodata ;
@@ -5313,6 +5497,104 @@ bool PixelEngine::innerCopyRoiData(T* source,T* target,PeRoi& roi,int fillval,
     return true;
 }
 
+//2020-12-01 copy array data from source to target
+template<typename T, typename U>
+void PixelEngine::innerCopyArrayData(T* srcDataPtr,size_t srcElementCount, U* tarDataPtr) 
+{
+    for(size_t it = 0 ; it < srcElementCount; ++ it ){
+        tarDataPtr[it] = (U)(srcDataPtr[it]) ;
+    }
+}
+//copy data
+bool PixelEngine::innerCopyArrayData(void* srcDataPtr,int srcType,size_t srcElementCount, void* tarDataPtr,int tarType) 
+{
+    bool isok = false ;
+    switch( srcType ){
+        case 1:{
+            switch(tarType){
+                case 1: innerCopyArrayData((unsigned char*)srcDataPtr,srcElementCount,(unsigned char*)tarDataPtr); isok=true;break ;
+                case 2: innerCopyArrayData((unsigned char*)srcDataPtr,srcElementCount,(unsigned short*)tarDataPtr); isok=true;break ;
+                case 3: innerCopyArrayData((unsigned char*)srcDataPtr,srcElementCount,(short*)tarDataPtr); isok=true;break ;
+                case 4: innerCopyArrayData((unsigned char*)srcDataPtr,srcElementCount,(unsigned int*)tarDataPtr); isok=true;break ;
+                case 5: innerCopyArrayData((unsigned char*)srcDataPtr,srcElementCount,(int*)tarDataPtr); isok=true;break ;
+                case 6: innerCopyArrayData((unsigned char*)srcDataPtr,srcElementCount,(float*)tarDataPtr); isok=true;break ;
+                case 7: innerCopyArrayData((unsigned char*)srcDataPtr,srcElementCount,(double*)tarDataPtr); isok=true;break ;
+            }
+        }
+        case 2:{
+            switch(tarType){
+                case 1: innerCopyArrayData((unsigned short*)srcDataPtr,srcElementCount,(unsigned char*)tarDataPtr); isok=true;break ;
+                case 2: innerCopyArrayData((unsigned short*)srcDataPtr,srcElementCount,(unsigned short*)tarDataPtr); isok=true;break ;
+                case 3: innerCopyArrayData((unsigned short*)srcDataPtr,srcElementCount,(short*)tarDataPtr); isok=true;break ;
+                case 4: innerCopyArrayData((unsigned short*)srcDataPtr,srcElementCount,(unsigned int*)tarDataPtr); isok=true;break ;
+                case 5: innerCopyArrayData((unsigned short*)srcDataPtr,srcElementCount,(int*)tarDataPtr); isok=true;break ;
+                case 6: innerCopyArrayData((unsigned short*)srcDataPtr,srcElementCount,(float*)tarDataPtr); isok=true;break ;
+                case 7: innerCopyArrayData((unsigned short*)srcDataPtr,srcElementCount,(double*)tarDataPtr); isok=true;break ;
+            }
+        }
+        case 3:{
+            switch(tarType){
+                case 1: innerCopyArrayData((short*)srcDataPtr,srcElementCount,(unsigned char*)tarDataPtr); isok=true;break ;
+                case 2: innerCopyArrayData((short*)srcDataPtr,srcElementCount,(unsigned short*)tarDataPtr); isok=true;break ;
+                case 3: innerCopyArrayData((short*)srcDataPtr,srcElementCount,(short*)tarDataPtr); isok=true;break ;
+                case 4: innerCopyArrayData((short*)srcDataPtr,srcElementCount,(unsigned int*)tarDataPtr); isok=true;break ;
+                case 5: innerCopyArrayData((short*)srcDataPtr,srcElementCount,(int*)tarDataPtr); isok=true;break ;
+                case 6: innerCopyArrayData((short*)srcDataPtr,srcElementCount,(float*)tarDataPtr); isok=true;break ;
+                case 7: innerCopyArrayData((short*)srcDataPtr,srcElementCount,(double*)tarDataPtr); isok=true;break ;
+            }
+        }
+        case 4:{
+            switch(tarType){
+                case 1: innerCopyArrayData((unsigned int*)srcDataPtr,srcElementCount,(unsigned char*)tarDataPtr); isok=true;break ;
+                case 2: innerCopyArrayData((unsigned int*)srcDataPtr,srcElementCount,(unsigned short*)tarDataPtr); isok=true;break ;
+                case 3: innerCopyArrayData((unsigned int*)srcDataPtr,srcElementCount,(short*)tarDataPtr); isok=true;break ;
+                case 4: innerCopyArrayData((unsigned int*)srcDataPtr,srcElementCount,(unsigned int*)tarDataPtr); isok=true;break ;
+                case 5: innerCopyArrayData((unsigned int*)srcDataPtr,srcElementCount,(int*)tarDataPtr); isok=true;break ;
+                case 6: innerCopyArrayData((unsigned int*)srcDataPtr,srcElementCount,(float*)tarDataPtr); isok=true;break ;
+                case 7: innerCopyArrayData((unsigned int*)srcDataPtr,srcElementCount,(double*)tarDataPtr); isok=true;break ;
+            }
+        }
+        case 5:{
+            switch(tarType){
+                case 1: innerCopyArrayData((int*)srcDataPtr,srcElementCount,(unsigned char*)tarDataPtr); isok=true;break ;
+                case 2: innerCopyArrayData((int*)srcDataPtr,srcElementCount,(unsigned short*)tarDataPtr); isok=true;break ;
+                case 3: innerCopyArrayData((int*)srcDataPtr,srcElementCount,(short*)tarDataPtr); isok=true;break ;
+                case 4: innerCopyArrayData((int*)srcDataPtr,srcElementCount,(unsigned int*)tarDataPtr); isok=true;break ;
+                case 5: innerCopyArrayData((int*)srcDataPtr,srcElementCount,(int*)tarDataPtr); isok=true;break ;
+                case 6: innerCopyArrayData((int*)srcDataPtr,srcElementCount,(float*)tarDataPtr); isok=true;break ;
+                case 7: innerCopyArrayData((int*)srcDataPtr,srcElementCount,(double*)tarDataPtr); isok=true;break ;
+            }
+        }
+        case 6:{
+            switch(tarType){
+                case 1: innerCopyArrayData((float*)srcDataPtr,srcElementCount,(unsigned char*)tarDataPtr); isok=true;break ;
+                case 2: innerCopyArrayData((float*)srcDataPtr,srcElementCount,(unsigned short*)tarDataPtr); isok=true;break ;
+                case 3: innerCopyArrayData((float*)srcDataPtr,srcElementCount,(short*)tarDataPtr); isok=true;break ;
+                case 4: innerCopyArrayData((float*)srcDataPtr,srcElementCount,(unsigned int*)tarDataPtr); isok=true;break ;
+                case 5: innerCopyArrayData((float*)srcDataPtr,srcElementCount,(int*)tarDataPtr); isok=true;break ;
+                case 6: innerCopyArrayData((float*)srcDataPtr,srcElementCount,(float*)tarDataPtr); isok=true;break ;
+                case 7: innerCopyArrayData((float*)srcDataPtr,srcElementCount,(double*)tarDataPtr); isok=true;break ;
+            }
+        }
+        case 7:{
+            switch(tarType){
+                case 1: innerCopyArrayData((double*)srcDataPtr,srcElementCount,(unsigned char*)tarDataPtr); isok=true;break ;
+                case 2: innerCopyArrayData((double*)srcDataPtr,srcElementCount,(unsigned short*)tarDataPtr); isok=true;break ;
+                case 3: innerCopyArrayData((double*)srcDataPtr,srcElementCount,(short*)tarDataPtr); isok=true;break ;
+                case 4: innerCopyArrayData((double*)srcDataPtr,srcElementCount,(unsigned int*)tarDataPtr); isok=true;break ;
+                case 5: innerCopyArrayData((double*)srcDataPtr,srcElementCount,(int*)tarDataPtr); isok=true;break ;
+                case 6: innerCopyArrayData((double*)srcDataPtr,srcElementCount,(float*)tarDataPtr); isok=true;break ;
+                case 7: innerCopyArrayData((double*)srcDataPtr,srcElementCount,(double*)tarDataPtr); isok=true;break ;
+            }
+        }
+    }
+    return isok ;
+}
+
+
+
+
+
 void* PixelEngine::V8ObjectGetTypedArrayBackPtr(Isolate* isolate, 
     Local<Object>& obj, 
     Local<Context>& context, 
@@ -5346,6 +5628,44 @@ void* PixelEngine::V8ObjectGetTypedArrayBackPtr(Isolate* isolate,
 	}
     return nullptr;
 }
+
+
+void* PixelEngine::V8ObjectGetTypedArrayBackPtr2(Isolate* isolate, 
+    Local<Object>& obj, 
+    Local<Context>& context, 
+    string key,
+    size_t& byteLen )
+{
+	MaybeLocal<Value> maybe1 = obj->Get(context,
+		String::NewFromUtf8(isolate, key.c_str()).ToLocalChecked()
+	);
+	if (maybe1.IsEmpty()) {
+		return nullptr;
+	}
+	else
+	{
+		Local<Value> local1 = maybe1.ToLocalChecked();
+		if (local1->IsTypedArray())
+		{
+            TypedArray* typedArrPtr = TypedArray::Cast(*local1) ;
+            if( typedArrPtr != nullptr )
+            {
+                Local<ArrayBuffer> arrbuff = typedArrPtr->Buffer();
+                ArrayBuffer* arrbuffPtr = *arrbuff;
+                byteLen = arrbuffPtr->ByteLength() ;
+                return arrbuffPtr->GetBackingStore()->Data();
+            }else{
+                return nullptr;
+            }
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+    return nullptr;
+}
+
 
 
 
