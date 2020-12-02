@@ -22,6 +22,16 @@ using namespace ArduinoJson;
 /// Java主动调用的。
 
 
+//connector版本信息
+string global_connector_version_str = "connector_version:0.2.0 2020-12-02" ;
+
+//外部调用，获得connector和core版本信息
+extern "C" void HBasePeHelperCppConnector_GetVersion(){
+    PixelEngine pe;
+    string ver  = global_connector_version_str+";core_version:" + pe.GetVersion() ;
+    cout<<ver<<endl ;
+}
+
 
 
 jstring cstring2jstring(JNIEnv *env, 
@@ -39,9 +49,9 @@ jstring cstring2jstring(JNIEnv *env,
  */
 JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_GetVersion
   (JNIEnv * env, jobject object)
-{
+{//这个方法是给java调用的
 	PixelEngine pe;
-	string ver  = string("connector_version:0.1.1")+";core_version:" + pe.GetVersion() ;
+	string ver  = global_connector_version_str+";core_version:" + pe.GetVersion() ;
 	return JavaPixelEngineHelperInterface::cstring2jstring(env, ver.c_str()) ;
 }
 
