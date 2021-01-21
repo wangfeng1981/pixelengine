@@ -33,6 +33,22 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 
 /*
  * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RunScriptForTileWithoutRenderWithExtra
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III)Lcom/pixelengine/TileComputeResult;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRenderWithExtra
+  (JNIEnv *, jobject, jstring, jstring, jstring, jint, jint, jint);
+
+/*
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RunScriptForTileWithRenderWithExtra
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III)Lcom/pixelengine/TileComputeResult;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithRenderWithExtra
+  (JNIEnv *, jobject, jstring, jstring, jstring, jstring, jint, jint, jint);
+
+/*
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    CheckScriptOk
  * Signature: (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
  */

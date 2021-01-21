@@ -9,6 +9,9 @@ public class HBasePeHelperCppConnector {
     public native TileComputeResult RunScriptForTileWithoutRender(String javaHelperClassName, String script, long datetime, int z , int y , int x) ;    
     public native TileComputeResult RunScriptForTileWithRender(String javaHelperClassName,String script,String styleJson,long datetime,int z,int y,int x) ;
 
+    public native TileComputeResult RunScriptForTileWithoutRenderWithExtra(String javaHelperClassName, String script, String extraJsonText , int z , int y , int x) ;    
+    public native TileComputeResult RunScriptForTileWithRenderWithExtra(String javaHelperClassName,String script,String styleJson,String extraJsonText ,int z,int y,int x) ;
+
     public native String CheckScriptOk( String javaHelperClassName, String script ) ;
 
     public native String GetVersion() ;

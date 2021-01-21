@@ -315,26 +315,41 @@ struct PixelEngine
 	////////////////////////////////////////////////////////////////////////////
 	/// below methods would be called by outsider
 
-	/// ÀÏ°æ±¾ÍßÆ¬¼ÆËã£¬ÎªÁË±£Ö¤ÒÔÇ°ÒµÎñ¿ÉÓÃ±£Áô£¬ºóÐø¿ª·¢²»ÔÙµ÷ÓÃ
+	/// 第一版瓦片计算接口，为了保持so的兼容性保留该接口，后面不再使用 2021-1-21
 	bool RunScriptForTile(void* extra,string& jsSource,long dt,int z,int y,int x, vector<unsigned char>& retbinary) ;
 
-	/// ÀÏ°æ±¾ÍßÆ¬¼ÆËã£¬ÎªÁË±£Ö¤ÒÔÇ°ÒµÎñ¿ÉÓÃ±£Áô£¬ºóÐø¿ª·¢²»ÔÙµ÷ÓÃ
+	/// 计算一次的瓦片接口，返回json，用于数据拉伸计算直方图等，很少使用 2021-1-21
 	bool RunScriptForComputeOnce(void* extra, string& jsSource,long currentdt
                                             ,int z,int y,int x, string& retJsonStr ) ;
 
-	/// ¼ì²é½Å±¾ÊÇ·ñÓÐÓï·¨´íÎó
+	/// 检查脚本语法错误
 	string CheckScriptOk(string& scriptSource) ;
 	inline string GetVersion() { return PixelEngine::pejs_version; }
-	//2020-9-13 get style from script ´Ó½Å±¾»ñÈ¡PeStyle¶ÔÏó
+	//2020-9-13 get style from script 运行脚本以获得渲染方案
 	bool RunToGetStyleFromScript(string& scriptContent, PeStyle& retstyle, string& retLogText);
 	//2020-9-13
-	//ÔËÐÐ½Å±¾±£ÁôÊý¾Ý£¬²»äÖÈ¾
+	// 运行脚本不渲染
 	bool RunScriptForTileWithoutRender(void* extra, string& scriptContent, int64_t currentDatetime,
 		int z, int y, int x, PeTileData& tileData , string& logStr);
-	//ÔËÐÐ½Å±¾²¢äÖÈ¾pngÍ¼Æ¬£¬PeStyle´ÓÍâ²¿´«Èë
+	// 运行脚本并渲染
 	bool RunScriptForTileWithRender(void* extra, string& scriptContent, PeStyle& inStyle, int64_t currentDatetime,
 		int z, int y, int x, vector<unsigned char>& retPngBinary, int& pngwid,int& pnghei, string& logStr);//
-	//Ê¹ÓÃesprima½âÎö½Å±¾Éú³ÉAST json¶ÔÏó 2020-9-19
+        
+    //2021-1-21
+	// 运行脚本不渲染,增加对extraJsonText支持，因此不需要currentDatetime了
+	bool RunScriptForTileWithoutRenderWithExtra(void* extra, string& scriptContent,
+        string& extraJsonText,
+		int z, int y, int x, 
+        PeTileData& tileData , string& logStr);
+	//2021-1-21
+    // 运行脚本并渲染,增加对extraJsonText支持，因此不需要currentDatetime了
+	bool RunScriptForTileWithRenderWithExtra(void* extra, string& scriptContent, PeStyle& inStyle, 
+        string& extraJsonText,
+        int z, int y, int x, 
+        vector<unsigned char>& retPngBinary, int& pngwid,int& pnghei, string& logStr);//
+        
+        
+	// 运行脚本获取语法树 2020-9-19
 	bool RunScriptForAST(void* extra, string& scriptContent, string& retJsonStr, string& errorText);
 	//解析Dataset-Datetime 数据集时间日期对
 	bool RunScriptForDatasetDatetimePairs(void* extra,

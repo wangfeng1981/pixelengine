@@ -23,7 +23,6 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ParseSc
 JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRender
   (JNIEnv *, jobject, jstring, jstring, jlong, jint, jint, jint);
 
-
 /*
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    RunScriptForTileWithRender
@@ -31,6 +30,22 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
  */
 JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithRender
   (JNIEnv *, jobject, jstring, jstring, jstring, jlong, jint, jint, jint);
+
+/*
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RunScriptForTileWithoutRenderWithExtra
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III)Lcom/pixelengine/TileComputeResult;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRenderWithExtra
+  (JNIEnv *, jobject, jstring, jstring, jstring, jint, jint, jint);
+
+/*
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RunScriptForTileWithRenderWithExtra
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III)Lcom/pixelengine/TileComputeResult;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithRenderWithExtra
+  (JNIEnv *, jobject, jstring, jstring, jstring, jstring, jint, jint, jint);
 
 /*
  * Class:     com_pixelengine_HBasePeHelperCppConnector
@@ -55,13 +70,8 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_GetVers
  */
 JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunToGetStyleFromScript
   (JNIEnv *, jobject, jstring, jstring);
-  
 
 #ifdef __cplusplus
 }
 #endif
 #endif
-
- 
-
-

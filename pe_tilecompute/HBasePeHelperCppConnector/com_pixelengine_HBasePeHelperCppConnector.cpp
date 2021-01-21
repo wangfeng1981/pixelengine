@@ -23,7 +23,12 @@ using namespace ArduinoJson;
 
 
 //connector版本信息
-string global_connector_version_str = "connector_version:0.2.0 2020-12-02" ;
+//string global_connector_version_str = "connector_version:0.2.0 2020-12-02" ;
+
+//2021-1-21 增加两个java调用c++接口，用于传入extra的json字符串
+//Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRenderWithExtra
+//Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithRenderWithExtra
+string global_connector_version_str = "connector_version:0.3.1 2021-01-21" ;
 
 //外部调用，获得connector和core版本信息
 extern "C" void HBasePeHelperCppConnector_GetVersion(){
@@ -289,6 +294,154 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 	}
 }
 
+
+/*
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RunScriptForTileWithoutRenderWithExtra
+ * Signature: (Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;III)Lcom/pixelengine/TileComputeResult;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRenderWithExtra
+  (JNIEnv * env, jobject object,
+  	jstring javaPEHelperClassName, 
+  	jstring scriptContent, 
+    jstring extraJsonText, 
+  	jint z, jint y, jint x)
+{
+
+	printf("in Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRender()\n") ;
+	jclass	javaTileComputeResultClass = (env)->FindClass("com/pixelengine/TileComputeResult");
+	if( javaTileComputeResultClass == NULL )
+	{
+		printf("Error : not find class of com/pixelengine/TileComputeResult.");
+		return NULL ;
+	}
+	jobject	javaResult = env->AllocObject(javaTileComputeResultClass);
+
+	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ; 
+
+	PixelEngine::initV8() ;
+	PixelEngine pe ;
+	pe.helperPointer = &helper ;
+
+	string cscript = JavaPixelEngineHelperInterface::jstring2cstring(env,scriptContent) ;
+    string cExJsonText = JavaPixelEngineHelperInterface::jstring2cstring(env,extraJsonText) ;
+    
+	PeTileData retTileData;
+	string logStr;
+
+	bool runok = pe.RunScriptForTileWithoutRenderWithExtra(
+        nullptr,
+		cscript , 
+        cExJsonText,
+		z , y , x , 
+		retTileData ,
+		logStr ) ;
+
+	if( runok == false ){
+		cout<<"run script failed : "<<logStr<<endl;
+
+		helper.setJavaObjectIntField(javaResult,"status",1) ;//status=1 bad.
+		helper.setJavaObjectStringField(javaResult,"log",logStr.c_str()) ;
+
+	}else{
+		cout<<"run script ok."<<endl ;
+		helper.setJavaObjectIntField(javaResult,"status",0) ;//status=0 ok.
+		helper.setJavaObjectIntField(javaResult,"outType", 0) ;//0-dataset, 1-png
+		helper.setJavaObjectIntField(javaResult,"dataType", retTileData.dataType ) ;
+		helper.setJavaObjectIntField(javaResult,"width",  retTileData.width ) ;
+		helper.setJavaObjectIntField(javaResult,"height", retTileData.height ) ;
+		helper.setJavaObjectIntField(javaResult,"nbands", retTileData.nbands ) ;
+		helper.setJavaObjectByteArrField(javaResult,"binaryData", retTileData.tiledata ) ;
+		helper.setJavaObjectIntField(javaResult,"z", z) ;
+		helper.setJavaObjectIntField(javaResult,"y", y) ;
+		helper.setJavaObjectIntField(javaResult,"x", x) ;
+	}
+	return javaResult ;	
+}
+
+
+/*
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RunScriptForTileWithRenderWithExtra
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III)Lcom/pixelengine/TileComputeResult;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithRenderWithExtra
+  (JNIEnv * env , jobject object , 
+  	jstring javaPEHelperClassName, 
+  	jstring scriptContent, 
+  	jstring styleJson, 
+    jstring extraJsonText, 
+  	jint z, 
+  	jint y, 
+  	jint x
+  	)
+{
+	printf("in Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithRender()\n") ;
+	jclass	javaTileComputeResultClass = (env)->FindClass("com/pixelengine/TileComputeResult");
+	if( javaTileComputeResultClass == NULL )
+	{
+		printf("Error : not find class of com/pixelengine/TileComputeResult.");
+		return NULL ;
+	}
+
+	jobject	javaResult = env->AllocObject(javaTileComputeResultClass);
+
+	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ; 
+	
+	PixelEngine::initV8() ;
+	PixelEngine pe ;
+	pe.helperPointer = &helper ;
+	string cscript = JavaPixelEngineHelperInterface::jstring2cstring(env,scriptContent) ;
+	string cstyle = JavaPixelEngineHelperInterface::jstring2cstring(env,styleJson) ;
+    string cExJsonText = JavaPixelEngineHelperInterface::jstring2cstring(env,extraJsonText) ;
+
+	pe::PeStyle tstyle ;
+	bool styleok = tstyle.loadFromJson(cstyle) ;
+	if( styleok ){
+
+	}else{
+		printf("Warning : bad style from json.\n") ;
+	}
+	vector<unsigned char> retPngBinary ;
+	string logStr;
+	int pngwid=0;
+	int pnghei=0;
+
+	bool runok = pe.RunScriptForTileWithRenderWithExtra(
+            nullptr,
+			cscript , 
+			tstyle,
+            cExJsonText,
+			z , y , x , 
+			retPngBinary ,
+			pngwid,
+			pnghei,
+			logStr ) ;
+
+	if( runok ){
+		cout<<"run script ok."<<endl ;
+		helper.setJavaObjectIntField(javaResult,"status",0) ;//status=0 ok.
+		helper.setJavaObjectIntField(javaResult,"outType", 1) ;//0-dataset, 1-png
+		helper.setJavaObjectIntField(javaResult,"dataType", 1 ) ;//useful ?
+		helper.setJavaObjectIntField(javaResult,"width",  pngwid ) ;
+		helper.setJavaObjectIntField(javaResult,"height", pnghei ) ;
+		helper.setJavaObjectIntField(javaResult,"nbands", 4 ) ;//useful ?
+		helper.setJavaObjectByteArrField(javaResult,"binaryData", retPngBinary) ;
+		helper.setJavaObjectIntField(javaResult,"z", z) ;
+		helper.setJavaObjectIntField(javaResult,"y", y) ;
+		helper.setJavaObjectIntField(javaResult,"x", x) ;
+		return javaResult;
+	}else{
+		printf("Error : failed to pe.RunScriptForTileWithRender.\n") ;
+		helper.setJavaObjectIntField(javaResult,"status",1) ;//status=1 bad.
+		helper.setJavaObjectStringField(javaResult,"log",logStr.c_str()) ;
+		return javaResult ;
+	}
+}
+
+
 /*
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    CheckScriptOk
@@ -308,6 +461,7 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_CheckSc
 		return JavaPixelEngineHelperInterface::cstring2jstring( env , errorinfo.c_str() ) ;
 	}
 }
+
 
 
 

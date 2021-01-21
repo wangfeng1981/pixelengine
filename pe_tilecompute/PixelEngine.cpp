@@ -36,7 +36,13 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 //6.增加数据集转换函数 C++ : GlobalFunc_ConvertToDataType , js:var newds = dataset.convertToDataType(pe.DataTypeFloat32); Done
 //7.增加函数获取数组指针与字节长度 V8ObjectGetTypedArrayBackPtr2() , Done
 //8.增加不同类型数组值复制功能，涉及新加两个重载函数innerCopyArrayData(..1..) innerCopyArrayData(..2..) , Done
-string PixelEngine::pejs_version = string("2.4.5.0 2020-12-01");
+//string PixelEngine::pejs_version = string("2.4.5.0 2020-12-01");
+
+//2021-1-21
+//1.支持传入一个外部json对象作为输入参数, 这个变量在脚本通过pe.extraData 引用
+//2.add RunScriptForTileWithoutRenderWithExtra
+//3.add RunScriptForTileWithRenderWithExtra
+string PixelEngine::pejs_version = string("2.4.6.0 2021-01-21");
 
 
 
@@ -3436,6 +3442,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	string sourceforEachPixelFunction = R"(
 		const PixelEngine=PixelEngineObject;
 		const pe=PixelEngineObject ;
+        pe.extraData={};
         function globalFunc_makeArrayOfDataType(dt,n){
             if( dt==1 ) return new Uint8Array(n);
             else if( dt==2 ) return new Uint16Array(n) ;
@@ -4085,7 +4092,7 @@ string PixelEngine::CheckScriptOk(string& scriptSource)
 
 
 //2020-9-14
-//ÔËÐÐ½Å±¾±£ÁôÊý¾Ý£¬²»äÖÈ¾
+//计算不渲染
 bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptContent, int64_t currentdt,
 	int z, int y, int x, PeTileData& tileData, string& logStr) {
 
@@ -4186,7 +4193,7 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 
 	return allOk;
 }
-//ÔËÐÐ½Å±¾²¢äÖÈ¾pngÍ¼Æ¬
+//计算并渲染
 bool PixelEngine::RunScriptForTileWithRender(void* extra, string& scriptContent,PeStyle& inStyle, int64_t currentDatetime,
 	int z, int y, int x, vector<unsigned char>& retPngBinary, int& pngwid,int& pnghei, string& logStr) {
 
@@ -4233,7 +4240,7 @@ bool PixelEngine::RunScriptForTileWithRender(void* extra, string& scriptContent,
 
 
 
-//Ê¹ÓÃesprima½âÎö½Å±¾Éú³ÉAST json¶ÔÏó 2020-9-19
+//提取语法树 2020-9-19
 bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& retJsonStr, string& errorText) {
 	if(! PixelEngine::quietMode)cout << "in PixelEngine::RunScriptForAST" << endl;
 	string esprimaMinJs = "esprima.min.js";
@@ -5995,3 +6002,169 @@ bool PixelEngine::RunScriptAndGetVariableJsonText(void* extra,
 	return allOk ;
 }
    
+ 
+ 
+//2021-1-21
+// 运行脚本不渲染,增加对extraJsonText支持，因此不需要currentDatetime了
+bool PixelEngine::RunScriptForTileWithoutRenderWithExtra(void* extra, 
+    string& scriptContent,
+    string& extraJsonText,
+    int z, int y, int x, 
+    PeTileData& tileData , string& logStr) 
+{
+
+	if(! PixelEngine::quietMode)cout << "in RunScriptForTileWithoutRenderWithExtra init v8" << endl;
+	this->pe_logs.reserve(2048);//max 1k bytes.
+	this->tileInfo.x = x;
+	this->tileInfo.y = y;
+	this->tileInfo.z = z;
+	this->extraPointer = extra;
+	this->currentDateTime = 0L;
+
+	bool allOk = true;
+
+	// Create a new Isolate and make it the current one.
+	//v8::Isolate::CreateParams create_params;
+	this->create_params.array_buffer_allocator =
+		v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+	//v8::Isolate* isolate = v8::Isolate::New(create_params);
+	this->isolate = v8::Isolate::New(create_params);
+	{
+		if(! PixelEngine::quietMode)cout << "in RunScriptForTileWithoutRender run script" << endl;
+		v8::Isolate::Scope isolate_scope(this->isolate);
+		v8::HandleScope handle_scope(this->isolate);
+
+		// Create a new context.
+		v8::Local<v8::Context> context = v8::Context::New(this->isolate);
+		// Enter the context for compiling and running the hello world script.
+		v8::Context::Scope context_scope(context);// enter scope
+		PixelEngine::initTemplate(this, this->isolate, context);
+		this->m_context.Reset(this->isolate, context);
+		TryCatch try_catch(this->isolate);
+		string source = scriptContent + "var PEMainResult=main();";
+        
+        //2021-1-21 使用外部变量
+        if( extraJsonText.length()!= 0 ){ //检查外部变量是否为空字符串
+           source = string("pe.extra=JSON.parse('") + extraJsonText + "');"+source ;
+        }
+        
+		// Compile the source code.
+		v8::Local<v8::Script> script;
+		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
+			source.c_str()).ToLocalChecked()).ToLocal(&script)) {
+			String::Utf8Value error(this->isolate, try_catch.Exception());
+			if(! PixelEngine::quietMode)cout << "v8 exception:" << *error << endl;
+			// The script failed to compile; bail out.
+			//return false;
+
+			allOk = false;
+		}
+		else
+		{
+			unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			// Run the script to get the result.
+			Local<v8::Value> result;
+			if (!script->Run(context).ToLocal(&result)) {
+				String::Utf8Value error(this->isolate, try_catch.Exception());
+				string exceptionstr = string("v8 exception:") + (*error);
+				if(! PixelEngine::quietMode)cout << exceptionstr << endl;
+				// The script failed to compile; bail out.
+				//return false;
+				this->log(exceptionstr);
+				allOk = false;
+			}
+			else
+			{
+				MaybeLocal<Value> peMainResult = context->Global()->Get(context
+					, String::NewFromUtf8(isolate, "PEMainResult").ToLocalChecked());
+				if (PixelEngine::IsMaybeLocalOK(peMainResult) == false) //IsNullOrUndefined() )
+				{
+					string error1("Error: the result from main() is null or undefined.");
+					if(! PixelEngine::quietMode)cout << error1 << endl;
+					this->log(error1);
+					allOk = false;
+				}
+				else
+				{
+					if(! PixelEngine::quietMode)cout << "in RunScriptForTileWithoutRender step4" << endl;
+
+					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					if (!PixelEngine::quietMode)printf("script run dura:%d ms \n", (int)(now1 - now) );//
+
+					// v8 dataset object 2 tileData
+					string errorText;
+					Local<Value> localMainResult = peMainResult.ToLocalChecked();
+					bool tiledataok = this->innerV8Dataset2TileData(isolate, context, localMainResult, tileData, errorText);
+					unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					if(!PixelEngine::quietMode)printf("v8 value to tiledata dura:%d ms \n", (int)(now2 - now1) );
+					if(! PixelEngine::quietMode)cout << "Info : innerV8Dataset2TileData return  " << tiledataok << endl;
+					allOk = tiledataok;
+				}
+			}
+		}
+	}
+
+
+	this->m_context.Reset();
+	this->GlobalFunc_ForEachPixelCallBack.Reset();
+	this->GlobalFunc_GetPixelCallBack.Reset();
+
+	// Dispose the isolate and tear down V8.
+	this->isolate->Dispose();
+
+
+	return allOk;
+}
+
+//2021-1-21
+// 运行脚本并渲染,增加对extraJsonText支持，因此不需要currentDatetime了
+bool PixelEngine::RunScriptForTileWithRenderWithExtra(void* extra, string& scriptContent, 
+    PeStyle& inStyle, 
+    string& extraJsonText,
+    int z, int y, int x, 
+    vector<unsigned char>& retPngBinary, int& pngwid,int& pnghei, string& logStr)
+{
+
+	if(! PixelEngine::quietMode)cout << "in RunScriptForTileWithRenderWithExtra" << endl;
+
+	PeTileData retTileData0 ;
+	string retLogText;
+	bool tiledataok = this->RunScriptForTileWithoutRenderWithExtra(extra, scriptContent, 
+        extraJsonText,
+        z, y, x,
+		retTileData0, logStr);
+
+	if (tiledataok) {
+		//do render staff
+		pngwid = retTileData0.width;
+		pnghei = retTileData0.height;
+        printf("C++ RunScriptForTileWithRender dtype:%d,wid:%d,hei:%d,nb:%d\n",
+            retTileData0.dataType,
+            retTileData0.width,
+            retTileData0.height,
+            retTileData0.nbands ) ;
+
+		if (inStyle.type == "") {
+			//do not use style
+			if(! PixelEngine::quietMode)cout << "Info : a empty inStyle, so do not use input style." << endl;
+			string renderError;
+			bool renderok = innerRenderTileDataWithoutStyle(retTileData0, retPngBinary , renderError);
+			logStr += renderError;
+			return renderok;
+		}
+		else {
+			//use input style
+			if(! PixelEngine::quietMode)cout << "Info : use input style" << endl;
+			string renderError;
+			bool renderok = this->innerRenderTileDataByPeStyle(retTileData0, inStyle,  retPngBinary, renderError);
+			logStr += renderError;
+			return renderok;
+		}
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
