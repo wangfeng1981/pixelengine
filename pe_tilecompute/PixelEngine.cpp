@@ -42,7 +42,7 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 //1.支持传入一个外部json对象作为输入参数, 这个变量在脚本通过pe.extraData 引用
 //2.add RunScriptForTileWithoutRenderWithExtra
 //3.add RunScriptForTileWithRenderWithExtra
-string PixelEngine::pejs_version = string("2.4.6.0 2021-01-21");
+string PixelEngine::pejs_version = string("2.4.6.1 2021-01-28");//.0 2021-01-21
 
 
 
@@ -6045,7 +6045,7 @@ bool PixelEngine::RunScriptForTileWithoutRenderWithExtra(void* extra,
         
         //2021-1-21 使用外部变量
         if( extraJsonText.length()!= 0 ){ //检查外部变量是否为空字符串
-           source = string("pe.extra=JSON.parse('") + extraJsonText + "');"+source ;
+           source = string("pe.extraData=JSON.parse('") + extraJsonText + "');"+source ;
         }
         
 		// Compile the source code.
