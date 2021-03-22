@@ -42,7 +42,11 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 //1.支持传入一个外部json对象作为输入参数, 这个变量在脚本通过pe.extraData 引用
 //2.add RunScriptForTileWithoutRenderWithExtra
 //3.add RunScriptForTileWithRenderWithExtra
-string PixelEngine::pejs_version = string("2.4.6.1 2021-01-28");//.0 2021-01-21
+//string PixelEngine::pejs_version = string("2.4.6.1 2021-01-28");//.0 2021-01-21
+
+//2021-3-22
+//1.增加Dataset接口 pe.Dataset("pdtname",20210101235959); 该接口忽略波段参数，返回全部产品瓦片数据
+string PixelEngine::pejs_version = string("2.4.7 2021-03-22");
 
 
 
@@ -2208,16 +2212,19 @@ void PixelEngine::GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v
 }
 
 /// create a Dataset from java.
-/// create a dataset from name, datetime, bands
+/// create a dataset from name, datetime 
+/// create a dataset from name, datetime, bands 
+/// create a dataset from name, datetime, bands, z, y, x 
+/// 
 void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
 {
 	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_DatasetCallBack"<<endl; 
-	if(args.Length() == 3 || args.Length() == 6 )
+	if(args.Length() == 2 || args.Length() == 3 || args.Length() == 6 )
 	{
 		//ok
 	}else
 	{
-		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 3 or !=6 "<<endl ;
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length!=2 , != 3 or !=6 "<<endl ;
 		return;
 	}
 	Isolate* isolate = args.GetIsolate() ;
@@ -2226,42 +2233,42 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 
 	Local<Value> v8name = args[0];
 	Local<Value> v8datetime = args[1] ;
-	Local<Value> v8bands = args[2] ;
-
+	
 	String::Utf8Value nameutf8( isolate , v8name) ;
 	string name( *nameutf8 ) ;
 
 	int64_t datetime = (int64_t) (v8datetime->ToNumber(context).ToLocalChecked())->Value();
 
 	if(! PixelEngine::quietMode)cout<<name<<","<<datetime<<endl ;
+    vector<int> wantBands ;
+    wantBands.reserve(32) ;
+    if( args.Length()==3 || args.Length()==6 ){
+        Local<Value> v8bands = args[2] ;
+        if( v8bands->IsArray() )
+        {
+            if(! PixelEngine::quietMode)cout<<"v8bands is array"<<endl ;
+        }
+        if( v8bands->IsObject() )
+        {
+            if(! PixelEngine::quietMode)cout<<"v8bands is object"<<endl ;
+        }
+        Array* i32array = Array::Cast(*v8bands) ;
+        int nband = i32array->Length() ;
 
-	if( v8bands->IsArray() )
-	{
-		if(! PixelEngine::quietMode)cout<<"v8bands is array"<<endl ;
-	}
-	if( v8bands->IsObject() )
-	{
-		if(! PixelEngine::quietMode)cout<<"v8bands is object"<<endl ;
-	}
-	Array* i32array = Array::Cast(*v8bands) ;
-	int nband = i32array->Length() ;
+        if(! PixelEngine::quietMode)cout<<"nband "<<nband<<endl ;
 
-	if(! PixelEngine::quietMode)cout<<"nband "<<nband<<endl ;
-
-	vector<int> wantBands ;
-	wantBands.reserve(32) ;
-	for(int ib = 0 ; ib<nband ; ++ ib )
-	{
-		int wantib = i32array->Get(context,ib).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
-		wantBands.push_back(wantib) ;
-	}
-
+        for(int ib = 0 ; ib<nband ; ++ ib )
+        {
+            int wantib = i32array->Get(context,ib).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
+            wantBands.push_back(wantib) ;
+        }        
+    }
+    
 	vector<unsigned char> externalData ;
 	int dt = 0 ;
 	int wid = 0 ;
 	int hei = 0 ; 
 	int retnbands = 0 ;
-
 	Local<Object> global = context->Global() ;
 	Local<Value> peinfo = global->Get( context
 		,String::NewFromUtf8(isolate, "PixelEnginePointer").ToLocalChecked())
