@@ -1,0 +1,11 @@
+{
+	"host":"10.1.7.170" ,
+	"port":"3306" ,
+	"db":"pe" ,  
+	"user":"big" , 
+	"pwd":"wfhbase2021" ,
+	"offtaskjsondir":"/home/hadoop/tempdata/pe-tmpdir/offtaskjsondir" , 
+	"sleep_sec":2 ,
+	"zonalstatcmd":"spark-submit --master spark://hp1:7077 /home/hadoop/IdeaProjects/Task13ZonalStatSparkHbase2/out/artifacts/Task13ZonalStatSparkHbase2_jar/Task13ZonalStatSparkHbase2.jar /home/hadoop/IdeaProjects/Task13ZonalStatSparkHbase2/task13config.json {{{IN}}} {{{OUT}}}" ,
+	"logfile":"/home/hadoop/tempdata/pe-tmpdir/offtaskjsondir/log/offtask.log"
+}
