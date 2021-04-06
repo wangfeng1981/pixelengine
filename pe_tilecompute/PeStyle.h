@@ -42,7 +42,7 @@ namespace pe {
 		PeColorElement nodatacolor;
 		vector<PeVRangeElement> vranges;
 		
-		//获取bands数组中第index个波段索引值
+		//禄帽脠隆bands脢媒脳茅脰脨碌脷index赂枚虏篓露脦脣梅脪媒脰碌
 		int getBand(int index);
 
 		bool loadFromJson(string jsonText);

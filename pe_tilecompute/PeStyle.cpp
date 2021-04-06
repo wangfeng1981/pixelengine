@@ -1,6 +1,7 @@
 #include "PeStyle.h"
 #include <exception>
 #include <iostream>
+#include "wjsontool.h"
 using std::cout;
 using std::endl;
 
@@ -36,8 +37,11 @@ namespace pe {
 			ArduinoJson::JsonObject& root = jsonBuffer.parseObject(jsonText);
 			if (root.success() == false) return false;
 
-			if (root.containsKey("type")) type = root["type"].as<char*>();
-			else return false;
+			//if (root.containsKey("type")) type = root["type"].as<char*>();
+            bool typeok= WJsonTool::getKeyStrValue(root,"type",type) ;
+            if( typeok==false ) {
+                cout<<"bad style type."<<endl ;
+            }
 			if (root.containsKey("nodatacolor")) {
 				JsonObject& nodata = root["nodatacolor"].as<JsonObject>();
 				nodatacolor.val = nodata["val"].as<double>();
@@ -45,7 +49,8 @@ namespace pe {
 				nodatacolor.g = nodata["g"].as<int>();
 				nodatacolor.b = nodata["b"].as<int>();
 				nodatacolor.a = nodata["a"].as<int>();
-				nodatacolor.lbl = nodata["lbl"].as<char*>();
+                //nodatacolor.lbl =  nodata["lbl"].as<char*>();
+                WJsonTool::getKeyStrValue(nodata,"lbl",nodatacolor.lbl) ;
 			}
 			else {
 				nodatacolor.val = 0;
@@ -67,7 +72,8 @@ namespace pe {
 					c1.g = obj1["g"].as<int>();
 					c1.b = obj1["b"].as<int>();
 					c1.a = obj1["a"].as<int>();
-					c1.lbl = obj1["lbl"].as<char*>();
+					//c1.lbl = obj1["lbl"].as<char*>();
+                    WJsonTool::getKeyStrValue(obj1,"lbl",c1.lbl) ;
 					colors.push_back(c1);
 				}
 			}
@@ -135,7 +141,7 @@ namespace pe {
 		return ss.str();
 	}
 
-	//获取bands数组中第index个波段索引值
+	//禄帽脠隆bands脢媒脳茅脰脨碌脷index赂枚虏篓露脦脣梅脪媒脰碌
 	int PeStyle::getBand(int index) {
 		if (index < 0 || index >= bands.size()) {
 			cout << "Warning : bad index in getBand(), use 0 as default." << endl;

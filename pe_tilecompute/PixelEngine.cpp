@@ -46,7 +46,11 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
 //2021-3-22
 //1.增加Dataset接口 pe.Dataset("pdtname",20210101235959); 该接口忽略波段参数，返回全部产品瓦片数据
-string PixelEngine::pejs_version = string("2.4.7 2021-03-22");
+//string PixelEngine::pejs_version = string("2.4.7 2021-03-22");
+
+//2021-4-6
+//1.修改Style解析json的代码，增加对空字符串的判断
+string PixelEngine::pejs_version = string("2.4.8 2021-04-06");
 
 
 
