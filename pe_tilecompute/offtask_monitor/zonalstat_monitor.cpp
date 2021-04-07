@@ -69,7 +69,7 @@ void runZonalStatMonitor( const MonitorConfig& config )
         vector<vector<string> > selResults ;
         {
             string modestr = wStringUtils::int2str( monitorMode.mode) ;
-            string selsql = string("select tid,mode,content from tbofftaskzonalstat where mode=")+ modestr
+            string selsql = string("select tid,mode,content,uid from tbofftaskzonalstat where mode=")+ modestr
                 +" AND status=0 Order By tid ASC Limit 1";
             wMysql wmysql ;
             string connError ;
@@ -105,6 +105,9 @@ void runZonalStatMonitor( const MonitorConfig& config )
             string modestr = selResults[0][1] ;
             int imode = atof( modestr.c_str() ); 
             string offtaskcontent = selResults[0][2] ;
+            string taskuserid = selResults[0][3] ;
+            int taskuseridval = atof( taskuserid.c_str() ) ;
+            
             spdlog::info("find offtask id {}" , offtaskid) ;
             //更新任务状态
             writeTaskStatus(config , taskid , "1" , "" , "" ) ;
@@ -121,6 +124,10 @@ void runZonalStatMonitor( const MonitorConfig& config )
             string productDir = dirTools.makeProductDir( config.offtaskjsondir,subdirs, dirError) ;
             string inputjsonfilename  = "";  
             string outputjsonfilename = "";  
+            
+            //临时变量 for 数据合成
+            CompositeContentFromMysql compositeInputParams ;
+            
             //生成输入json文件
             if( monitorMode.mode==0 ){
                 //区域统计任务 
@@ -152,6 +159,7 @@ void runZonalStatMonitor( const MonitorConfig& config )
                 outputjsonfilename = productDir + "/co_out_" + currdatetime + ".json" ;
                 
                 CompositeContentFromMysql coMysqlContent(offtaskcontent) ;
+                compositeInputParams = coMysqlContent ;
                 CompositeSparkInput sparkinputjson(offtaskid , coMysqlContent) ;
                 spdlog::info("write input json {}" , inputjsonfilename) ;
                 bool inputjsonok = sparkinputjson.writeToJsonFile(inputjsonfilename) ;
@@ -187,6 +195,21 @@ void runZonalStatMonitor( const MonitorConfig& config )
             if( wDirTools::isFileExist( outputjsonfilename ) ){
                 //success
                 writeTaskStatus(config , taskid , "2" , "" , outputjsonfilename ) ;
+                if( monitorMode.mode==4 ){
+                    //数据合成，更新数据库
+                    CompositeSparkOutput coOutput ;
+                    bool cook = coOutput.loadFromJson(outputjsonfilename) ;
+                    if( cook==false ){
+                        spdlog::error("failed to load from json for composite result {}",outputjsonfilename) ;
+                    }else{
+                        bool dbok = coOutput.doDbWork(config,compositeInputParams,taskuseridval) ;
+                        if( dbok == true ){
+                            spdlog::info("db work for composite result OK.") ;
+                        }else{
+                            spdlog::error("db work for composite result failed.") ;
+                        }
+                    }
+                }
             }
             else{
                 //failed

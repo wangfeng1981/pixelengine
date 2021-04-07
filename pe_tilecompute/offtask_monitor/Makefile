@@ -1,2 +1,2 @@
 offtask_monitor:offtask_monitor.cpp zonalstat_input.cpp monitorconfig.cpp zonalstat_monitor.cpp
-	g++ -I/usr/include/mysql/ -I./ -I../ composite_input.cpp offtask_monitor.cpp zonalstat_input.cpp monitorconfig.cpp zonalstat_monitor.cpp -o offtask_monitor  -fPIC  -lpthread -lmysqlclient -std=c++0x
+	g++ -I/usr/include/mysql/ -I./ -I../ composite_input.cpp offtask_monitor.cpp zonalstat_input.cpp monitorconfig.cpp wmysql.cpp wstringutils.cpp zonalstat_monitor.cpp -o offtask_monitor  -fPIC  -lpthread -lmysqlclient -std=c++0x

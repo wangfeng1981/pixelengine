@@ -2,10 +2,18 @@
 #define COMPOSITE_INPUT_H
 
 #include <string>
+#include <vector>
 #include "ajson5.h"
 #include <fstream>
 #include <iostream>
+#include "wmysql.h"
+#include "monitorconfig.h"
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/daily_file_sink.h"
+#include "wstringutils.h"
 
+using std::vector ;
 using std::cout;
 using std::endl;
 using std::string ;
@@ -55,6 +63,7 @@ struct CompositeContentFromMysql{
      int zmin,zmax ;
     
     CompositeContentFromMysql(string text) ;
+    inline CompositeContentFromMysql() {} 
  
 } ;
 
@@ -87,9 +96,51 @@ struct CompositeSparkInput{
      double left,right,top,bottom;
      int zmin,zmax ;
     
+    inline CompositeSparkInput() {}
     CompositeSparkInput(int oftid1 , CompositeContentFromMysql& co) ;
     bool writeToJsonFile(string outfilename) ;
 } ;
+
+struct CompositeProductBand{
+    int hPid ;
+    int bsqIndex;
+    string bName ;
+    double scale ;
+    double offset ;
+    double validMin ;
+    double validMax ;
+    double noData ;
+} ;
+
+struct CompositeSparkOutput{
+    string proj ;
+    int minZoom,maxZoom,dataType;
+    int tileWid,tileHei ;
+    vector<CompositeProductBand> bandList ;
+    
+    bool loadFromJson(string jsonfilename) ;
+    bool doDbWork(const MonitorConfig& config,CompositeContentFromMysql coParams,int userid) ;
+    
+    //更新产品信息
+    static bool updateProductInDb(const MonitorConfig& config,
+        const int pid,string proj,
+        int minZoom,int maxZoom,
+        int dataType, int timeType,
+        string htablename,int tilewid,int tilehei,
+        string compress,int styleid,
+        int userid) ;
+        
+    //添加产品波段信息
+    static bool insertProductBandInDb(const MonitorConfig& config,
+        const int pid,int bindex,int hpid,int bsqindex,
+        string bname,double scale,double offset,
+        double validmin,double validmax,double nodata) ;
+        
+    //添加产品期次记录
+    static bool insertProductDataItem(const MonitorConfig& config,
+        const int pid,int64_t hcol,double left,double right,
+        double top,double bottom) ;
+};
 
 
 #endif
