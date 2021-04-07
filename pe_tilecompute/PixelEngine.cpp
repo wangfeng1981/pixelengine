@@ -50,7 +50,7 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
 //2021-4-6
 //1.修改Style解析json的代码，增加对空字符串的判断
-string PixelEngine::pejs_version = string("2.4.8 2021-04-06");
+string PixelEngine::pejs_version = string("2.4.8.1 2021-04-06");
 
 
 

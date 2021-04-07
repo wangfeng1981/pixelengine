@@ -23,6 +23,8 @@ int main(int argc, char* argv[] ){
 	cout<<"usage:offtask_monitor config.json"<<endl ;
 	cout<<"v1.0 2021-3-29"<<endl ;
     cout<<"v1.1 2021-4-1"<<endl ;
+    cout<<"v2.0 use new monitor config.json, support multi-offtask. 2021-4-6"<<endl ;
+    cout<<"v2.1 support data composite. 2021-4-7"<<endl ;
 
     if( argc!=2 ){
         cout<<"params not equals 2. exit."<<endl ;
@@ -44,7 +46,8 @@ int main(int argc, char* argv[] ){
     spdlog::set_default_logger(dailylogger );
 
 
-    cout<<"start runZonalStatMonitor ... "<<endl ;
+    cout<<"start runZonalStatMonitor ( all offtask monitor )... "<<endl ;
+    //名称虽然是zonalstat但是离线任务的事情统一给管理了2021-4-6
     runZonalStatMonitor(monitorConfig) ;
 
 

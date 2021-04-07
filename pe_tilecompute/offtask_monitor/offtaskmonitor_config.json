@@ -6,6 +6,11 @@
 	"pwd":"wfhbase2021" ,
 	"offtaskjsondir":"/home/hadoop/tempdata/pe-tmpdir/offtaskjsondir" , 
 	"sleep_sec":2 ,
-	"zonalstatcmd":"spark-submit --master spark://hp1:7077 /home/hadoop/IdeaProjects/Task13ZonalStatSparkHbase2/out/artifacts/Task13ZonalStatSparkHbase2_jar/Task13ZonalStatSparkHbase2.jar /home/hadoop/IdeaProjects/Task13ZonalStatSparkHbase2/task13config.json {{{IN}}} {{{OUT}}}" ,
-	"logfile":"/home/hadoop/tempdata/pe-tmpdir/offtaskjsondir/log/offtask.log"
+	"logfile":"/home/hadoop/tempdata/pe-tmpdir/offtaskjsondir/log/offtask.log",
+	"modearray":[
+		{
+			"mode":1,
+			"cmdtem":"spark-submit --master spark://hp1:7077 /home/hadoop/IdeaProjects/Task13ZonalStatSparkHbase2/out/artifacts/Task13ZonalStatSparkHbase2_jar/Task13ZonalStatSparkHbase2.jar /home/hadoop/IdeaProjects/Task13ZonalStatSparkHbase2/task13config.json {{{IN}}} {{{OUT}}}"
+		}
+	]
 }
