@@ -25,6 +25,9 @@ bool ZSContentFromMysql::fromJsonText(string text)
         this->zlevel = root["zlevel"].as<int>() ;
         this->method = root["method"].as<char*>() ;//min,max,ave
         this->offsetdt = root["offsetdt"].as<char*>() ;
+        
+        outfilename = root["outfilename"].as<char*>() ;
+        outfilenamedb = root["outfilenamedb"].as<char*>() ;
     }
     return true ;
 }
@@ -47,6 +50,9 @@ string ZSContentFromMysql::long2str(int64_t val)
     return string(buff) ;
 }
 
+
+//imode =0 区域统计，1实况序列分析，2历史序列分析
+//imode=0,1 使用sk分析，=2使用ls分析
 void ZSSparkInput::fromZSContentFromMysql(  ZSContentFromMysql& zsc ,int imode) 
 {
     this->combMax = zsc.double2str(zsc.bandValidMax) ;

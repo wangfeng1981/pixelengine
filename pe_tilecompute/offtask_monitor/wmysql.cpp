@@ -1,4 +1,8 @@
 #include "wmysql.h"
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/daily_file_sink.h"
+
 
 //获取当前日期，格式YYYYMMDD HH:mm:ss 2017-11-14
 std::string wmysql_current_datetimestr()
@@ -36,16 +40,16 @@ bool wMysql::connect(string host ,
 	                            0 , 0 , CLIENT_MULTI_STATEMENTS )
 	                    == NULL )
 	    { 
-	    	cout<<"Error: mysql failed to connect."<<endl ;
             error = mysql_error(conn) ;
+            spdlog::critical("Error: mysql failed to connect:{}" , error ) ;
             return false ;
 	    }else{
-            cout<<"connect mysql success."<<endl ;
+            spdlog::info("connect mysql success.") ;
             return true ;
         }
 	}
     else{
-        cout<<"all ready connected. "<<endl ;
+        spdlog::info("mysql already connected.") ;
         return true ;//already connected
     }
 }
@@ -55,18 +59,18 @@ int wMysql::runsql(string sqlstr)
 {
 	if( conn == 0 )
 	{
-		cout<<"Error : no connection."<<endl ;
+        spdlog::critical("Error: mysql no connection" ) ;
 		return 1 ;
 	}
 
 	if( mysql_query(conn , sqlstr.c_str() ) )
 	{
-		cout<<"Error : run sql query failed."<<endl ;
+        spdlog::critical("Error : run sql query failed:{}" , sqlstr ) ;
 		return 2 ;
 	} else
 	{
 		int naffected = mysql_affected_rows(conn) ;
-		cout<<"affected rows "<<naffected<<endl ;
+        spdlog::info("affected rows : {}" , naffected ) ;
         while( mysql_next_result(conn)==0 ){} ;
         return 0 ;
 	}
@@ -87,20 +91,20 @@ int wMysql::selectsql(string sqlstr, vector<vector<string> >& resultRows )
 {   
     if( conn == 0 )
 	{
-		cout<<"Error : no connection."<<endl ;
+		spdlog::critical("Error: mysql no connection" ) ;
 		return 1;
 	}
 	
 	if( mysql_query(conn , sqlstr.c_str() )!=0 )
 	{
-		cout<<"Error : run select sql:"<<sqlstr<<". error:"<< mysql_error(conn) <<endl ;
+        spdlog::critical("Error : run sql query failed:{} , mysql_erro:{}" , sqlstr  , mysql_error(conn) ) ;
 	    return 2;
 	} 
 	MYSQL_RES * res = mysql_store_result(conn) ;
 	if (res == NULL)
 	{
 	 	mysql_close( conn);
-	 	cout<<"Error : mysql_store_result failed."<<endl ;
+        spdlog::critical("Error : mysql_store_result failed.") ;
 	 	return 3 ;
 	}
 

@@ -7,6 +7,7 @@
 #include "wdatetimeUtil.h"
 #include "wstringutils.h"
 #include "composite_input.h"
+#include "export_input.h"
 
 const int MYSQL_RECONNECT_SECONDS = 10 ;
 const int MAX_FAILED_COUNT=100 ;
@@ -59,7 +60,7 @@ void runZonalStatMonitor( const MonitorConfig& config )
     while( true ){
         
         const MonitorMode& monitorMode = config.modearray[modeindex_cursor] ;
-        cout<<"monitor offtask mode:"<<monitorMode.mode<<endl ;
+        spdlog::info("monitor offtask mode:{}" , monitorMode.mode) ;
         ++ modeindex_cursor ;
         if( modeindex_cursor ==config.modearray.size() ){
             modeindex_cursor = 0 ;
@@ -104,7 +105,7 @@ void runZonalStatMonitor( const MonitorConfig& config )
             int offtaskid = atof( taskid.c_str() ) ;
             string modestr = selResults[0][1] ;
             int imode = atof( modestr.c_str() ); 
-            string offtaskcontent = selResults[0][2] ;
+            string offtaskcontent = selResults[0][2] ;//json内容
             string taskuserid = selResults[0][3] ;
             int taskuseridval = atof( taskuserid.c_str() ) ;
             
@@ -121,21 +122,29 @@ void runZonalStatMonitor( const MonitorConfig& config )
             subdirs.push_back(ymdstr) ;
             string dirError ;
             wDirTools dirTools ;
-            string productDir = dirTools.makeProductDir( config.offtaskjsondir,subdirs, dirError) ;
+            //没有必要生产子目录
+            //string productDir = dirTools.makeProductDir( config.offtaskjsondir,subdirs, dirError) ;
             string inputjsonfilename  = "";  
-            string outputjsonfilename = "";  
+            string outputfilenamedb = "" ;
+            string outputfilename = "";  //这个值不在c++中生产了，改为在java生产并记录在mysql中。
             
             //临时变量 for 数据合成
             CompositeContentFromMysql compositeInputParams ;
             
+            //临时变量 用于 数据导出记录入库的文件名称
+            ExportContentFromMysql tempExportContentFromMysql ;
+            
             //生成输入json文件
-            if( monitorMode.mode==0 ){
-                //区域统计任务 
-                inputjsonfilename  = productDir + "/zs_in_" + currdatetime + ".json" ;
-                outputjsonfilename = productDir + "/zs_out_" + currdatetime + ".json" ;
+            if( monitorMode.mode==0 || monitorMode.mode==1 || monitorMode.mode==2 ){
+                //区域统计任务，实况序列，历史序列 
                 
                 ZSContentFromMysql zscontent ;
                 zscontent.fromJsonText( offtaskcontent) ;
+                
+                inputjsonfilename  = zscontent.outfilename + ".in.json" ;
+                outputfilename =     zscontent.outfilename ;
+                outputfilenamedb   = zscontent.outfilenamedb ;
+                
                 ZSSparkInput sparkinputjson ;
                 sparkinputjson.fromZSContentFromMysql( zscontent, imode ) ;
                 
@@ -155,11 +164,14 @@ void runZonalStatMonitor( const MonitorConfig& config )
                 
             }else if( monitorMode.mode==4 ){
                 //数据合成任务
-                inputjsonfilename  = productDir + "/co_in_" + currdatetime + ".json" ;
-                outputjsonfilename = productDir + "/co_out_" + currdatetime + ".json" ;
                 
                 CompositeContentFromMysql coMysqlContent(offtaskcontent) ;
                 compositeInputParams = coMysqlContent ;
+                
+                inputjsonfilename  = coMysqlContent.outfilename + ".in.json" ;
+                outputfilename =     coMysqlContent.outfilename ;
+                outputfilenamedb   = coMysqlContent.outfilenamedb ;
+                
                 CompositeSparkInput sparkinputjson(offtaskid , coMysqlContent) ;
                 spdlog::info("write input json {}" , inputjsonfilename) ;
                 bool inputjsonok = sparkinputjson.writeToJsonFile(inputjsonfilename) ;
@@ -174,34 +186,74 @@ void runZonalStatMonitor( const MonitorConfig& config )
                     }
                     continue ; 
                 }                
+            }else if( monitorMode.mode==5 ){
+                //数据导出任务
+
+                ExportContentFromMysql mysqlcontent ;
+                spdlog::info("begin parse mysql content for export tid:{}" ,offtaskid ) ;
+                bool mysqlcontentParseOk = mysqlcontent.loadFromJson(offtaskcontent) ;
+                if( mysqlcontentParseOk==false )
+                {
+                    ++ failedCount ;
+                    spdlog::warn("parse mysql content failed for export tid:{}" ,offtaskid ) ;
+                    writeTaskStatus(config , taskid , "3" , "parse json from mysql failed." , "" ) ;
+                    continue ;
+                }
+                else{
+                    inputjsonfilename  = mysqlcontent.outfilename + ".in.json" ;
+                    outputfilename =     mysqlcontent.outfilename ;
+                    outputfilenamedb   = mysqlcontent.outfilenamedb ;
+                    
+                    tempExportContentFromMysql = mysqlcontent ;
+                    
+                    ExportTaskInput taskinput( mysqlcontent) ;
+                    spdlog::info("begin writing task input json {}" , inputjsonfilename) ;
+                    bool writeok = taskinput.writeToJsonFile( inputjsonfilename) ;
+                    if( writeok==false ){
+                        ++ failedCount ;
+                        spdlog::warn("write input failed: {}", inputjsonfilename) ;
+                        writeTaskStatus(config , taskid , "3" , "write input json failed "+inputjsonfilename , "" ) ;
+                        if( failedCount>MAX_FAILED_COUNT ){
+                            spdlog::warn("failed count exceed:{}" ,MAX_FAILED_COUNT ) ;
+                            break ;
+                        }
+                        continue ;
+                    }else{
+                        spdlog::info("write task input json {} ok." , inputjsonfilename) ;
+                    }
+                }
             }
             
-            if( inputjsonfilename=="" || outputjsonfilename=="" ){
-                spdlog::critical("inputjsonfilename or outputjsonfilename is empty." ) ;
-                break ;
+            if( inputjsonfilename=="" || outputfilename==""  ||outputfilenamedb=="" ){
+                spdlog::warn("inputjsonfilename or outputfilename is empty." ) ;
+                writeTaskStatus(config , taskid , "3" , "inputjsonfilename or outputfilename is empty.", "" ) ;
+                continue ;
             }
             
             
-            //调用spark
+            //调用spark或者其他离线命令行
             string thecommand = monitorMode.cmdtem ;
             thecommand = wStringUtils::replaceString( thecommand,"{{{IN}}}" , inputjsonfilename) ;
-            thecommand = wStringUtils::replaceString( thecommand,"{{{OUT}}}" , outputjsonfilename) ;
+            thecommand = wStringUtils::replaceString( thecommand,"{{{OUT}}}" , outputfilename) ;
             spdlog::info("begin call:{}" , thecommand) ;
-            cout<<"begin call:"<<thecommand<<endl ;
             int retval = system( thecommand.c_str() ) ;
             spdlog::info("{} result:{}" ,thecommand, retval) ;
             
             //结果写回数据库
-            if( wDirTools::isFileExist( outputjsonfilename ) ){
-                //success
-                writeTaskStatus(config , taskid , "2" , "" , outputjsonfilename ) ;
+            if( wDirTools::isFileExist( outputfilename ) ){
+                
+                //数据库记录相对路径
+                writeTaskStatus(config , taskid , "2" , "" , outputfilenamedb ) ;    
+                
+                //下面后续操作针对数据合成，其他任务没有这个要求
                 if( monitorMode.mode==4 ){
-                    //数据合成，更新数据库
+                    //数据合成，更新数据库，添加产品id，波段信息等操作
                     CompositeSparkOutput coOutput ;
-                    bool cook = coOutput.loadFromJson(outputjsonfilename) ;
+                    bool cook = coOutput.loadFromJson(outputfilename) ;
                     if( cook==false ){
-                        spdlog::error("failed to load from json for composite result {}",outputjsonfilename) ;
+                        spdlog::error("failed to load from json for composite result {}",outputfilename) ;
                     }else{
+                        //添加产品id，波段信息等操作
                         bool dbok = coOutput.doDbWork(config,compositeInputParams,taskuseridval) ;
                         if( dbok == true ){
                             spdlog::info("db work for composite result OK.") ;
@@ -213,7 +265,7 @@ void runZonalStatMonitor( const MonitorConfig& config )
             }
             else{
                 //failed
-                writeTaskStatus(config , taskid , "3" , "spark failed." , "" ) ;
+                writeTaskStatus(config , taskid , "3" , "offtask command failed, no result file." , "" ) ;
             }
         }
         

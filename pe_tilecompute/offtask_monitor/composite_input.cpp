@@ -25,7 +25,7 @@ CompositeContentFromMysql::CompositeContentFromMysql(string text)
     outyxblen = root["outyxblen"].as<int>() ;
     outhcol = root["outhcol"].as<int>() ;
     
-    userbound = root["userbound"].as<int>() ;
+    usebound = root["usebound"].as<int>() ;
     left = root["left"].as<double>() ;
     right = root["right"].as<double>() ;
     top = root["top"].as<double>() ;
@@ -33,6 +33,9 @@ CompositeContentFromMysql::CompositeContentFromMysql(string text)
     
     zmin = root["zmin"].as<int>() ;
     zmax = root["zmax"].as<int>() ;
+    
+    outfilename = root["outfilename"].as<char*>() ;
+    outfilenamedb = root["outfilenamedb"].as<char*>() ;
 }
 
 
@@ -47,7 +50,7 @@ CompositeSparkInput::CompositeSparkInput(int oftid1 ,CompositeContentFromMysql& 
     outhpidblen = co.outhpidblen ;
     outyxblen = co.outyxblen ;
     outhcol = co.outhcol ;
-    userbound = co.userbound ;
+    usebound = co.usebound ;
     left = co.left ;
     right = co.right ;
     top = co.top ;
@@ -70,7 +73,7 @@ bool CompositeSparkInput::writeToJsonFile(string outfilename)
     root["outyxblen"] = outyxblen ;
     root["outhcol"] = outhcol ;
     
-    root["userbound"] = userbound ;
+    root["usebound"] = usebound ;
     root["left"] = left ;
     root["right"] = right ;
     root["top"] = top ;
@@ -270,7 +273,7 @@ bool CompositeSparkOutput::insertProductDataItem(const MonitorConfig& config,
     std::string currdt = wmysql_current_datetimestr() ;
     
     
-    string insql = string("INSERT INTO tbproductdataitem (pid,hcol,`left`,`right`,`top`,`bottom`,createtime,updatetime) VALUES (")
+    string insql = string("INSERT INTO tbproductdataitem (pid,hcol,`hleft`,`hright`,`htop`,`hbottom`,createtime,updatetime) VALUES (")
         + wStringUtils::int2str(pid) + ","
         + wStringUtils::long2str(hcol) + ","
         + wStringUtils::double2str(left) + ","

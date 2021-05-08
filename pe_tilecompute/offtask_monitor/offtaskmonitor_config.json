@@ -9,12 +9,24 @@
 	"logfile":"/home/hadoop/tempdata/pe-tmpdir/offtaskjsondir/log/offtask.log",
 	"modearray":[
 		{
+			"mode":0,
+			"cmdtem":"spark-submit --master spark://hp1:7077 /home/hadoop/IdeaProjects/Task13ZonalStatSparkHbase2/out/artifacts/Task13ZonalStatSparkHbase2_jar/Task13ZonalStatSparkHbase2.jar /home/hadoop/IdeaProjects/Task13ZonalStatSparkHbase2/task13config.json {{{IN}}} {{{OUT}}}"
+		},
+		{
 			"mode":1,
+			"cmdtem":"spark-submit --master spark://hp1:7077 /home/hadoop/IdeaProjects/Task13ZonalStatSparkHbase2/out/artifacts/Task13ZonalStatSparkHbase2_jar/Task13ZonalStatSparkHbase2.jar /home/hadoop/IdeaProjects/Task13ZonalStatSparkHbase2/task13config.json {{{IN}}} {{{OUT}}}"
+		},
+		{
+			"mode":2,
 			"cmdtem":"spark-submit --master spark://hp1:7077 /home/hadoop/IdeaProjects/Task13ZonalStatSparkHbase2/out/artifacts/Task13ZonalStatSparkHbase2_jar/Task13ZonalStatSparkHbase2.jar /home/hadoop/IdeaProjects/Task13ZonalStatSparkHbase2/task13config.json {{{IN}}} {{{OUT}}}"
 		},
 		{
 			"mode":4,
 			"cmdtem":"spark-submit --master spark://hp1:7077 /home/hadoop/IdeaProjects/Task16SparkHbaseV8OffTaskWorker/out/artifacts/Task16SparkHbaseV8OffTaskWorker_jar/Task16SparkHbaseV8OffTaskWorker.jar {{{IN}}} {{{OUT}}}"
+		},
+		{
+			"mode":5 , 
+			"cmdtem":"java -jar /home/hadoop/IdeaProjects/Task15ExportHbase2GeoTiff/out/artifacts/Task15ExportHbase2GeoTiff_jar/Task15ExportHbase2GeoTiff.jar {{{IN}}} {{{OUT}}}"
 		}
 	]
 }

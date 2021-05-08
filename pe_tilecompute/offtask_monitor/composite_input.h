@@ -40,7 +40,7 @@ using namespace ArduinoJson;
 //    "outhpidblen": 4,
 //    "outyxblen": 2,
 //    "outhcol": 1,
-//    "userbound": 0,
+//    "usebound": 0,
 //    "left": 0,
 //    "right": 0,
 //    "top": 0,
@@ -58,9 +58,11 @@ struct CompositeContentFromMysql{
      string scriptfilename , outhtable, outhfami ;
      int outpid , outhpid , outhpidblen , outyxblen;
      int outhcol ;
-     int userbound ;//0-not use, 1-use 
+     int usebound ;//0-not use, 1-use 
      double left , right , top , bottom ;
      int zmin,zmax ;
+     string outfilename;
+     string outfilenamedb ;
     
     CompositeContentFromMysql(string text) ;
     inline CompositeContentFromMysql() {} 
@@ -92,9 +94,10 @@ struct CompositeSparkInput{
      int oftid ;
      string scriptfilename , outhtable, outhfami ;
      int outhpid , outhpidblen, outyxblen ;
-     int outhcol , userbound ;
+     int outhcol , usebound ;
      double left,right,top,bottom;
      int zmin,zmax ;
+
     
     inline CompositeSparkInput() {}
     CompositeSparkInput(int oftid1 , CompositeContentFromMysql& co) ;

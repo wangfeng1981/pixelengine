@@ -25,6 +25,10 @@ int main(int argc, char* argv[] ){
     cout<<"v1.1 2021-4-1"<<endl ;
     cout<<"v2.0 use new monitor config.json, support multi-offtask. 2021-4-6"<<endl ;
     cout<<"v2.1.1 support data composite. 2021-4-7"<<endl ;
+    cout<<"v2.2.5 add data export task, output filename from mysql. 2021-4-21"<<endl ;
+    cout<<"v2.2.6 userbound bugfixed, usebound is correct params for co, change cout to spdlog.2021-4-26."<<endl ;
+    cout<<"v2.2.7 use hleft,hright,htop,hbottom in tbproductdataitem 2021-4-29"<<endl ;
+    cout<<"v2.2.8 do not make offtaskdir 2021-5-8"<<endl ;
 
     if( argc!=2 ){
         cout<<"params not equals 2. exit."<<endl ;
