@@ -2,6 +2,8 @@
 
 #include "PixelEngine.h"
 #include <time.h>
+#define ESPRIMA_CPP_TOOL_IMPLEMENTATION
+#include "esprimacpptool.h"
 
 
 bool PixelEngine::quietMode = false;
@@ -50,7 +52,12 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
 //2021-4-6
 //1.修改Style解析json的代码，增加对空字符串的判断
-string PixelEngine::pejs_version = string("2.4.8.1 2021-04-06");
+//string PixelEngine::pejs_version = string("2.4.8.1 2021-04-06");
+
+//2022-2-12
+//1. 增加了成员函数PixelEngine::GetDatasetNameArray 用于识别代码中全部数据集的函数，该函数不依赖其他库与初始化代码，直接调用即可。
+string PixelEngine::pejs_version = string("2.5.0.0 2022-02-12");
+
 
 
 
@@ -4445,7 +4452,25 @@ bool PixelEngine::RunScriptForDatasetDatetimePairs(void* extra,
 }
 
 
-
+//2022-2-12 函数获取脚本数据集名称数组
+bool PixelEngine::GetDatasetNameArray(void* extra,
+		string& scriptContent,
+        vector<string>& retDsNameArr, 
+        string& errorText) 
+{
+    cout<<"in PixelEngine::GetDatasetNameArray()"<<endl;
+    std::vector<std::string> dsNameArr ;
+    std::string errorMsg ;
+    int64_t dura_ms = 0;
+    bool isok = EsprimaCppTool::getDatasetNameArray(scriptContent , dsNameArr ,errorMsg, dura_ms);
+    if( isok==true ){
+        retDsNameArr = dsNameArr ;
+        return true ;
+    }else{
+        errorText = errorMsg ;
+        return false ;
+    }
+}
 
 
 

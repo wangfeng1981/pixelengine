@@ -15,6 +15,17 @@ extern "C" {
 JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ParseScriptForDsDt
   (JNIEnv *, jobject, jstring, jstring);
 
+
+/* 2022-2-12 获取脚本中全部数据集名称,返回结果是Json格式字符串{status:0,error:"",data:[...]}
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    GetDatasetNameArray
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_GetDatasetNameArray
+  (JNIEnv *, jobject, jstring, jstring);
+  
+  
+
 /*
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    RunScriptForTileWithoutRender

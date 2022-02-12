@@ -1,2 +1,0 @@
-JniTilesComputingMT:JniTilesComputingMT.cpp
-	g++ -shared -I../ -I../../ -I../../v8include -I/usr/local/jdk1.8.0_192/include -I/usr/local/jdk1.8.0_192/include/linux ../../WV8Engine.cpp ../../WTileDataBuffer.cpp  ../adler32.o ../compress.o ../crc32.o ../deflate.o ../gzclose.o ../gzlib.o ../gzread.o ../gzwrite.o ../infback.o ../inffast.o ../inflate.o ../inftrees.o ../trees.o ../uncompr.o ../zutil.o JniTilesComputingMT.cpp -o libJniTileComputingMT.so -fPIC -lv8_monolith -L../../v8lib -lpthread -ldl -std=c++0x

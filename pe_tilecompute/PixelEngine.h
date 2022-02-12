@@ -31,6 +31,7 @@
 #include "peroi.h"
 #include <memory>
 #include "ajson5.h"
+#include "esprimacpptool.h"//2022-2-12 
 
 
 
@@ -354,6 +355,15 @@ struct PixelEngine
 	//解析Dataset-Datetime 数据集时间日期对
 	bool RunScriptForDatasetDatetimePairs(void* extra,
 		string& scriptContent,vector<wDatasetDatetime>& retDsDtVec,string& errorText);
+        
+        
+    //获取脚本中全部数据集名称 2022-2-12
+    //这个函数没有使用v8,不依赖其他初始化代码，直接使用即可，使用esprima.cpp实现AST解析
+    //数据集名称包括 pe.Dataset(...) pe.DatasetArray(...) pe.DataFile(...)
+    bool GetDatasetNameArray(void* extra,
+		string& scriptContent,
+        vector<string>& retDsNameArr,  
+        string& errorText) ; 
         
 
     /**

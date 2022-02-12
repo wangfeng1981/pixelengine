@@ -28,7 +28,11 @@ using namespace ArduinoJson;
 //2021-1-21 增加两个java调用c++接口，用于传入extra的json字符串
 //Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRenderWithExtra
 //Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithRenderWithExtra
-string global_connector_version_str = "connector_version:0.3.1 2021-01-21" ;
+//string global_connector_version_str = "connector_version:0.3.1 2021-01-21" ;
+
+//2022-2-12 增加获取脚本全部数据集名称的接口
+//(1)Java_com_pixelengine_HBasePeHelperCppConnector_GetDatasetNameArray
+string global_connector_version_str = "connector_version:1.0.0 2022-02-12" ;
 
 //外部调用，获得connector和core版本信息
 extern "C" void HBasePeHelperCppConnector_GetVersion(){
@@ -151,6 +155,60 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ParseSc
 	jstring jstr = JavaPixelEngineHelperInterface::cstring2jstring(env, jsonstr.c_str() ) ;
 	return jstr ;
 }
+
+
+
+/* 2022-2-12 获取脚本中全部数据集名称,返回结果是Json格式字符串{status:0,error:"",data:[...]}
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    GetDatasetNameArray
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+ * {
+	"data":["fy4","fy3","modis/ndvi","ls/08"] ,
+	"error":"",
+	"status":0   //0 for good, 1 for error	
+    }
+ */
+JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_GetDatasetNameArray
+  (JNIEnv * env, jobject object , 
+  	jstring javaPEHelperClassName, 
+  	jstring scriptContent)
+{
+    printf("in Java_com_pixelengine_HBasePeHelperCppConnector_GetDatasetNameArray()\n") ;
+
+	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ; 
+	PixelEngine pe ;
+	string cscriptContent = JavaPixelEngineHelperInterface::jstring2cstring(env,scriptContent) ;
+
+	vector<string> retDsNameArr ;
+	string errorText;
+	bool ok = pe.GetDatasetNameArray( nullptr ,
+		cscriptContent,
+		retDsNameArr ,
+		errorText) ;
+	DynamicJsonBuffer jsonBuffer;
+	JsonObject& root = jsonBuffer.createObject();
+	if( ok ){
+		root["status"] = 0 ;//ok
+		root["error"] = "" ;
+		JsonArray& jdsNameArr = root.createNestedArray("data") ;
+		for(int ids = 0 ; ids < retDsNameArr.size(); ++ ids ){
+            jdsNameArr.add(retDsNameArr[ids]) ;
+		}
+	}else{
+		root["status"] = 9 ; 
+		root["error"] = errorText ;
+		root.createNestedArray("data") ;
+	}
+	string jsonstr ;
+	root.printTo(jsonstr) ;
+	jstring jstr = JavaPixelEngineHelperInterface::cstring2jstring(env, jsonstr.c_str() ) ;
+	return jstr ;
+}
+
+
+
+
 
 /*
  * Class:     com_pixelengine_HBasePeHelperCppConnector
