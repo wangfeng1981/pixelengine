@@ -25,15 +25,15 @@ public:
  	JavaPixelEngineHelperInterface(JNIEnv* env0,string javaHelperClassName);
 
 	virtual bool getTileData(int64_t dt, string& dsName, vector<int> bandindices,
-		int z, int y, int x, vector<unsigned char>& retTileData, 
+		int z, int y, int x, vector<unsigned char>& retTileData,
 		int& dataType,
 		int& wid,
 		int& hei,
 		int& nbands,
 		string& errorText);
 
- 
-	virtual bool getTileDataArray( 
+
+	virtual bool getTileDataArray(
 		int64_t fromdtInclusive, int64_t todtInclusive,
 		string& dsName, vector<int> bandindices, int z, int y, int x,
 		int filterMonth,int filterDay,int filterHour,int filterMinu,
@@ -46,18 +46,21 @@ public:
 		int& nbands,
 		string& errorText);
 
- 
+
 	virtual bool getColorRamp(string& crid , PixelEngineColorRamp& crobj , string& errorText);
 
- 
+
 	virtual bool getStyle(string& styleid, PeStyle& retStyle, string& errorText) ;
+
+	//2022-3-6 从外部读取roi hseg.tlv数据 isUserRoi=1为用户roi，isUserRoi=0为系统ROI，rid为关系数据库中主键, retTlvData返回的二进制结果
+	virtual bool getRoiHsegTlv(int isUserRoi,int rid,vector<unsigned char>& retTlvData) ;
 
 
 private:
 	bool getJavaObjectIntField(jobject obj,const char* fieldname,int& retval) ;
 	bool getJavaObjectLongArrField(jobject obj,const char* fieldname,vector<int64_t>& retvec) ;
 	bool getJavaObjectByteArrOfArrField(jobject obj,const char* fieldname,vector<vector<unsigned char> >& retvecOfVec) ;
-	
+
 	bool getJavaObjectByteField(jobject obj,const char* fieldname,unsigned char& retval) ;
 	bool getJavaObjectDoubleField(jobject obj,const char* fieldname,double& retval) ;
 	bool getJavaObjectStringField(jobject obj,const char* fieldname,string& retval) ;

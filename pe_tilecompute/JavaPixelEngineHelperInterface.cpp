@@ -8,13 +8,13 @@ JavaPixelEngineHelperInterface::JavaPixelEngineHelperInterface(JNIEnv* env0,stri
 }
 
 bool JavaPixelEngineHelperInterface::getTileData(int64_t dt, string& dsName, vector<int> bandindices,
-	int z, int y, int x, vector<unsigned char>& retTileData, 
+	int z, int y, int x, vector<unsigned char>& retTileData,
 	int& dataType,
 	int& wid,
 	int& hei,
 	int& nbands,
 	string& errorText)
-{ 
+{
 	cout<<"in c++ JavaPixelEngineHelperInterface::getTileData"<<endl;
 	JNIEnv *env = this->env	 ;
 	if( env==0 ){
@@ -24,13 +24,13 @@ bool JavaPixelEngineHelperInterface::getTileData(int64_t dt, string& dsName, vec
 
 	jclass	javaHelperClass =  env->FindClass("com/pixelengine/HBasePixelEngineHelper");
 	jobject	javaHelperObject = env->AllocObject(javaHelperClass);
-	
+
 	//Signature: (Ljava/lang/String;JIII)Lcom/pixelengine/TileComputeResult;
 	//TileData getTileData( long dt, String dsName,int[] bandindices,int z,int y,int x)
-	jmethodID getTileDataMethodId = env->GetMethodID(javaHelperClass, 
-		"getTileData", 
+	jmethodID getTileDataMethodId = env->GetMethodID(javaHelperClass,
+		"getTileData",
 		"(JLjava/lang/String;[IIII)Lcom/pixelengine/TileData;");
-    
+
 	jintArray jbands = env->NewIntArray(bandindices.size()) ;
 	for(int ib = 0 ; ib < bandindices.size() ; ++ ib ){
 		int bandindex = bandindices[ib];
@@ -42,8 +42,8 @@ bool JavaPixelEngineHelperInterface::getTileData(int64_t dt, string& dsName, vec
 	jobject tileDataJavaObj = (jobject) env->CallObjectMethod(javaHelperObject,
 		getTileDataMethodId,
 		dt,
-		env->NewStringUTF(dsName.c_str()) , 
-		jbands , 
+		env->NewStringUTF(dsName.c_str()) ,
+		jbands ,
 		z,y,x
 		);
 
@@ -55,14 +55,14 @@ bool JavaPixelEngineHelperInterface::getTileData(int64_t dt, string& dsName, vec
 	int numds = 0;
 	vector<int64_t> dtVec ;
 	vector<vector<unsigned char> > dataVecOfVec ;
-	bool isok = this->unwrapJavaTileData(tileDataJavaObj , 
-		dtVec , 
-		dataVecOfVec , 
+	bool isok = this->unwrapJavaTileData(tileDataJavaObj ,
+		dtVec ,
+		dataVecOfVec ,
 		wid,
 		hei,
 		nbands,
-		numds , 
-		dataType , 
+		numds ,
+		dataType ,
 		x,y,z
 		) ;
 	if( isok ==false ){
@@ -80,19 +80,19 @@ bool JavaPixelEngineHelperInterface::getTileData(int64_t dt, string& dsName, vec
 	int onedsbytesize = (int)dataVecOfVec[0].size() ;
     cout<<"onedsbytesize:"<<onedsbytesize<<endl;
 	retTileData.resize( onedsbytesize ) ;
-    
+
     unsigned char* destptr = retTileData.data();
     memcpy(destptr , dataVecOfVec[0].data() , onedsbytesize ) ;
-	
+
 
 	env->DeleteLocalRef(javaHelperObject);
     env->DeleteLocalRef(javaHelperClass);
- 
+
 	return true;
 }
 
 
-bool JavaPixelEngineHelperInterface::getTileDataArray( 
+bool JavaPixelEngineHelperInterface::getTileDataArray(
 	int64_t fromdtInclusive, int64_t todtInclusive,
 	string& dsName, vector<int> bandindices, int z, int y, int x,
 	int filterMonth,int filterDay,int filterHour,int filterMinu,
@@ -112,11 +112,11 @@ bool JavaPixelEngineHelperInterface::getTileDataArray(
 	}
 	jclass	javaHelperClass =  env->FindClass("com/pixelengine/HBasePixelEngineHelper");
 	jobject	javaHelperObject = env->AllocObject(javaHelperClass);
-	
-	jmethodID methodId = env->GetMethodID(javaHelperClass, 
-		"getTileDataArray", 
+
+	jmethodID methodId = env->GetMethodID(javaHelperClass,
+		"getTileDataArray",
 		"(JJLjava/lang/String;[IIIIIIIII)Lcom/pixelengine/TileData;");
-    
+
 	jintArray jbands = env->NewIntArray(bandindices.size()) ;
 	for(int ib = 0 ; ib < bandindices.size() ; ++ ib ){
 		int bandindex = bandindices[ib];
@@ -128,8 +128,8 @@ bool JavaPixelEngineHelperInterface::getTileDataArray(
 		methodId,
 		fromdtInclusive,
 		todtInclusive,
-		env->NewStringUTF(dsName.c_str()) , 
-		jbands , 
+		env->NewStringUTF(dsName.c_str()) ,
+		jbands ,
 		z,y,x,
 		filterMonth,
 		filterDay,
@@ -144,15 +144,15 @@ bool JavaPixelEngineHelperInterface::getTileDataArray(
 		return false ;
 	}
 	int numds = 0;
- 
-	bool isok = this->unwrapJavaTileData(tileDataJavaObj , 
-		dtArr , 
-		retTileDataArr , 
+
+	bool isok = this->unwrapJavaTileData(tileDataJavaObj ,
+		dtArr ,
+		retTileDataArr ,
 		wid,
 		hei,
 		nbands,
-		numds , 
-		dataType , 
+		numds ,
+		dataType ,
 		x,y,z
 		) ;
 	if( isok ==false ){
@@ -186,11 +186,11 @@ bool JavaPixelEngineHelperInterface::getColorRamp(string& crid ,
 
 	jclass	javaHelperClass =  env->FindClass("com/pixelengine/HBasePixelEngineHelper");
 	jobject	javaHelperObject = env->AllocObject(javaHelperClass);
-	
+
 	//Signature: (Ljava/lang/String;)Lcom/pixelengine/ColorRamp;
 	// public ColorRamp getColorRamp( String crid )
-	jmethodID methodID = env->GetMethodID(javaHelperClass, 
-		"getColorRamp", 
+	jmethodID methodID = env->GetMethodID(javaHelperClass,
+		"getColorRamp",
 		"(Ljava/lang/String;)Lcom/pixelengine/ColorRamp;");
 
 	jobject jo = (jobject) env->CallObjectMethod(javaHelperObject,
@@ -211,12 +211,12 @@ bool JavaPixelEngineHelperInterface::getColorRamp(string& crid ,
 	cout<<"Info : unwrap ColorRamp ok."<<endl ;
 	env->DeleteLocalRef(javaHelperObject);
     env->DeleteLocalRef(javaHelperClass);
- 
+
 	return true;
 }
 
 
-bool JavaPixelEngineHelperInterface::getStyle(string& styleid, PeStyle& retStyle, string& errorText) 
+bool JavaPixelEngineHelperInterface::getStyle(string& styleid, PeStyle& retStyle, string& errorText)
 {
 	JNIEnv *env = this->env	 ;
 	if( env==0 ){
@@ -225,9 +225,9 @@ bool JavaPixelEngineHelperInterface::getStyle(string& styleid, PeStyle& retStyle
 	}
 	jclass	javaHelperClass =  env->FindClass("com/pixelengine/HBasePixelEngineHelper");
 	jobject	javaHelperObject = env->AllocObject(javaHelperClass);
-	
-	jmethodID methodID = env->GetMethodID(javaHelperClass, 
-		"getStyle", 
+
+	jmethodID methodID = env->GetMethodID(javaHelperClass,
+		"getStyle",
 		"(Ljava/lang/String;)Lcom/pixelengine/JPeStyle;");
 
 	jobject jo = (jobject) env->CallObjectMethod(javaHelperObject,
@@ -249,6 +249,65 @@ bool JavaPixelEngineHelperInterface::getStyle(string& styleid, PeStyle& retStyle
     env->DeleteLocalRef(javaHelperClass);
 	return true;
 }
+
+
+
+//2022-3-6 从外部读取roi hseg.tlv数据 isUserRoi=1为用户roi，isUserRoi=0为系统ROI，rid为关系数据库中主键
+bool JavaPixelEngineHelperInterface::getRoiHsegTlv(int isUserRoi,int rid,vector<unsigned char>& retTlvData)
+{
+    cout<<"in c++ JavaPixelEngineHelperInterface::getRoiHsegTlv"<<endl;
+	JNIEnv *env = this->env	 ;
+	if( env==0 ){
+		cout<<"Error : JavaPixelEngineHelperInterface::getRoiHsegTlv env is null"<<endl ;
+		return false;
+	}
+
+	jclass	javaHelperClass =  env->FindClass("com/pixelengine/HBasePixelEngineHelper");
+	jobject	javaHelperObject = env->AllocObject(javaHelperClass);
+
+	//Signature:
+	//
+	jmethodID methodID = env->GetMethodID(javaHelperClass,
+		"getRoiHsegTlv",
+		"(II)[B");
+
+    jbyteArray jbarr = (jbyteArray) env->CallObjectMethod(javaHelperObject,
+		methodID,
+		isUserRoi,
+		rid
+		);
+	if( jbarr == NULL ){
+		cout<<"Error : getRoiHsegTlv return null result, isUserRoi:"<< isUserRoi << ",rid:"<<rid <<endl ;
+		return false ;
+	}
+
+	jbyteArray* jbarrPtr = reinterpret_cast<jbyteArray*>(&jbarr) ;
+    unsigned char* dataPtr = (unsigned char*)env->GetByteArrayElements(*jbarrPtr,NULL) ;
+    int blen = env->GetArrayLength(  *jbarrPtr ) ;
+	retTlvData.resize(blen) ;
+	memcpy( retTlvData.data() ,  dataPtr , blen ) ;
+    env->ReleaseByteArrayElements(*jbarrPtr, (jbyte*)dataPtr, 0);
+    cout<<"debug blen:"<<blen<<endl ;
+
+	env->DeleteLocalRef(javaHelperObject);
+    env->DeleteLocalRef(javaHelperClass);
+
+	return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -288,7 +347,7 @@ bool JavaPixelEngineHelperInterface::unwrapJavaColorRamp(jobject obj,
 }
 
 bool JavaPixelEngineHelperInterface::unwrapJavaStyle(jobject obj,
-	pe::PeStyle& style ) 
+	pe::PeStyle& style )
 {
 	JNIEnv *env = this->env	 ;
 	if( env==0 ){
@@ -300,11 +359,11 @@ bool JavaPixelEngineHelperInterface::unwrapJavaStyle(jobject obj,
 	bool ok1 = this->getJavaObjectIntArrField(obj,"bands",style.bands) ;
 	ok1 = this->getJavaObjectStringField(obj,"type" , style.type ) ;
 
-	jfieldID colorsid = env->GetFieldID( someClass, "colors", 
+	jfieldID colorsid = env->GetFieldID( someClass, "colors",
 		"[Lcom/pixelengine/JPeColorElement;");
-	jfieldID nodatacolorid = env->GetFieldID( someClass, "nodatacolor", 
+	jfieldID nodatacolorid = env->GetFieldID( someClass, "nodatacolor",
 		"Lcom/pixelengine/JPeColorElement;");
-	jfieldID vrangesid = env->GetFieldID( someClass, "vranges", 
+	jfieldID vrangesid = env->GetFieldID( someClass, "vranges",
 		"[Lcom/pixelengine/JPeVRangeElement;");
 
 	if (NULL == colorsid || NULL== nodatacolorid || NULL==vrangesid) {
@@ -317,7 +376,7 @@ bool JavaPixelEngineHelperInterface::unwrapJavaStyle(jobject obj,
 	jobjectArray jo_vranges =(jobjectArray) env->GetObjectField( obj, vrangesid);
 
 	ok1 = this->unwrapColorElement(jo_nodatacolor, style.nodatacolor) ;
-	
+
 	int colorslen = (int) env->GetArrayLength( jo_colors);
 	int vrangeslen = (int) env->GetArrayLength( jo_vranges);
 
@@ -363,7 +422,7 @@ bool JavaPixelEngineHelperInterface::unwrapJavaTileData(
 	bool ok5 = this->getJavaObjectIntField(obj,"dataType" , dataType) ;
 	bool ok6 = this->getJavaObjectIntField(obj,"x" , x) ;
 	bool ok7 = this->getJavaObjectIntField(obj,"y" , y) ;
-	bool ok8 = this->getJavaObjectIntField(obj,"z" , z) ; 
+	bool ok8 = this->getJavaObjectIntField(obj,"z" , z) ;
 
 	bool ok9 = this->getJavaObjectLongArrField(obj,"datetimeArray" , dtvec ) ;
 	bool ok10 = this->getJavaObjectByteArrOfArrField(obj,"tiledataArray" , datavec) ;
@@ -389,7 +448,7 @@ bool JavaPixelEngineHelperInterface::getJavaObjectIntField(jobject obj,const cha
 }
 
 bool JavaPixelEngineHelperInterface::getJavaObjectLongArrField(jobject obj,const char* fieldname,
-	vector<int64_t>& retvec) 
+	vector<int64_t>& retvec)
 {
 	JNIEnv *env = this->env	 ;
 	jclass someClass = env->GetObjectClass(obj);
@@ -401,9 +460,9 @@ bool JavaPixelEngineHelperInterface::getJavaObjectLongArrField(jobject obj,const
 
 	// Get the object field, returns JObject (because Array is instance of Object)
 	jobject jo = env->GetObjectField( obj, fid);
-	// Cast it to a  
+	// Cast it to a
 	jlongArray * arr = reinterpret_cast<jlongArray*>(&jo) ;
-	// Get the elements (you probably have to fetch the length of the array as well  
+	// Get the elements (you probably have to fetch the length of the array as well
 	int64_t* data = env->GetLongArrayElements(*arr, NULL);
 	jint len = env->GetArrayLength( *arr);
 	int leni = len ;
@@ -411,13 +470,13 @@ bool JavaPixelEngineHelperInterface::getJavaObjectLongArrField(jobject obj,const
 	for(int idt = 0 ; idt < leni; ++ idt ){
 		retvec[idt] = data[idt] ;
 	}
-	// Don't forget to release it 
+	// Don't forget to release it
 	env->ReleaseLongArrayElements(*arr, data, 0);
 	return true;
 }
 
 bool JavaPixelEngineHelperInterface::getJavaObjectByteArrOfArrField(jobject obj,const char* fieldname,
-	vector<vector<unsigned char> >& retvecOfVec) 
+	vector<vector<unsigned char> >& retvecOfVec)
 {
 	JNIEnv *env = this->env	 ;
 	jclass someClass = env->GetObjectClass(obj);
@@ -429,7 +488,7 @@ bool JavaPixelEngineHelperInterface::getJavaObjectByteArrOfArrField(jobject obj,
 
 	// Get the object field, returns JObject (because Array is instance of Object)
 	jobject jo = env->GetObjectField( obj, fid);
-	// Cast it to a 
+	// Cast it to a
 	jobjectArray* arr = reinterpret_cast<jobjectArray*>(&jo) ;
 	int len1 = env->GetArrayLength(  *arr ) ;
 	retvecOfVec.resize(len1) ;
@@ -478,7 +537,7 @@ jstring JavaPixelEngineHelperInterface::cstring2jstring(JNIEnv *env,
 
 
 
-bool JavaPixelEngineHelperInterface::getJavaObjectDoubleField(jobject obj,const char* fieldname,double& retval) 
+bool JavaPixelEngineHelperInterface::getJavaObjectDoubleField(jobject obj,const char* fieldname,double& retval)
 {
 	JNIEnv *env = this->env	 ;
 	jclass someClass = env->GetObjectClass(obj);
@@ -492,7 +551,7 @@ bool JavaPixelEngineHelperInterface::getJavaObjectDoubleField(jobject obj,const 
 	return true;
 }
 
-bool JavaPixelEngineHelperInterface::getJavaObjectByteField(jobject obj,const char* fieldname,unsigned char& retval) 
+bool JavaPixelEngineHelperInterface::getJavaObjectByteField(jobject obj,const char* fieldname,unsigned char& retval)
 {
 	JNIEnv *env = this->env	 ;
 	jclass someClass = env->GetObjectClass(obj);
@@ -506,7 +565,7 @@ bool JavaPixelEngineHelperInterface::getJavaObjectByteField(jobject obj,const ch
 	return true;
 }
 
-bool JavaPixelEngineHelperInterface::getJavaObjectStringField(jobject obj,const char* fieldname,string& retval) 
+bool JavaPixelEngineHelperInterface::getJavaObjectStringField(jobject obj,const char* fieldname,string& retval)
 {
 	JNIEnv *env = this->env	 ;
 	jclass someClass = env->GetObjectClass(obj);
@@ -519,7 +578,7 @@ bool JavaPixelEngineHelperInterface::getJavaObjectStringField(jobject obj,const 
 	retval = JavaPixelEngineHelperInterface::jstring2cstring(env,fvalue) ;
 	return true;
 }
-bool JavaPixelEngineHelperInterface::getJavaObjectIntArrField(jobject obj,const char* fieldname,vector<int>& retval) 
+bool JavaPixelEngineHelperInterface::getJavaObjectIntArrField(jobject obj,const char* fieldname,vector<int>& retval)
 {
 	JNIEnv *env = this->env	 ;
 	jclass someClass = env->GetObjectClass(obj);
@@ -531,9 +590,9 @@ bool JavaPixelEngineHelperInterface::getJavaObjectIntArrField(jobject obj,const 
 
 	// Get the object field, returns JObject (because Array is instance of Object)
 	jobject jo = env->GetObjectField( obj, fid);
-	// Cast it to a  
+	// Cast it to a
 	jintArray * arr = reinterpret_cast<jintArray*>(&jo) ;
-	// Get the elements (you probably have to fetch the length of the array as well  
+	// Get the elements (you probably have to fetch the length of the array as well
 	int* data = env->GetIntArrayElements(*arr, NULL);
 	jint len = env->GetArrayLength( *arr);
 	int leni = len ;
@@ -541,11 +600,11 @@ bool JavaPixelEngineHelperInterface::getJavaObjectIntArrField(jobject obj,const 
 	for(int idt = 0 ; idt < leni; ++ idt ){
 		retval[idt] = data[idt] ;
 	}
-	// Don't forget to release it 
+	// Don't forget to release it
 	env->ReleaseIntArrayElements(*arr, data, 0);
 	return true;
 }
-bool JavaPixelEngineHelperInterface::getJavaObjectByteArrField(jobject obj,const char* fieldname,vector<unsigned char>& retval) 
+bool JavaPixelEngineHelperInterface::getJavaObjectByteArrField(jobject obj,const char* fieldname,vector<unsigned char>& retval)
 {
 	JNIEnv *env = this->env	 ;
 	jclass someClass = env->GetObjectClass(obj);
@@ -557,9 +616,9 @@ bool JavaPixelEngineHelperInterface::getJavaObjectByteArrField(jobject obj,const
 
 	// Get the object field, returns JObject (because Array is instance of Object)
 	jobject jo = env->GetObjectField( obj, fid);
-	// Cast it to a  
+	// Cast it to a
 	jbyteArray * arr = reinterpret_cast<jbyteArray*>(&jo) ;
-	// Get the elements (you probably have to fetch the length of the array as well  
+	// Get the elements (you probably have to fetch the length of the array as well
 	unsigned char* data =(unsigned char*) env->GetByteArrayElements(*arr, NULL);
 	jint len = env->GetArrayLength( *arr);
 	int leni = len ;
@@ -567,11 +626,11 @@ bool JavaPixelEngineHelperInterface::getJavaObjectByteArrField(jobject obj,const
 	for(int idt = 0 ; idt < leni; ++ idt ){
 		retval[idt] = data[idt] ;
 	}
-	// Don't forget to release it 
+	// Don't forget to release it
 	env->ReleaseByteArrayElements(*arr, (jbyte*)data, 0);
 	return true;
 }
-bool JavaPixelEngineHelperInterface::getJavaObjectStrArrField(jobject obj,const char* fieldname,vector<string>& retval) 
+bool JavaPixelEngineHelperInterface::getJavaObjectStrArrField(jobject obj,const char* fieldname,vector<string>& retval)
 {
 	cout<<"debug in cpp getJavaObjectStrArrField "<<endl;
 	JNIEnv *env = this->env	 ;
@@ -594,7 +653,7 @@ bool JavaPixelEngineHelperInterface::getJavaObjectStrArrField(jobject obj,const 
 	}
 	return true;
 }
-bool JavaPixelEngineHelperInterface::unwrapColorElement(jobject obj,pe::PeColorElement& retval) 
+bool JavaPixelEngineHelperInterface::unwrapColorElement(jobject obj,pe::PeColorElement& retval)
 {
 	this->getJavaObjectDoubleField(obj,"val",retval.val) ;
 	this->getJavaObjectByteField(obj,"r",retval.r) ;
@@ -604,7 +663,7 @@ bool JavaPixelEngineHelperInterface::unwrapColorElement(jobject obj,pe::PeColorE
 	this->getJavaObjectStringField(obj,"lbl" , retval.lbl) ;
 	return true;
 }
-bool JavaPixelEngineHelperInterface::unwrapRangeElement(jobject obj,pe::PeVRangeElement& retval) 
+bool JavaPixelEngineHelperInterface::unwrapRangeElement(jobject obj,pe::PeVRangeElement& retval)
 {
 	this->getJavaObjectDoubleField(obj,"minval",retval.minval) ;
 	this->getJavaObjectDoubleField(obj,"maxval",retval.maxval) ;
@@ -657,3 +716,5 @@ bool JavaPixelEngineHelperInterface::setJavaObjectByteArrField(jobject obj,const
 	env->SetObjectField( obj, fid, jarr ) ;
 	return true;
 }
+
+

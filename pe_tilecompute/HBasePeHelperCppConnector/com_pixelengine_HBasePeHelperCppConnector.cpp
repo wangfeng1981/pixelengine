@@ -32,7 +32,10 @@ using namespace ArduinoJson;
 
 //2022-2-12 增加获取脚本全部数据集名称的接口
 //(1)Java_com_pixelengine_HBasePeHelperCppConnector_GetDatasetNameArray
-string global_connector_version_str = "connector_version:1.0.0 2022-02-12" ;
+//string global_connector_version_str = "connector_version:1.0.0 2022-02-12" ;
+
+//2022-3-6 rebuild with new core 
+string global_connector_version_str = "connector_version:1.0.1 2022-03-06" ;
 
 //外部调用，获得connector和core版本信息
 extern "C" void HBasePeHelperCppConnector_GetVersion(){

@@ -8,7 +8,7 @@
 
 bool PixelEngine::quietMode = false;
 
-const double PE_CURRENTDATETIME = 0L; 
+const double PE_CURRENTDATETIME = 0L;
 
 //PixelEngine_GetDataFromExternal_FunctionPointer PixelEngine::GetExternalDatasetCallBack = nullptr ;
 PixelEngine_GetDataFromExternal2_FunctionPointer PixelEngine::GetExternalTileDataCallBack = nullptr ;
@@ -32,7 +32,7 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 //2.Dataset增加数据格式转换的方法, Dataset.toByte() .toUint16() .toInt16() .toUint32() .toInt32() .toFloat32() toFloat64() , Done
 //3.DatasetArray.forEachPixel 支持多种数据类型，涉及修改函数 globalFunc_DA_forEachPixelCallBack , Done
 //4.修改globalFunc_getPixelCallBack函数，不再使用固定256x256瓦片尺寸，动态获取瓦片尺寸,Done
-//5.增加pe数据类型常量 
+//5.增加pe数据类型常量
 //  pe.DataTypeByte, pe.DataTypeUint16 pe.DataTypeInt16 pe.DataTypeUint32 pe.DataTypeInt32 pe.DataTypeFloat32 pe.DataTypeFloat64
 //  ,Done
 //6.增加数据集转换函数 C++ : GlobalFunc_ConvertToDataType , js:var newds = dataset.convertToDataType(pe.DataTypeFloat32); Done
@@ -56,7 +56,12 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
 //2022-2-12
 //1. 增加了成员函数PixelEngine::GetDatasetNameArray 用于识别代码中全部数据集的函数，该函数不依赖其他库与初始化代码，直接调用即可。
-string PixelEngine::pejs_version = string("2.5.0.0 2022-02-12");
+//string PixelEngine::pejs_version = string("2.5.0.0 2022-02-12");
+
+//2022-3-6
+//1. 增加dataset.clip2()方法 支持使用HSeg.Tlv进行数据裁剪
+//2. WHsegTlvObject.isTileOverlay bugfixed
+string PixelEngine::pejs_version = string("2.5.1.2 2022-03-06");
 
 
 
@@ -106,7 +111,7 @@ void PixelEngineMapReduceContainer::add(PixelEngineMapReduce& mr)
 ///////////////////////////////////////////////////////////////
 
 
-int PixelEngineColorRamp::upper_bound(int val) 
+int PixelEngineColorRamp::upper_bound(int val)
 {
 	if( this->numColors<2 )
 	{
@@ -120,7 +125,7 @@ int PixelEngineColorRamp::upper_bound(int val)
 		{
 			if( val == this->ivalues[i0] ) return i0 ;
 			else return i1 ;
-		} 
+		}
 		int ic = (i1+i0)/2 ;
 		if(val==this->ivalues[ic])
 		{
@@ -141,7 +146,7 @@ int PixelEngineColorRamp::upper_bound(int val)
 	}
 }
 
-int PixelEngineColorRamp::binary_equal(int val) 
+int PixelEngineColorRamp::binary_equal(int val)
 {
 	if( this->numColors<1 )
 	{
@@ -166,7 +171,7 @@ int PixelEngineColorRamp::binary_equal(int val)
 				if( val == this->ivalues[i0] ) return i0 ;
 				else if( val==this->ivalues[i1] ) return i1 ;
 				else return -1 ;
-			} 
+			}
 			int ic = (i1+i0)/2 ;
 			if(val==this->ivalues[ic])
 			{
@@ -269,7 +274,7 @@ bool PixelEngine::V8ObjectGetUint8Array(Isolate* isolate,
 	Local<Object>&obj,
 	Local<Context>&context,
 	string key,
-	int shouldElementNumber , 
+	int shouldElementNumber ,
 	void* copyToPtr ){
 
 	MaybeLocal<Value> maybe1 = obj->Get(context,
@@ -378,7 +383,7 @@ bool PixelEngine::V8ObjectGetInt32Array(Isolate* isolate,
 	Local<Object>&obj,
 	Local<Context>&context,
 	string key,
-	int shouldElementNumber , 
+	int shouldElementNumber ,
 	void* copyToPtr ){
 
 	MaybeLocal<Value> maybe1 = obj->Get(context,
@@ -411,7 +416,7 @@ bool PixelEngine::V8ObjectGetInt16Array(Isolate* isolate,
 	Local<Object>&obj,
 	Local<Context>&context,
 	string key,
-	int shouldElementNumber , 
+	int shouldElementNumber ,
 	void* copyToPtr ){
 
 	MaybeLocal<Value> maybe1 = obj->Get(context,
@@ -444,7 +449,7 @@ bool PixelEngine::V8ObjectGetFloat32Array(Isolate* isolate,
 	Local<Object>&obj,
 	Local<Context>&context,
 	string key,
-	int shouldElementNumber , 
+	int shouldElementNumber ,
 	void* copyToPtr ){
 
 	MaybeLocal<Value> maybe1 = obj->Get(context,
@@ -554,13 +559,13 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 	//nodatacolor
 	// Uint8Array* nodatacolorArray = Uint8Array::Cast(
 	// 		* crobj->Get(context,String::NewFromUtf8(isolate,"NodataColor").ToLocalChecked()).ToLocalChecked()
-	// 		) ; 
+	// 		) ;
 	// nodatacolorArray->CopyContents( this->NodataColor , 4) ;
 	bool ok3 = PixelEngine::V8ObjectGetUint8Array(isolate,
 			crobj,
 			context,
 			"NodataColor",
-			4 , 
+			4 ,
 			this->NodataColor ) ;
 	if( ok3==false )
 	{
@@ -571,13 +576,13 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 	//ivalues
 	// Int32Array* ivaluesArray = Int32Array::Cast(
 	// 		* crobj->Get(context,String::NewFromUtf8(isolate,"ivalues").ToLocalChecked()).ToLocalChecked()
-	// 		) ; 
+	// 		) ;
 	// ivaluesArray->CopyContents( this->ivalues , PixelEngineColorRamp::MAXNUM_COLORS*4 ) ;
 	ok3 = PixelEngine::V8ObjectGetInt32Array(isolate,
 			crobj,
 			context,
 			"ivalues",
-			PixelEngineColorRamp::MAXNUM_COLORS , 
+			PixelEngineColorRamp::MAXNUM_COLORS ,
 			this->ivalues ) ;
 	if( ok3==false )
 	{
@@ -589,13 +594,13 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 	// //fvalues
 	// Float32Array* fvaluesArray = Float32Array::Cast(
 	// 		* crobj->Get(context,String::NewFromUtf8(isolate,"fvalues").ToLocalChecked()).ToLocalChecked()
-	// 		) ; 
+	// 		) ;
 	// fvaluesArray->CopyContents( this->fvalues , PixelEngineColorRamp::MAXNUM_COLORS*4 ) ;
 	ok3 = PixelEngine::V8ObjectGetFloat32Array(isolate,
 			crobj,
 			context,
 			"fvalues",
-			PixelEngineColorRamp::MAXNUM_COLORS  , 
+			PixelEngineColorRamp::MAXNUM_COLORS  ,
 			this->fvalues ) ;
 	if( ok3==false )
 	{
@@ -607,13 +612,13 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 	//red
 	// Uint8Array* rArray = Uint8Array::Cast(
 	// 		* crobj->Get(context,String::NewFromUtf8(isolate,"r").ToLocalChecked()).ToLocalChecked()
-	// 		) ; 
+	// 		) ;
 	// rArray->CopyContents( this->r , PixelEngineColorRamp::MAXNUM_COLORS) ;
 	ok3 = PixelEngine::V8ObjectGetUint8Array(isolate,
 			crobj,
 			context,
 			"r",
-			PixelEngineColorRamp::MAXNUM_COLORS , 
+			PixelEngineColorRamp::MAXNUM_COLORS ,
 			this->r ) ;
 	if( ok3==false )
 	{
@@ -626,7 +631,7 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 			crobj,
 			context,
 			"g",
-			PixelEngineColorRamp::MAXNUM_COLORS , 
+			PixelEngineColorRamp::MAXNUM_COLORS ,
 			this->g ) ;
 	if( ok3==false )
 	{
@@ -637,13 +642,13 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 	//blue
 	// Uint8Array* bArray = Uint8Array::Cast(
 	// 		* crobj->Get(context,String::NewFromUtf8(isolate,"b").ToLocalChecked()).ToLocalChecked()
-	// 		) ; 
+	// 		) ;
 	// bArray->CopyContents( this->b , PixelEngineColorRamp::MAXNUM_COLORS) ;
 	ok3 = PixelEngine::V8ObjectGetUint8Array(isolate,
 			crobj,
 			context,
 			"b",
-			PixelEngineColorRamp::MAXNUM_COLORS , 
+			PixelEngineColorRamp::MAXNUM_COLORS ,
 			this->b ) ;
 	if( ok3==false )
 	{
@@ -654,18 +659,18 @@ bool PixelEngineColorRamp::unwrap(Isolate* isolate , Local<v8::Value> obj)
 	//alpha
 	// Uint8Array* aArray = Uint8Array::Cast(
 	// 		* crobj->Get(context,String::NewFromUtf8(isolate,"a").ToLocalChecked()).ToLocalChecked()
-	// 		) ; 
+	// 		) ;
 	// aArray->CopyContents( this->a , PixelEngineColorRamp::MAXNUM_COLORS) ;
 	// return true ;
 	bool oka = PixelEngine::V8ObjectGetUint8Array(isolate,
 			crobj,
 			context,
 			"a",
-			PixelEngineColorRamp::MAXNUM_COLORS , 
+			PixelEngineColorRamp::MAXNUM_COLORS ,
 			this->a ) ;
 	if( oka==false )
 	{
-		if(! PixelEngine::quietMode)cout<<"PixelEngine::V8ObjectGetUint8Array a failed."<<endl; 
+		if(! PixelEngine::quietMode)cout<<"PixelEngine::V8ObjectGetUint8Array a failed."<<endl;
 		return false ;
 	}
 	return true ;
@@ -699,7 +704,7 @@ bool PixelEngineColorRamp::unwrapWithLabels( Isolate* isolate , Local<v8::Value>
 	}
 }
 
-void PixelEngineColorRamp::copy2v8(Isolate* isolate , Local<v8::Value> obj) 
+void PixelEngineColorRamp::copy2v8(Isolate* isolate , Local<v8::Value> obj)
 {
 	v8::HandleScope handle_scope(isolate);
 	Local<Context> context(isolate->GetCurrentContext()) ;
@@ -707,25 +712,25 @@ void PixelEngineColorRamp::copy2v8(Isolate* isolate , Local<v8::Value> obj)
 	Local<Object> crobj = obj->ToObject(context).ToLocalChecked() ;
 
 	//set use integer
-	Maybe<bool> ok1 = crobj->Set(context , 
-		String::NewFromUtf8(isolate,"useInteger").ToLocalChecked() , 
+	Maybe<bool> ok1 = crobj->Set(context ,
+		String::NewFromUtf8(isolate,"useInteger").ToLocalChecked() ,
 		Boolean::New(isolate,true)
 		) ;
 
 	//set color number
-	Maybe<bool> ok2 = crobj->Set(context , 
-		String::NewFromUtf8(isolate,"numColors").ToLocalChecked() , 
+	Maybe<bool> ok2 = crobj->Set(context ,
+		String::NewFromUtf8(isolate,"numColors").ToLocalChecked() ,
 		Integer::New(isolate,this->numColors)
 		) ;
 	//set nodata
 	Maybe<bool> ok3 = crobj->Set(context,
-		String::NewFromUtf8(isolate,"Nodata").ToLocalChecked() , 
+		String::NewFromUtf8(isolate,"Nodata").ToLocalChecked() ,
 		Number::New(isolate,this->Nodata)
 		) ;
 	//nodatacolor
 	Uint8Array* nodatacolorArray = Uint8Array::Cast(
 			* crobj->Get(context,String::NewFromUtf8(isolate,"NodataColor").ToLocalChecked()).ToLocalChecked()
-			) ; 
+			) ;
 	unsigned char* nodatacolorBackPtr = (unsigned char*)( nodatacolorArray->Buffer()->GetBackingStore().get()->Data() );
 	nodatacolorBackPtr[0] = this->NodataColor[0] ;
 	nodatacolorBackPtr[1] = this->NodataColor[1] ;
@@ -735,32 +740,32 @@ void PixelEngineColorRamp::copy2v8(Isolate* isolate , Local<v8::Value> obj)
 	//set ivalues
 	Int32Array* ivaluesArray = Int32Array::Cast(
 			* crobj->Get(context,String::NewFromUtf8(isolate,"ivalues").ToLocalChecked()).ToLocalChecked()
-			) ; 
+			) ;
 	int* ivaluesBackPtr = (int*)( ivaluesArray->Buffer()->GetBackingStore().get()->Data() );
 
 
 	//red
 	Uint8Array* rArray = Uint8Array::Cast(
 			* crobj->Get(context,String::NewFromUtf8(isolate,"r").ToLocalChecked()).ToLocalChecked()
-			) ; 
+			) ;
 	unsigned char* rBackPtr = (unsigned char*)( rArray->Buffer()->GetBackingStore().get()->Data() );
 
 	//green
 	Uint8Array* gArray = Uint8Array::Cast(
 			* crobj->Get(context,String::NewFromUtf8(isolate,"g").ToLocalChecked()).ToLocalChecked()
-			) ; 
+			) ;
 	unsigned char* gBackPtr = (unsigned char*)( gArray->Buffer()->GetBackingStore().get()->Data() );
 
 	//blue
 	Uint8Array* bArray = Uint8Array::Cast(
 			* crobj->Get(context,String::NewFromUtf8(isolate,"b").ToLocalChecked()).ToLocalChecked()
-			) ; 
+			) ;
 	unsigned char* bBackPtr = (unsigned char*)( bArray->Buffer()->GetBackingStore().get()->Data() );
 
 	//alpha
 	Uint8Array* aArray = Uint8Array::Cast(
 			* crobj->Get(context,String::NewFromUtf8(isolate,"a").ToLocalChecked()).ToLocalChecked()
-			) ; 
+			) ;
 	unsigned char* aBackPtr = (unsigned char*)( aArray->Buffer()->GetBackingStore().get()->Data() );
 
 	for(int ic = 0 ; ic < this->numColors ; ++ ic )
@@ -776,7 +781,7 @@ void PixelEngineColorRamp::copy2v8(Isolate* isolate , Local<v8::Value> obj)
 
 
 /// reverse color ramp
-void PixelEngine::ColorReverse(vector<int>& colors) 
+void PixelEngine::ColorReverse(vector<int>& colors)
 {
 	int nc = colors.size()/3 ;
 	int hnc = nc/2 ;
@@ -795,14 +800,14 @@ void PixelEngine::ColorReverse(vector<int>& colors)
 	}
 }
 
-string PixelEngine::long2str(long val) 
+string PixelEngine::long2str(long val)
 {
 	char buff[32] ;
 	sprintf(buff,"%ld" , val ) ;
 	return string(buff) ;
 }
 
-bool PixelEngine::IsMaybeLocalOK(MaybeLocal<Value>& val) 
+bool PixelEngine::IsMaybeLocalOK(MaybeLocal<Value>& val)
 {
 	if( val.IsEmpty() )
 	{
@@ -821,7 +826,7 @@ bool PixelEngine::IsMaybeLocalOK(MaybeLocal<Value>& val)
 	}
 }
 
-long PixelEngine::RelativeDatetimeConvert(long currdt,long seconds) 
+long PixelEngine::RelativeDatetimeConvert(long currdt,long seconds)
 {
 	time_t rawtime ;
 	time(&rawtime) ;
@@ -843,17 +848,17 @@ long PixelEngine::RelativeDatetimeConvert(long currdt,long seconds)
 	struct tm* timeinfo1 = localtime(&time1) ;
 
 	long newdt = timeinfo1->tm_year*10000000000L
-	+(timeinfo1->tm_mon+1) * 100000000 
+	+(timeinfo1->tm_mon+1) * 100000000
 	+timeinfo1->tm_mday * 1000000  //tm_mday must -1, i don't why.
-	+timeinfo1->tm_hour * 10000 
-	+timeinfo1->tm_min * 100 
+	+timeinfo1->tm_hour * 10000
+	+timeinfo1->tm_min * 100
 	+timeinfo1->tm_sec ;
 	return newdt ;
 
 }
 
 /// get predefined color ramp
-vector<int> PixelEngine::GetColorRamp(int colorid,int inverse) 
+vector<int> PixelEngine::GetColorRamp(int colorid,int inverse)
 {
 	if( colorid==1 ){
 		if( inverse==0 )
@@ -975,7 +980,7 @@ vector<int> PixelEngine::ColorGrays{
 
 } ;
 
-void PixelEngine::log(string& str) 
+void PixelEngine::log(string& str)
 {
 	if( this->pe_logs.length() > 1024 )
 	{
@@ -988,7 +993,7 @@ void PixelEngine::log(string& str)
 }
 
 /// pe.log(...)
-void PixelEngine::GlobalFunc_Log(const v8::FunctionCallbackInfo<v8::Value>& args) 
+void PixelEngine::GlobalFunc_Log(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
 	if (args.Length() < 1) return;
 	Isolate* isolate = args.GetIsolate();
@@ -1016,18 +1021,18 @@ void PixelEngine::GlobalFunc_Log(const v8::FunctionCallbackInfo<v8::Value>& args
 
 /// use c++ create a new empty Dataset object
 Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& context
-	,const int datatype 
-	,const int width 
+	,const int datatype
+	,const int width
 	,const int height
 	,const int nband )
 {
 	if(! PixelEngine::quietMode)cout<<"inside CPP_NewDataset datatype,w,h,nb:"
-        <<datatype<<","<<width<<","<<height<<","<<nband<<endl; 
+        <<datatype<<","<<width<<","<<height<<","<<nband<<endl;
 	v8::EscapableHandleScope handle_scope(isolate);
 
 	Local<Object> global = context->Global() ;
 
-	Local<Value> forEachFuncInJs = global->Get(context 
+	Local<Value> forEachFuncInJs = global->Get(context
     	,String::NewFromUtf8(isolate, "globalFunc_forEachPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;
 	Local<Object> ds = Object::New(isolate) ;
 	Maybe<bool> ok1 = ds->Set(context
@@ -1035,8 +1040,8 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
             forEachFuncInJs );
 
 
-	Local<Value> getPixelFuncInJs = global->Get(context 
-    	,String::NewFromUtf8(isolate, "globalFunc_getPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;	
+	Local<Value> getPixelFuncInJs = global->Get(context
+    	,String::NewFromUtf8(isolate, "globalFunc_getPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;
 	Maybe<bool> ok2 = ds->Set(context
 		,String::NewFromUtf8(isolate, "getPixel").ToLocalChecked(),
             getPixelFuncInJs );
@@ -1053,7 +1058,7 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 	Maybe<bool> ok6 = ds->Set(context
 		,String::NewFromUtf8(isolate, "renderRGB").ToLocalChecked(),
             FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_RenderRGBCallBack)->GetFunction(context).ToLocalChecked() );
-	
+
 
 	Maybe<bool> ok7 = ds->Set(context
 		,String::NewFromUtf8(isolate, "width").ToLocalChecked()
@@ -1092,7 +1097,7 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 	Maybe<bool> ok17 = ds->Set(context
 		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
 		,Integer::New(isolate,0) ) ;
-    
+
     if( datatype==1 )
     {//byte
 		int bsize = width*height*nband ;
@@ -1154,9 +1159,9 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 			,i16array ) ;
     }
     else
-	{//unknow data type 
+	{//unknow data type
         cout<<"Error : unknow datatype"<<endl;
-        
+
 	}
 
 	//dataset.clip() 2020-10-16
@@ -1164,7 +1169,14 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 		,String::NewFromUtf8(isolate, "clip").ToLocalChecked(),
            FunctionTemplate::New(isolate,
            	PixelEngine::GlobalFunc_ClipCallBack)->GetFunction(context).ToLocalChecked() );
-            
+
+    //dataset.clip() 2020-10-16
+	Maybe<bool> ok20_1 = ds->Set(context
+		,String::NewFromUtf8(isolate, "clip2").ToLocalChecked(),
+           FunctionTemplate::New(isolate,
+           	PixelEngine::GlobalFunc_Clip2CallBack)->GetFunction(context).ToLocalChecked() );
+
+
     //convert datatype methods
     Maybe<bool> ok21 = ds->Set(context
 		,String::NewFromUtf8(isolate, "convertToDataType").ToLocalChecked(),
@@ -1213,18 +1225,18 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 
 /// use c++ create a new empty DatasetArray object
 Local<Object> PixelEngine::CPP_NewDatasetArray(Isolate* isolate,Local<Context>& context
-	,const int datatype 
-	,const int width 
+	,const int datatype
+	,const int width
 	,const int height
 	,const int nband
 	,const int numds )
 {
-	if(! PixelEngine::quietMode)cout<<"inside CPP_NewDatasetArray"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside CPP_NewDatasetArray"<<endl;
 	v8::EscapableHandleScope handle_scope(isolate);
 
 	Local<Object> global = context->Global() ;
 
-	Local<Value> forEachFuncInJs = global->Get(context 
+	Local<Value> forEachFuncInJs = global->Get(context
     	,String::NewFromUtf8(isolate, "globalFunc_DA_forEachPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;
 	Local<Object> ds = Object::New(isolate) ;
 	Maybe<bool> ok1 = ds->Set(context
@@ -1274,7 +1286,7 @@ Local<Object> PixelEngine::CPP_NewDatasetArray(Isolate* isolate,Local<Context>& 
 	Maybe<bool> ok14 = ds->Set(context
 		,String::NewFromUtf8(isolate, "dataArr").ToLocalChecked()
 		,Array::New(isolate,numds) ) ;// 4 is current always null.
-	
+
 	return handle_scope.Escape(ds);
 }
 
@@ -1283,9 +1295,9 @@ Local<Object> PixelEngine::CPP_NewDatasetArray(Isolate* isolate,Local<Context>& 
 /// dataset.renderGray() , return a new Dataset
 /// iband,vmin,vmax,nodata,nodataColor
 /// fit all data type 2020-11-12
-void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_RenderGrayCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_RenderGrayCallBack"<<endl;
 	if (args.Length() != 5 ){
 		cout<<"Error: args.Length != 5 "<<endl ;
 		return;
@@ -1357,7 +1369,7 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
         Uint16Array* i16Array = Uint16Array::Cast(*tiledataValue) ;
 		unsigned short* backData = (unsigned short*) i16Array->Buffer()->GetBackingStore()->Data() ;
 		unsigned short* backDataOffset = backData + iband * asize;
-		
+
 		for(int it = 0 ; it < asize ; ++ it )
 		{
 			if( backDataOffset[it] == nodata ){
@@ -1367,8 +1379,8 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
 				outbackData[asize*3+it] = nodataColor[3] ;
 			}else
 			{
-                
-                
+
+
 				int gray = (backDataOffset[it]-vmin) * theK ;
 				if( gray < 0 ) gray = 0 ;
 				else if( gray > 255 ) gray = 255 ;
@@ -1376,7 +1388,7 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
 				outbackData[asize+it] = gray;
 				outbackData[asize*2+it] = gray ;
 				outbackData[asize*3+it] = 255;
-                
+
                 if( it==0 ){
                     cout<<"debug 1726  "<<backDataOffset[it]<<endl;
                     cout<<"debug 1726 grey "<<gray<<endl;
@@ -1386,11 +1398,11 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
     }
 	else if( thisDataType==3 )//bug fixed , add else 2020-11-14
 	{//short
-		
+
 		Int16Array* i16Array = Int16Array::Cast(*tiledataValue) ;
 		short* backData = (short*) i16Array->Buffer()->GetBackingStore()->Data() ;
 		short* backDataOffset = backData + iband * asize;
-		
+
 		for(int it = 0 ; it < asize ; ++ it )
 		{
 			if( backDataOffset[it] == nodata ){
@@ -1415,7 +1427,7 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
         Uint32Array* i16Array = Uint32Array::Cast(*tiledataValue) ;
 		unsigned int* backData = (unsigned int*) i16Array->Buffer()->GetBackingStore()->Data() ;
 		unsigned int* backDataOffset = backData + iband * asize;
-		
+
 		for(int it = 0 ; it < asize ; ++ it )
 		{
 			if( backDataOffset[it] == nodata ){
@@ -1440,7 +1452,7 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
         Int32Array* i16Array = Int32Array::Cast(*tiledataValue) ;
 		int* backData = (int*) i16Array->Buffer()->GetBackingStore()->Data() ;
 		int* backDataOffset = backData + iband * asize;
-		
+
 		for(int it = 0 ; it < asize ; ++ it )
 		{
 			if( backDataOffset[it] == nodata ){
@@ -1464,7 +1476,7 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
         Float32Array* i16Array = Float32Array::Cast(*tiledataValue) ;
 		float* backData = (float*) i16Array->Buffer()->GetBackingStore()->Data() ;
 		float* backDataOffset = backData + iband * asize;
-		
+
 		for(int it = 0 ; it < asize ; ++ it )
 		{
 			if( backDataOffset[it] == nodata ){
@@ -1488,7 +1500,7 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
         Float64Array* i16Array = Float64Array::Cast(*tiledataValue) ;
 		double* backData = (double*) i16Array->Buffer()->GetBackingStore()->Data() ;
 		double* backDataOffset = backData + iband * asize;
-		
+
 		for(int it = 0 ; it < asize ; ++ it )
 		{
 			if( backDataOffset[it] == nodata ){
@@ -1513,7 +1525,7 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
 		Uint8Array* u8Array = Uint8Array::Cast(*tiledataValue) ;
 		unsigned char* backData = (unsigned char*) u8Array->Buffer()->GetBackingStore()->Data() ;
 		unsigned char* backDataOffset = backData + iband * asize;
-	
+
 		for(int it = 0 ; it < asize ; ++ it )
 		{
 			if( backDataOffset[it] == nodata ){
@@ -1533,7 +1545,7 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
 			}
 		}
 	}
-	
+
 	//info.GetReturnValue().Set(i16arr);
 	args.GetReturnValue().Set(outds) ;
 }
@@ -1542,11 +1554,11 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
 
 /// 数据集格式转换，返回新的数据集 2020-12-01
 /// dataset.convertToDataType(newDataType) , return a new Dataset
-/// newDataType:pe.DataTypeByte, pe.DataTypeUint16 pe.DataTypeInt16 
+/// newDataType:pe.DataTypeByte, pe.DataTypeUint16 pe.DataTypeInt16
 ///             pe.DataTypeUint32 pe.DataTypeInt32 pe.DataTypeFloat32 pe.DataTypeFloat64
-void PixelEngine::GlobalFunc_ConvertToDataType(const v8::FunctionCallbackInfo<v8::Value>& args) 
+void PixelEngine::GlobalFunc_ConvertToDataType(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_ConvertToDataType"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_ConvertToDataType"<<endl;
 	if (args.Length() != 1 ){
 		cout<<"Error: args.Length != 1 "<<endl ;
 		return;
@@ -1565,7 +1577,7 @@ void PixelEngine::GlobalFunc_ConvertToDataType(const v8::FunctionCallbackInfo<v8
         cout<<"Error : invalid newDataType:"<<retNewDataType<<endl ;
         return ;
     }
-    
+
 	Local<Object> thisobj =  args.This() ;
     int thisDataType = 0 ;
     bool thisDataTypeOk = V8ObjectGetIntValue(isolate,thisobj,context,"dataType",thisDataType) ;
@@ -1573,9 +1585,9 @@ void PixelEngine::GlobalFunc_ConvertToDataType(const v8::FunctionCallbackInfo<v8
         cout<<"Error : failed to get this.dataType." ;
         return ;
     }
-    
+
     cout<<"Info : try to convert "<<thisDataType<<" to "<<retNewDataType<<endl ;
-    
+
     int width(0) , height(0) , nband(0) ;
     bool widok = V8ObjectGetIntValue(isolate,thisobj,context,"width",width) ;
     if( widok==false ){
@@ -1606,13 +1618,13 @@ void PixelEngine::GlobalFunc_ConvertToDataType(const v8::FunctionCallbackInfo<v8
         cout<<"Error : failed to get oldDataPtr." ;
         return ;
     }
-    
+
     void* newDataPtr = V8ObjectGetTypedArrayBackPtr2(isolate,outds  ,context,"tiledata",newByteLen) ;
     if( newDataPtr==nullptr ){
         cout<<"Error : failed to get newDataPtr." ;
         return ;
     }
-    
+
 	size_t elementCount = (size_t)width * height * nband ;
     bool iscopyok = innerCopyArrayData(oldDataPtr , thisDataType , elementCount , newDataPtr , retNewDataType) ;
     if(iscopyok==false )
@@ -1620,7 +1632,7 @@ void PixelEngine::GlobalFunc_ConvertToDataType(const v8::FunctionCallbackInfo<v8
         cout<<"Error : innerCopyArrayData failed , maybe caused by invalid datatype."<<endl ;
         return ;
     }
-	
+
 	//info.GetReturnValue().Set(i16arr);
 	args.GetReturnValue().Set(outds) ;
 }
@@ -1704,15 +1716,15 @@ void PixelEngine::GlobalFunc_GetStyleCallBack(const v8::FunctionCallbackInfo<v8:
 
 /// dataset.renderRGB , return a new Dataset
 /// ri,gi,bi,rmin,rmax,gmin,gmax,bmin,bmax
-void PixelEngine::GlobalFunc_RenderRGBCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+void PixelEngine::GlobalFunc_RenderRGBCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_RenderRGBCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_RenderRGBCallBack"<<endl;
 	Isolate* isolate = args.GetIsolate() ;
 	if (args.Length() != 9 ){
 		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 9 "<<endl ;
 		return;
 	}
-	
+
 	v8::HandleScope handle_scope(isolate);
 	Local<Context> context(isolate->GetCurrentContext()) ;
 
@@ -1772,7 +1784,7 @@ void PixelEngine::GlobalFunc_RenderRGBCallBack(const v8::FunctionCallbackInfo<v8
 	float bK = 255.f/(bmax-bmin) ;
 	if( thisDataType==3 )
 	{//short
-		
+
 		Int16Array* i16Array = Int16Array::Cast(*tiledataValue) ;
 		short* backData = (short*) i16Array->Buffer()->GetBackingStore()->Data() ;
 		short* roffset = backData + ri * asize;
@@ -1781,8 +1793,8 @@ void PixelEngine::GlobalFunc_RenderRGBCallBack(const v8::FunctionCallbackInfo<v8
 		for(int it = 0 ; it < asize ; ++ it )
 		{
 			outbackData[it] = min( max( (roffset[it]-rmin) * rK,0.f) ,255.f)  ;
-			outbackData[asize+it] = min( max( (goffset[it]-gmin) * gK,0.f) ,255.f) ;  
-			outbackData[asize*2+it] = min( max( (boffset[it]-bmin) * bK,0.f) ,255.f) ; 
+			outbackData[asize+it] = min( max( (goffset[it]-gmin) * gK,0.f) ,255.f) ;
+			outbackData[asize*2+it] = min( max( (boffset[it]-bmin) * bK,0.f) ,255.f) ;
 			outbackData[asize*3+it] = 255 ;
 		}
 	}else
@@ -1795,12 +1807,12 @@ void PixelEngine::GlobalFunc_RenderRGBCallBack(const v8::FunctionCallbackInfo<v8
 		for(int it = 0 ; it < asize ; ++ it )
 		{
 			outbackData[it] = min( max( (roffset[it]-rmin) * rK,0.f) ,255.f)  ;
-			outbackData[asize+it] = min( max( (goffset[it]-gmin) * gK,0.f) ,255.f) ;  
-			outbackData[asize*2+it] = min( max( (boffset[it]-bmin) * bK,0.f) ,255.f) ; 
+			outbackData[asize+it] = min( max( (goffset[it]-gmin) * gK,0.f) ,255.f) ;
+			outbackData[asize*2+it] = min( max( (boffset[it]-bmin) * bK,0.f) ,255.f) ;
 			outbackData[asize*3+it] = 255 ;
 		}
 	}
-	
+
 	//info.GetReturnValue().Set(i16arr);
 	args.GetReturnValue().Set(outds) ;
 }
@@ -1808,9 +1820,9 @@ void PixelEngine::GlobalFunc_RenderRGBCallBack(const v8::FunctionCallbackInfo<v8
 
 /// fill value in the same dataset , not create a new one , no return.
 /// iband,vmin,vmax
-void PixelEngine::GlobalFunc_FillRangeCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+void PixelEngine::GlobalFunc_FillRangeCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_FillRangeCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_FillRangeCallBack"<<endl;
 	if (args.Length() != 3 ){
 		if(! PixelEngine::quietMode)cout<<"Error: args.Length !=2 "<<endl ;
 		return;
@@ -1826,7 +1838,7 @@ void PixelEngine::GlobalFunc_FillRangeCallBack(const v8::FunctionCallbackInfo<v8
 	int iband = v8_iband->ToInteger(context).ToLocalChecked()->Value() ;
 	int vmin = v8_vmin->ToInteger(context).ToLocalChecked()->Value() ;
 	int vmax = v8_vmax->ToInteger(context).ToLocalChecked()->Value() ;
-	
+
 	Local<Object> thisobj =  args.This() ;
 	int thisDataType = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"dataType").ToLocalChecked())
@@ -1855,7 +1867,7 @@ void PixelEngine::GlobalFunc_FillRangeCallBack(const v8::FunctionCallbackInfo<v8
 	float theK = (vmax-vmin)*1.f/asize ;
 	if( thisDataType==3 )
 	{//short
-		
+
 		Int16Array* i16Array = Int16Array::Cast(*tiledataValue) ;
 		short* backData = (short*) i16Array->Buffer()->GetBackingStore()->Data() ;
 		short* backDataOffset = backData + iband * asize;
@@ -1880,9 +1892,9 @@ void PixelEngine::Value2Color(int valx,float K
 	,int nodata,int* nodataColor
 	,int vmin,int vmax , int interpol
 	,vector<int>& colorRamp , int ncolor
-	,unsigned char& rr 
-	,unsigned char& rg 
-	,unsigned char& rb 
+	,unsigned char& rr
+	,unsigned char& rg
+	,unsigned char& rb
 	,unsigned char& ra ){
 	if( valx == nodata ){
 		rr = nodataColor[0] ;
@@ -1902,12 +1914,12 @@ void PixelEngine::Value2Color(int valx,float K
 			rb =  colorRamp[2]  ;
 			ra = 255;
 		}
-		else if( dn >= ncolor-1 ) 
+		else if( dn >= ncolor-1 )
 		{
 			int off = (ncolor-1)*3;
-			rr =  colorRamp[off] ; 
+			rr =  colorRamp[off] ;
 			rg =  colorRamp[off+1] ;
-			rb =  colorRamp[off+2] ; 
+			rb =  colorRamp[off+2] ;
 			ra = 255;
 
 		}else
@@ -1919,7 +1931,7 @@ void PixelEngine::Value2Color(int valx,float K
 				float wl = 1.f-weightHigh ;
 				rr = colorRamp[off0]*wl+colorRamp[off1]*weightHigh ;
 				rg = colorRamp[off0+1]*wl+colorRamp[off1+1]*weightHigh ;
-				rb = colorRamp[off0+2]*wl+colorRamp[off1+2]*weightHigh ; 
+				rb = colorRamp[off0+2]*wl+colorRamp[off1+2]*weightHigh ;
 				ra = 255;
 			}else
 			{//discrete
@@ -1996,7 +2008,7 @@ void PixelEngine::Value2Color(int valx,
 						float wl = 1.f - wup ;
 						rr = cr.r[ii0]*wl+ cr.r[ii]*wup ;
 						rg = cr.g[ii0]*wl+ cr.g[ii]*wup ;
-						rb = cr.b[ii0]*wl+ cr.b[ii]*wup ; 
+						rb = cr.b[ii0]*wl+ cr.b[ii]*wup ;
 						ra = cr.a[ii0]*wl+ cr.a[ii]*wup ;
 
 					}else
@@ -2030,16 +2042,16 @@ void PixelEngine::Value2Color(int valx,
 		}
 	}
 }
-	
+
 
 
 
 /// dataset.renderPsuedColor(...), return a new Dataset
 //args1: iband,vmin,vmax,nodata,nodataColor,colorid,noraml/inverse(0/1),discrete/interpol(0/1)
 //args2: iband,colorRamp,method(discrete 0/linear 1/exact 2)
-void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_RenderPsuedColorCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_RenderPsuedColorCallBack"<<endl;
 	if (args.Length() != 8 && args.Length() != 3){
 		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 8 and != 3 "<<endl ;
 		return;
@@ -2139,12 +2151,12 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 		.ToLocalChecked() ;
 	Uint8Array* outU8Array = Uint8Array::Cast(*outDataValue) ;
 	unsigned char* outbackData = (unsigned char*) outU8Array->Buffer()->GetBackingStore()->Data() ;
- 
+
 
 	Local<Value> tiledataValue = thisobj->Get(context,
 		String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
 		.ToLocalChecked() ;
- 
+
 
 	int asize = width * height ;
 	int asize2 = asize*2 ;
@@ -2157,9 +2169,9 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 
 		for(int it = 0 ; it < asize ; ++ it )
 		{
-			PixelEngine::Value2Color(backDataOffset[it], 
-				colorRamp , 
-				colormethod , 
+			PixelEngine::Value2Color(backDataOffset[it],
+				colorRamp ,
+				colormethod ,
 				outbackData[it],
 				outbackData[it+asize],
 				outbackData[it+asize2],
@@ -2173,9 +2185,9 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 		unsigned char* backDataOffset = backData + iband * asize;
 		for(int it = 0 ; it < asize ; ++ it )
 		{
-			PixelEngine::Value2Color(backDataOffset[it], 
-				colorRamp , 
-				colormethod , 
+			PixelEngine::Value2Color(backDataOffset[it],
+				colorRamp ,
+				colormethod ,
 				outbackData[it],
 				outbackData[it+asize],
 				outbackData[it+asize2],
@@ -2189,9 +2201,9 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 
 /// javascript callback, create a new empty Dataset
 /// create an empty Dataset.
-void PixelEngine::GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+void PixelEngine::GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_NewDatasetCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_NewDatasetCallBack"<<endl;
 	if (args.Length() != 4 ){
 		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 4 "<<endl ;
 		return;
@@ -2223,13 +2235,13 @@ void PixelEngine::GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v
 }
 
 /// create a Dataset from java.
-/// create a dataset from name, datetime 
-/// create a dataset from name, datetime, bands 
-/// create a dataset from name, datetime, bands, z, y, x 
-/// 
-void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+/// create a dataset from name, datetime
+/// create a dataset from name, datetime, bands
+/// create a dataset from name, datetime, bands, z, y, x
+///
+void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_DatasetCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_DatasetCallBack"<<endl;
 	if(args.Length() == 2 || args.Length() == 3 || args.Length() == 6 )
 	{
 		//ok
@@ -2244,7 +2256,7 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 
 	Local<Value> v8name = args[0];
 	Local<Value> v8datetime = args[1] ;
-	
+
 	String::Utf8Value nameutf8( isolate , v8name) ;
 	string name( *nameutf8 ) ;
 
@@ -2272,13 +2284,13 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
         {
             int wantib = i32array->Get(context,ib).ToLocalChecked()->ToInteger(context).ToLocalChecked()->Value() ;
             wantBands.push_back(wantib) ;
-        }        
+        }
     }
-    
+
 	vector<unsigned char> externalData ;
 	int dt = 0 ;
 	int wid = 0 ;
-	int hei = 0 ; 
+	int hei = 0 ;
 	int retnbands = 0 ;
 	Local<Object> global = context->Global() ;
 	Local<Value> peinfo = global->Get( context
@@ -2290,15 +2302,15 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 	PixelEngine* thisPePtr = static_cast<PixelEngine*>(thisPePtrEx->Value() );
 
 	int tilez = thisPePtr->tileInfo.z  ;
-	int tiley = thisPePtr->tileInfo.y  ; 
-	int tilex = thisPePtr->tileInfo.x  ; 
+	int tiley = thisPePtr->tileInfo.y  ;
+	int tilex = thisPePtr->tileInfo.x  ;
 	if( args.Length()==6 )
 	{
 		tilez = (int) (args[3]->ToNumber(context).ToLocalChecked())->Value();
 		tiley = (int) (args[4]->ToNumber(context).ToLocalChecked())->Value();
 		tilex = (int) (args[5]->ToNumber(context).ToLocalChecked())->Value();
 	}
-	
+
 	if( datetime == PE_CURRENTDATETIME )
 	{
 		//datetime = PixelEngine::long2str(thisPePtr->currentDateTime) ;
@@ -2354,7 +2366,7 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 		if(! PixelEngine::quietMode)cout << "Error: PixelEngine::GetExternalTileDataCallBack is null and helper is null too." << endl;
 		return;//return null in javascript.
 	}
-	
+
 
 	Local<Object> ds = PixelEngine::CPP_NewDataset( isolate
 		,context
@@ -2393,9 +2405,9 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 /// create a Dataset from java.
 /// create a dataset from filekey or filepath
 /// pe.Datafile("/some/dir/file");
-void PixelEngine::GlobalFunc_DatafileCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+void PixelEngine::GlobalFunc_DatafileCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_DatafileCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_DatafileCallBack"<<endl;
 	if(args.Length() == 1 )
 	{
 		//ok
@@ -2408,7 +2420,7 @@ void PixelEngine::GlobalFunc_DatafileCallBack(const v8::FunctionCallbackInfo<v8:
 	v8::HandleScope handle_scope(isolate);
 	Local<Context> context(isolate->GetCurrentContext()) ;
 
-	Local<Value> v8filekey = args[0]; 
+	Local<Value> v8filekey = args[0];
 
 	String::Utf8Value filekeyutf8( isolate , v8filekey) ;
 	string filekey( *filekeyutf8 ) ;
@@ -2418,7 +2430,7 @@ void PixelEngine::GlobalFunc_DatafileCallBack(const v8::FunctionCallbackInfo<v8:
 	vector<unsigned char> externalData ;
 	int dt = 0 ;
 	int wid = 0 ;
-	int hei = 0 ; 
+	int hei = 0 ;
 	int retnbands = 0 ;
 
 	Local<Object> global = context->Global() ;
@@ -2431,8 +2443,8 @@ void PixelEngine::GlobalFunc_DatafileCallBack(const v8::FunctionCallbackInfo<v8:
 	PixelEngine* thisPePtr = static_cast<PixelEngine*>(thisPePtrEx->Value() );
 
 	int tilez = thisPePtr->tileInfo.z  ;
-	int tiley = thisPePtr->tileInfo.y  ; 
-	int tilex = thisPePtr->tileInfo.x  ; 
+	int tiley = thisPePtr->tileInfo.y  ;
+	int tilex = thisPePtr->tileInfo.x  ;
     vector<int> wantBands ;//empty vector
     string datetimeStr = "" ;
 
@@ -2479,7 +2491,7 @@ void PixelEngine::GlobalFunc_DatafileCallBack(const v8::FunctionCallbackInfo<v8:
 		if(! PixelEngine::quietMode)cout << "Error: PixelEngine::GetExternalTileDataCallBack is null and helper is null too." << endl;
 		return;//return null in javascript.
 	}
-	
+
 
 	Local<Object> ds = PixelEngine::CPP_NewDataset( isolate
 		,context
@@ -2529,9 +2541,9 @@ void PixelEngine::GlobalFunc_DatafileCallBack(const v8::FunctionCallbackInfo<v8:
 /// @params filterHour optional
 /// @params filterMinu optional
 /// @params filterSec optional    PixelEngine.Ignore
-void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_DatasetArrayCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_DatasetArrayCallBack"<<endl;
 	if (args.Length() < 4 ){
 		if(! PixelEngine::quietMode)cout<<"Error: args.Length < 4 "<<endl ;
 		return;
@@ -2595,7 +2607,7 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	vector<long> externalTimeArr ;
 	int dt = 0 ;
 	int wid = 0 ;
-	int hei = 0 ; 
+	int hei = 0 ;
 	int retnbands = 0 ;// return number of bands in one dataset
 	int retnumds = 0 ;// return number of datasets
 
@@ -2609,15 +2621,15 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	PixelEngine* thisPePtr = static_cast<PixelEngine*>(thisPePtrEx->Value() );
 
 	int tilez = thisPePtr->tileInfo.z  ;
-	int tiley = thisPePtr->tileInfo.y  ; 
-	int tilex = thisPePtr->tileInfo.x  ; 
-	if( fromdatetime == PE_CURRENTDATETIME ) 
+	int tiley = thisPePtr->tileInfo.y  ;
+	int tilex = thisPePtr->tileInfo.x  ;
+	if( fromdatetime == PE_CURRENTDATETIME )
 	{
 		if(! PixelEngine::quietMode)cout<<"fromdatetime use current "<<thisPePtr->currentDateTime<<endl ;
 		fromdatetime = thisPePtr->currentDateTime  ;
 	}else if( fromdatetime<0 )
 	{
-		fromdatetime =  PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , fromdatetime ); 
+		fromdatetime =  PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , fromdatetime );
 		if(! PixelEngine::quietMode)cout<<"fromdatetime use passed "<<fromdatetime<<endl ;
 	}
 
@@ -2627,7 +2639,7 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 		todatetime =  thisPePtr->currentDateTime  ;
 	}else if( todatetime < 0 )
 	{
-		todatetime = PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , todatetime ); 
+		todatetime = PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , todatetime );
 		if(! PixelEngine::quietMode)cout<<"todatetime use passed "<<todatetime<<endl ;
 	}
 
@@ -2686,7 +2698,7 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 		if(! PixelEngine::quietMode)cout << "Error: PixelEngine::GetExternalTileDataArrCallBack is null and helper is null too." << endl;
 		return;//return null in javascript.
 	}
-	
+
 
 	Local<Object> ds = PixelEngine::CPP_NewDatasetArray( isolate
 		,context
@@ -2752,7 +2764,7 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 		{
 			printf("Error: unsupported data type:%d\n" , dt) ;
 		}
-		
+
 	}
 	//info.GetReturnValue().Set(i16arr);
 	args.GetReturnValue().Set(ds) ;
@@ -2761,9 +2773,9 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 /// ¸Ã·½·¨ÓÃÔÚ forEachPixelÀïÃæ×ö´°¿Ú¼ÆËã£¬·ÃÎÊÁÙ½üÍßÆ¬Êý¾Ý
 /// get external tile data only, return data array not dataset.
 /// PixelEngine.GetTileData(name,datetime,z,y,x)
-void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-	if(! PixelEngine::quietMode)cout<<"inside C++ GlobalFunc_GetTileDataCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside C++ GlobalFunc_GetTileDataCallBack"<<endl;
 	if (args.Length() != 5 ){
 		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 5 "<<endl ;
 		return;
@@ -2782,8 +2794,8 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 	int64_t datetime =  (int64_t)(v8datetime->ToNumber(context).ToLocalChecked())->Value();
 
 	int tilez = args[2]->ToInteger(context).ToLocalChecked()->Value() ;
-	int tiley = args[3]->ToInteger(context).ToLocalChecked()->Value() ; 
-	int tilex = args[4]->ToInteger(context).ToLocalChecked()->Value() ; 
+	int tiley = args[3]->ToInteger(context).ToLocalChecked()->Value() ;
+	int tilex = args[4]->ToInteger(context).ToLocalChecked()->Value() ;
 
 	vector<int> wantBands(1,0) ;//not used yet.
 
@@ -2792,7 +2804,7 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 	int wid = 0 ;
 	int hei = 0 ;
 	int nband =0 ;
-	
+
 	Local<Object> global = context->Global() ;
 	Local<Value> peinfo = global->Get( context
 		,String::NewFromUtf8(isolate, "PixelEnginePointer").ToLocalChecked())
@@ -2808,7 +2820,7 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 		datetime =  thisPePtr->currentDateTime  ;
 	}else if( datetime < 0 )
 	{
-		datetime = PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , datetime ); 
+		datetime = PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , datetime );
 		if(! PixelEngine::quietMode)cout<<"use passed "<<datetime<<endl ;
 	}
 	string datetimestr = PixelEngine::long2str(datetime) ;
@@ -2899,9 +2911,9 @@ void PixelEngine::GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<
 
 /// get external colorramp.
 /// PixelEngine.ColorRamp(colorid,colorRampObj)
-void PixelEngine::GlobalFunc_ColorRampCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+void PixelEngine::GlobalFunc_ColorRampCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_ColorRampCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_ColorRampCallBack"<<endl;
 	if (args.Length() != 2 ){
 		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 2 "<<endl ;
 		return;
@@ -2955,9 +2967,9 @@ void PixelEngine::GlobalFunc_ColorRampCallBack(const v8::FunctionCallbackInfo<v8
 
 /// create a Dataset from localfile. only for testing.
 /// filepath,dt,width,hight,nband
-void PixelEngine::GlobalFunc_LocalDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+void PixelEngine::GlobalFunc_LocalDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_LocalDatasetCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_LocalDatasetCallBack"<<endl;
 	if (args.Length() != 5 ){
 		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 5 "<<endl ;
 		return;
@@ -2993,12 +3005,12 @@ void PixelEngine::GlobalFunc_LocalDatasetCallBack(const v8::FunctionCallbackInfo
 	Int16Array* i16Array = Int16Array::Cast(*tiledataValue) ;
 	short* backData = (short*) i16Array->Buffer()->GetBackingStore()->Data() ;
 	memcpy(backData , imgdata.data() , imgdata.size() );
-	
+
 	//info.GetReturnValue().Set(i16arr);
 	args.GetReturnValue().Set(ds) ;
 }
 
- 
+
 /// convert dataset to png
 void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<Value> dsValue
 	, vector<unsigned char>& retpngbinary )
@@ -3020,31 +3032,31 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 
 	bool ok1 = PixelEngine::V8ObjectGetIntValue(isolate,dsObj2,context,"dataType",dt) ;
 	if( ok1==false ){
-		if(! PixelEngine::quietMode)cout<<"Error : failed to get dataType of output object."<<endl; 
+		if(! PixelEngine::quietMode)cout<<"Error : failed to get dataType of output object."<<endl;
 		return ;
 	}
 
 	ok1 = PixelEngine::V8ObjectGetIntValue(isolate,dsObj2,context,"width",width) ;
 	if( ok1==false ){
-		if(! PixelEngine::quietMode)cout<<"Error : failed to get width of output object."<<endl; 
+		if(! PixelEngine::quietMode)cout<<"Error : failed to get width of output object."<<endl;
 		return ;
 	}
 
 	ok1 = PixelEngine::V8ObjectGetIntValue(isolate,dsObj2,context,"height",height) ;
 	if( ok1==false ){
-		if(! PixelEngine::quietMode)cout<<"Error : failed to get height of output object."<<endl; 
+		if(! PixelEngine::quietMode)cout<<"Error : failed to get height of output object."<<endl;
 		return ;
 	}
 
 	ok1 = PixelEngine::V8ObjectGetIntValue(isolate,dsObj2,context,"nband",nband) ;
 	if( ok1==false ){
-		if(! PixelEngine::quietMode)cout<<"Error : failed to get nband of output object."<<endl; 
+		if(! PixelEngine::quietMode)cout<<"Error : failed to get nband of output object."<<endl;
 		return ;
 	}
 
 	if( nband == 0 )
 	{
-		if(! PixelEngine::quietMode)cout<<"failed to make png: zero nbands of output object."<<endl; 
+		if(! PixelEngine::quietMode)cout<<"failed to make png: zero nbands of output object."<<endl;
 		return ;
 	}
 
@@ -3066,9 +3078,9 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 	// Local<Value> tiledataValue = dsObj->Get(context,
 	// 	String::NewFromUtf8(isolate,"tiledata").ToLocalChecked())
 	// 	.ToLocalChecked() ;
-	unsigned long now1 = 0; 
+	unsigned long now1 = 0;
 	const int imgsize = width * height;
-	vector<unsigned char> rgbadata(imgsize * 4, 0);   
+	vector<unsigned char> rgbadata(imgsize * 4, 0);
 	bool outimageOk = false ;
 	if( dt == 1 )
 	{
@@ -3078,11 +3090,11 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 			dsObj2,
 			context,
 			"tiledata",
-			elementnumber, 
+			elementnumber,
 			tiledata.data() ) ;
 		if( dataok==false )
 		{
-			if(! PixelEngine::quietMode)cout<<"Error : failed to get tiledata."<<endl; 
+			if(! PixelEngine::quietMode)cout<<"Error : failed to get tiledata."<<endl;
 			return ;
 		}
 		// Uint8Array* u8arr = Uint8Array::Cast(*tiledataValue) ;
@@ -3090,7 +3102,7 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 		now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	  	printf("get dataptr:%d ms \n", (int)(now1 - now) );//1024*1024 use 340millisec
 
-		
+
 		if( nband==4 )
 		{
 			for (int it = 0; it < imgsize; ++it)
@@ -3128,11 +3140,11 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 			dsObj2,
 			context,
 			"tiledata",
-			elementnumber, 
+			elementnumber,
 			tiledata.data() ) ;
 		if( dataok==false )
 		{
-			if(! PixelEngine::quietMode)cout<<"Error : failed to get tiledata."<<endl; 
+			if(! PixelEngine::quietMode)cout<<"Error : failed to get tiledata."<<endl;
 			return ;
 		}
 		now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -3166,7 +3178,7 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 			}
 		}
 		outimageOk=true ;
-	} 
+	}
 
 	if( outimageOk )
 	{
@@ -3187,7 +3199,7 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 		state.encoder.zlibsettings.btype = 2;
 		state.encoder.auto_convert = 0;
 		unsigned error = lodepng::encode(retpngbinary, rgbadata, width, height, state);
-		
+
 		unsigned long now3 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	  	printf("encode png:%d ms \n", (int)(now3 - now2) );//1024*1024 use 340millisec
 	}else
@@ -3197,8 +3209,8 @@ void PixelEngine::Dataset2Png( Isolate* isolate, Local<Context>& context, Local<
 }
 
 
-bool PixelEngine::innerV8Dataset2TileData(Isolate* isolate, Local<Context>& context, 
-	Local<Value>& v8dsValue, PeTileData& retTileData, string& error) 
+bool PixelEngine::innerV8Dataset2TileData(Isolate* isolate, Local<Context>& context,
+	Local<Value>& v8dsValue, PeTileData& retTileData, string& error)
 {
 	unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
@@ -3337,10 +3349,10 @@ bool PixelEngine::innerV8Dataset2TileData(Isolate* isolate, Local<Context>& cont
 	}
 
 	return copyDataOk;
- 
+
 }
 
-/// init global objects and functions 
+/// init global objects and functions
 bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Context>& context )
 {
 	v8::HandleScope handle_scope(isolate);
@@ -3401,7 +3413,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	Integer::New(isolate,2));//add 2020-6-20
 	Maybe<bool> ok13 = pe->Set(context,String::NewFromUtf8(isolate, "pejs_version").ToLocalChecked(),
 		String::NewFromUtf8(isolate, PixelEngine::pejs_version.c_str()).ToLocalChecked()) ;
-        
+
 
 
 
@@ -3415,7 +3427,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
     Maybe<bool> ok15_1 = pe->Set(context
 		,String::NewFromUtf8(isolate, "Datafile").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_DatafileCallBack)->GetFunction(context).ToLocalChecked() );
-           
+
 	Maybe<bool> ok16 = pe->Set(context
 		,String::NewFromUtf8(isolate, "GetTileData").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_GetTileDataCallBack)->GetFunction(context).ToLocalChecked() );
@@ -3434,25 +3446,25 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 	Maybe<bool> ok20 = pe->Set(context
 		,String::NewFromUtf8(isolate, "log").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_Log)->GetFunction(context).ToLocalChecked() );
-           
+
 
     {//DataTypes
-        //pe.DataTypeByte  pe.DataTypeUint16 pe.DataTypeInt16 pe.DataTypeUint32 
+        //pe.DataTypeByte  pe.DataTypeUint16 pe.DataTypeInt16 pe.DataTypeUint32
         //pe.DataTypeInt32 pe.DataTypeFloat32 pe.DataTypeFloat64
     	Maybe<bool> ok31 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeByte").ToLocalChecked(),
-        Integer::New(isolate,1)); 
+        Integer::New(isolate,1));
         Maybe<bool> ok32 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeUint16").ToLocalChecked(),
-        Integer::New(isolate,2)); 
+        Integer::New(isolate,2));
         Maybe<bool> ok33 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeInt16").ToLocalChecked(),
-        Integer::New(isolate,3)); 
+        Integer::New(isolate,3));
         Maybe<bool> ok34 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeUint32").ToLocalChecked(),
-        Integer::New(isolate,4)); 
+        Integer::New(isolate,4));
         Maybe<bool> ok35 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeInt32").ToLocalChecked(),
-        Integer::New(isolate,5)); 
+        Integer::New(isolate,5));
         Maybe<bool> ok36 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeFloat32").ToLocalChecked(),
-        Integer::New(isolate,6)); 
+        Integer::New(isolate,6));
         Maybe<bool> ok37 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeFloat64").ToLocalChecked(),
-        Integer::New(isolate,7)); 
+        Integer::New(isolate,7));
     }
 
 
@@ -3479,7 +3491,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
         var globalFunc_ds_toFloat32CallBack=function(){return this.convertToDataType(6);} ;
         var globalFunc_ds_toFloat64CallBack=function(){return this.convertToDataType(7);} ;
 		var globalFunc_forEachPixelCallBack = function(pxfunc){
-			var outds = null ; 
+			var outds = null ;
 			var outtiledata = null ;
 			var width = this.width ;
 			var height = this.height ;
@@ -3521,14 +3533,14 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 					}
 				}else
 				{
-					outtiledata[it]=res ;				
+					outtiledata[it]=res ;
 				}
 
 			}
 			return outds ;
 		} ;
 		var globalFunc_DA_forEachPixelCallBack = function(pxfunc){
-			var outds = null ; 
+			var outds = null ;
 			var outtiledata = null ;
 			var width = this.width ;
 			var height = this.height ;
@@ -3543,7 +3555,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 			for(var it = 0 ; it<asize ; ++ it )
 			{
 				itb=0;
-				for(ib=0;ib<nband;++ib){    
+				for(ib=0;ib<nband;++ib){
 					bit=ib*asize+it;
 					for(ids=0;ids<nds;++ids)
 					{
@@ -3575,7 +3587,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 					}
 				}else
 				{
-					outtiledata[it]=res ;				
+					outtiledata[it]=res ;
 				}
 
 			}
@@ -3611,7 +3623,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 				return this.tiledata[iband * tasize +newline * twidth +newsample] ;
 			}else
 			{
-				var nbi = (1+gy)*3 + 1 + gx ; 
+				var nbi = (1+gy)*3 + 1 + gx ;
 				if( this.nbloads[nbi] == 1 )
 				{
 					if( this.nbdatas[nbi] != null )
@@ -3634,7 +3646,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 						return nodata ;
 					}
 				}
-			} 
+			}
 		};
 		PixelEngineObject.ColorRamp = function(colorRampId){
 			var cr = new Object() ;
@@ -3675,9 +3687,9 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 				globalFunc_ColorRampCallBack(colorRampId,cr) ;
 			}
 			return cr ;
-		};	
+		};
 	)" ;
-	
+
 	v8::Local<v8::Script> scriptForEach ;
 	bool scriptOk = v8::Script::Compile(context
           	, String::NewFromUtf8(isolate,sourceforEachPixelFunction.c_str()).ToLocalChecked()
@@ -3687,7 +3699,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 		if(! PixelEngine::quietMode)cout<<"compile sourceforEachPixelFunction failed."<<endl ;
 		return false ;
 	}
-    
+
     v8::Local<v8::Value> resultForEach ;
     bool runok = scriptForEach->Run(context).ToLocal( &resultForEach );
     if( runok==false )
@@ -3696,11 +3708,11 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 		return false ;
 	}
 
-    Local<Value> forEachFuncInJs = global->Get(context 
+    Local<Value> forEachFuncInJs = global->Get(context
     	,String::NewFromUtf8(isolate, "globalFunc_forEachPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;
     thePE->GlobalFunc_ForEachPixelCallBack.Reset(isolate , forEachFuncInJs) ;
 
-    Local<Value> getPixelFuncInJs = global->Get(context 
+    Local<Value> getPixelFuncInJs = global->Get(context
     	,String::NewFromUtf8(isolate, "globalFunc_getPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;
     thePE->GlobalFunc_GetPixelCallBack.Reset(isolate , getPixelFuncInJs) ;
 
@@ -3797,7 +3809,7 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 
 					MaybeLocal<String> outStyleJson = JSON::Stringify(context, styleResult.ToLocalChecked());
 					Local<String> outStyleJson2;
-					
+
 					if (outStyleJson.ToLocal(& outStyleJson2)) {
 						//SetStyle·µ»ØµÄÊÇjson¶ÔÏó
 						Local<Value> styleV8Value  = outStyleJson2.As<Value>();
@@ -3868,7 +3880,7 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 	return allOk;
 }
 
-bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,int z,int y,int x, vector<unsigned char>& retbinary) 
+bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,int z,int y,int x, vector<unsigned char>& retbinary)
 {
 	if(! PixelEngine::quietMode)cout<<"in RunScriptForTile init v8"<<endl;
 	this->pe_logs.reserve(2048);//max 1k bytes.
@@ -3925,7 +3937,7 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 				allOk = false ;
 			}else
 			{
-				MaybeLocal<Value> peMainResult = context->Global()->Get(context 
+				MaybeLocal<Value> peMainResult = context->Global()->Get(context
 		    		,String::NewFromUtf8(isolate, "PEMainResult").ToLocalChecked() ) ;
 				if( PixelEngine::IsMaybeLocalOK(peMainResult) == false) //IsNullOrUndefined() )
 				{
@@ -3950,7 +3962,7 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 			}
 		}
 	}
-	
+
 
 	this->m_context.Reset() ;
 	this->GlobalFunc_ForEachPixelCallBack.Reset() ;
@@ -3967,7 +3979,7 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 
 //Only ComputeOnce
 bool PixelEngine::RunScriptForComputeOnce(void* extra, string& jsSource,long currentdt
-	,int z,int y,int x, string& retJsonStr ) 
+	,int z,int y,int x, string& retJsonStr )
 {
 	if(! PixelEngine::quietMode)cout<<"in RunScriptForComputeOnce init v8"<<endl;
 	this->pe_logs.reserve(2048);//max 1k bytes.
@@ -4022,7 +4034,7 @@ bool PixelEngine::RunScriptForComputeOnce(void* extra, string& jsSource,long cur
 				allOk = false ;
 			}else
 			{
-				MaybeLocal<Value> coResult = context->Global()->Get(context 
+				MaybeLocal<Value> coResult = context->Global()->Get(context
 		    		,String::NewFromUtf8(isolate, "temp_computeOnceResult").ToLocalChecked() ) ;
 				if( PixelEngine::IsMaybeLocalOK(coResult) == false) //IsNullOrUndefined() )
 				{
@@ -4052,7 +4064,7 @@ bool PixelEngine::RunScriptForComputeOnce(void* extra, string& jsSource,long cur
 			}
 		}
 	}
-	
+
 
 	this->m_context.Reset() ;
 	this->GlobalFunc_ForEachPixelCallBack.Reset() ;
@@ -4067,7 +4079,7 @@ bool PixelEngine::RunScriptForComputeOnce(void* extra, string& jsSource,long cur
 	return allOk ;
 }
 
-string PixelEngine::CheckScriptOk(string& scriptSource) 
+string PixelEngine::CheckScriptOk(string& scriptSource)
 {
 	if(! PixelEngine::quietMode)cout<<"in CheckScriptOk"<<endl;
 
@@ -4080,7 +4092,7 @@ string PixelEngine::CheckScriptOk(string& scriptSource)
 		v8::HandleScope handle_scope(this->isolate);
 		v8::Local<v8::Context> context = v8::Context::New(this->isolate );
 		v8::Context::Scope context_scope(context);// enter scope
-		
+
 		v8::TryCatch try_catch(this->isolate);
 		v8::MaybeLocal<v8::String> source =
 			v8::String::NewFromUtf8( this->isolate, scriptSource.c_str() ,
@@ -4292,7 +4304,7 @@ bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& re
 		pe::wStringUtil strutil;
 		string escapeScript = strutil.escape(scriptContent);
 		if(! PixelEngine::quietMode)cout << escapeScript << endl;
- 
+
 
 		//add esprima codes and try catch.
 		string source2 = esprimaSource + ";"
@@ -4305,7 +4317,7 @@ bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& re
 			+ "pe_ast_parse_resulterrorstr = err;"
 			+ "}";
 
- 
+
 
 		// Compile the source code.
 		v8::Local<v8::Script> script;
@@ -4369,7 +4381,7 @@ bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& re
 						errorText = "Error : AST result is empty string.";
 						allOk = false;
 					}
-					
+
 				}
 			}
 		}
@@ -4393,7 +4405,7 @@ bool PixelEngine::RunScriptForDatasetDatetimePairs(void* extra,
     cout<<"scriptContent:"<<endl;
     cout<<scriptContent<<endl;
     cout<<"scriptContent end."<<endl;
-    
+
 	//vector<wDatasetDatetime> udsdtVec;
     string retASTLog , retASTJsonText;
     bool runASTok = this->RunScriptForAST(nullptr, scriptContent , retASTJsonText, retASTLog);
@@ -4417,8 +4429,8 @@ bool PixelEngine::RunScriptForDatasetDatetimePairs(void* extra,
             //去掉dtds重复项
             for (vector<wDatasetDatetime>::iterator iter = dsdtVec.begin(); iter != dsdtVec.end(); ++iter) {
                 bool hasone = false;
-                for (vector<wDatasetDatetime>::iterator iteru = retDsDtVec.begin(); 
-                	iteru != retDsDtVec.end(); ++iteru) 
+                for (vector<wDatasetDatetime>::iterator iteru = retDsDtVec.begin();
+                	iteru != retDsDtVec.end(); ++iteru)
                 {
                     if (iteru->ds == iter->ds && iteru->dt0 == iter->dt0 && iteru->dt1 == iter->dt1) {
                         hasone = true;
@@ -4455,8 +4467,8 @@ bool PixelEngine::RunScriptForDatasetDatetimePairs(void* extra,
 //2022-2-12 函数获取脚本数据集名称数组
 bool PixelEngine::GetDatasetNameArray(void* extra,
 		string& scriptContent,
-        vector<string>& retDsNameArr, 
-        string& errorText) 
+        vector<string>& retDsNameArr,
+        string& errorText)
 {
     cout<<"in PixelEngine::GetDatasetNameArray()"<<endl;
     std::vector<std::string> dsNameArr ;
@@ -4775,7 +4787,7 @@ template<typename T>
 bool PixelEngine::innerData2RGBAByPeStyle2(T* dataPtr, int width, int height, int nbands, PeStyle& style, vector<unsigned char>& retRGBAData, string& retLogStr) {
 	int dataLen = width * height;
 	retRGBAData.resize(dataLen * 4);//RGBA
-	
+
 	if (style.type == "gray" && style.vranges.size() > 0) {
 		int bandindex = style.getBand(0);
 		if (bandindex < 0 || bandindex >= nbands) {
@@ -4823,7 +4835,7 @@ bool PixelEngine::innerData2RGBAByPeStyle2(T* dataPtr, int width, int height, in
 		bandindices[1] = style.getBand(1);
 		bandindices[2] = style.getBand(2);
 
-		if (bandindices[0] < 0 || bandindices[0] >= nbands 
+		if (bandindices[0] < 0 || bandindices[0] >= nbands
 			|| bandindices[1] < 0 || bandindices[1] >= nbands
 			|| bandindices[2] < 0 || bandindices[2] >= nbands) {
 			stringstream ss("Error : some bandindex is invalid : ");
@@ -4857,7 +4869,7 @@ bool PixelEngine::innerData2RGBAByPeStyle2(T* dataPtr, int width, int height, in
 				for (int ib = 0; ib < 3; ++ib) {
 					T valx = newDataPtr[ib][it];
 					if (valx <= style.vranges[ib].minval) {
-						retRGBAData[it1+ib] = 0; 
+						retRGBAData[it1+ib] = 0;
 					}
 					else if (valx >= style.vranges[ib].maxval) {
 						retRGBAData[it1 + ib] = 255;
@@ -4934,7 +4946,7 @@ bool PixelEngine::innerData2RGBAByPeStyle2(T* dataPtr, int width, int height, in
 				}
 			}
 		}
-		
+
 	}
 	else {
 		stringstream ss("Error : style.type=");
@@ -4950,7 +4962,7 @@ bool PixelEngine::innerData2RGBAByPeStyle2(T* dataPtr, int width, int height, in
 
 
 
-PixelEngine::PixelEngine() 
+PixelEngine::PixelEngine()
 {
 	if(! PixelEngine::quietMode)cout<<"PixelEngine()"<<endl;
 	extraPointer = 0 ;
@@ -4961,17 +4973,17 @@ PixelEngine::PixelEngine()
 }
 
 
-PixelEngine::~PixelEngine() 
+PixelEngine::~PixelEngine()
 {
 	if(! PixelEngine::quietMode)cout<<"~PixelEngine()"<<endl;
-	
+
 }
 
 //Ö»ÐèÒªµ÷ÓÃÒ»´Î
-void PixelEngine::initV8() 
+void PixelEngine::initV8()
 {
 	// Initialize V8.
-	
+
 	if( v8Platform  ){
 		if(! PixelEngine::quietMode)cout<<"v8 has inited"<<endl ;
 	}else{
@@ -5023,7 +5035,7 @@ bool PixelEngine::unwarpMultiPolygon(Isolate* isolate,Local<Value>& jsMulPoly,
 	if( jsMulPoly->IsArray() )
 	{
 		v8::Array* array0 = v8::Array::Cast( * jsMulPoly ) ;
-		
+
 		retMPoly.polys.resize( array0->Length() ) ;
 
 		for(int i0 =0 ; i0 < array0->Length() ; ++ i0 )
@@ -5058,27 +5070,27 @@ bool PixelEngine::unwarpMultiPolygon(Isolate* isolate,Local<Value>& jsMulPoly,
 							MaybeLocal<Value> maybe1 = arr2local->Get(context,1);
 							if( convertV8MaybeLocalValue2Double( maybe0, retMPoly.polys[i0][ipt].v0 )==false )
 							{
-								if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<"-"<<ipt<<" in jsMulPoly [0] is not a number"<<endl; 
+								if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<"-"<<ipt<<" in jsMulPoly [0] is not a number"<<endl;
 								return false ;
 							}
 							if( convertV8MaybeLocalValue2Double( maybe1, retMPoly.polys[i0][ipt].v1 )==false )
 							{
-								if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<"-"<<ipt<<" in jsMulPoly [1] is not a number"<<endl; 
+								if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<"-"<<ipt<<" in jsMulPoly [1] is not a number"<<endl;
 								return false ;
 							}
 						}else{
-							if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<"-"<<ipt<<" in jsMulPoly length lower than 2"<<endl; 
+							if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<"-"<<ipt<<" in jsMulPoly length lower than 2"<<endl;
 							return false ;
 						}
 					}else
 					{
-						if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<"-"<<ipt<<" in jsMulPoly is not a Array"<<endl; 
+						if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<"-"<<ipt<<" in jsMulPoly is not a Array"<<endl;
 						return false ;
 					}
 				}
 			}else
 			{
-				if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<" in jsMulPoly is not a Array"<<endl; 
+				if(! PixelEngine::quietMode)cout<<"Error : item-"<<i0<<" in jsMulPoly is not a Array"<<endl;
 				return false ;
 			}
 		}
@@ -5086,15 +5098,15 @@ bool PixelEngine::unwarpMultiPolygon(Isolate* isolate,Local<Value>& jsMulPoly,
 		return true;
 	}else
 	{
-		if(! PixelEngine::quietMode)cout<<"Error : jsMulPoly is not Array"<<endl; 
+		if(! PixelEngine::quietMode)cout<<"Error : jsMulPoly is not Array"<<endl;
 		return false;
 	}
 }
 
 //pixelengine.roi(multiPoly, zlevel, proj) 通过MultiPolygon对象生产ROI对象
-void PixelEngine::GlobalFunc_RoiCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+void PixelEngine::GlobalFunc_RoiCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_RoiCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_RoiCallBack"<<endl;
 	if (args.Length() < 1 ){
 		if(! PixelEngine::quietMode)cout<<"Error: args.Length < 1 "<<endl ;
 		return;
@@ -5118,7 +5130,7 @@ void PixelEngine::GlobalFunc_RoiCallBack(const v8::FunctionCallbackInfo<v8::Valu
 
 	string proj = "EPSG:4326";
 	if( args.Length() > 1)
-	{	
+	{
 		Local<Value> args2 = args[1] ;
 		proj = PixelEngine::convertV8LocalValue2CppString(isolate, args2);
 	}
@@ -5138,7 +5150,7 @@ void PixelEngine::GlobalFunc_RoiCallBack(const v8::FunctionCallbackInfo<v8::Valu
 	cout<<"debug roiindex:"<<roiIndex<<endl;
 
 	Local<Object> roiobj=Object::New(isolate);
-	Maybe<bool> setok1 = roiobj->Set(context, 
+	Maybe<bool> setok1 = roiobj->Set(context,
 		String::NewFromUtf8(isolate,"roiindex").ToLocalChecked(),
 		Integer::New(isolate,roiIndex)
 		);
@@ -5148,7 +5160,7 @@ void PixelEngine::GlobalFunc_RoiCallBack(const v8::FunctionCallbackInfo<v8::Valu
 }
 
 
-bool PixelEngine::convertV8LocalValue2Int(Local<Value>& v8Val,int& retval) 
+bool PixelEngine::convertV8LocalValue2Int(Local<Value>& v8Val,int& retval)
 {
 	if( v8Val->IsNumber() ){
 		Integer* ptr = Integer::Cast(*v8Val) ;
@@ -5161,7 +5173,7 @@ bool PixelEngine::convertV8LocalValue2Int(Local<Value>& v8Val,int& retval)
 }
 
 
-bool PixelEngine::convertV8LocalValue2IntArray(Local<Context>& context, Local<Value>& v8Val,vector<int>& retvec) 
+bool PixelEngine::convertV8LocalValue2IntArray(Local<Context>& context, Local<Value>& v8Val,vector<int>& retvec)
 {
     if( v8Val->IsArray() )
     {
@@ -5181,7 +5193,7 @@ bool PixelEngine::convertV8LocalValue2IntArray(Local<Context>& context, Local<Va
                         "convertV8LocalValue2IntArray mbval->Int32Value is nothing"<<endl;
                     return false;
                 }
-                
+
             }else
             {
                 if(! PixelEngine::quietMode)cout<<"convertV8LocalValue2IntArray tarray->Get() failed."<<endl;
@@ -5200,7 +5212,7 @@ bool PixelEngine::convertV8LocalValue2IntArray(Local<Context>& context, Local<Va
 bool PixelEngine::convertV8LocalValue2DoubleArray(
     Local<Context>&context,
     Local<Value>& v8Val,
-    vector<double>& retvec) 
+    vector<double>& retvec)
 {
     retvec.clear();
     if( v8Val->IsArray() )
@@ -5219,7 +5231,7 @@ bool PixelEngine::convertV8LocalValue2DoubleArray(
                     if(! PixelEngine::quietMode)cout<<"convertV8LocalValue2DoubleArray mbval->NumberValue is nothing"<<endl;
                     return false;
                 }
-                
+
             }else
             {
                 if(! PixelEngine::quietMode)cout<<"convertV8LocalValue2DoubleArray tarray->Get() failed."<<endl;
@@ -5236,9 +5248,9 @@ bool PixelEngine::convertV8LocalValue2DoubleArray(
 
 //dataset.clip() 瓦片数据集裁剪，返回新的瓦片数据集
 /// dataset.clip(roi,filldata); if all pixel outside roi return null;
-void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) 
+void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
-	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_ClipCallBack"<<endl; 
+	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_ClipCallBack"<<endl;
 	if (args.Length() != 2 ){
 		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 2 "<<endl ;
 		return;
@@ -5307,8 +5319,8 @@ void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Val
 	}
 
 	int tilez = thisPePtr->tileInfo.z  ;
-	int tiley = thisPePtr->tileInfo.y  ; 
-	int tilex = thisPePtr->tileInfo.x  ; 
+	int tiley = thisPePtr->tileInfo.y  ;
+	int tilex = thisPePtr->tileInfo.x  ;
 
 	int tilefully0 = tiley * rethei;
 	int tilefully1 = tilefully0 + rethei;
@@ -5317,7 +5329,7 @@ void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Val
 	int tilefullx1 = tilefullx0 + retwid;
 
 	PeRoi& roi1 = thisPePtr->roiVector[roiIndex];
-	
+
 	bool tileOutsideRoi=innerTileOutsideRoi(roi1, tilez, tiley, tilex,
 		retwid,rethei);
 	if( tileOutsideRoi==false )
@@ -5328,28 +5340,28 @@ void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Val
 			,retdatatype
 			,retwid
 			,rethei
-			,retnbands );   
-        
+			,retnbands );
+
         void* sourceDataPtr = V8ObjectGetTypedArrayBackPtr(isolate,thisobj,context,"tiledata");
         void* targetDataPtr = V8ObjectGetTypedArrayBackPtr(isolate,outds,context,"tiledata") ;
-        
+
         if( sourceDataPtr==nullptr ){
             cout<<"Error : sourceDataPtr is null"<<endl;
             return ;
         }
-        
+
         if( targetDataPtr==nullptr ){
             cout<<"Error : targetDataPtr is null"<<endl;
             return ;
         }
-        
-            
+
+
 		//copy datas
         switch( retdatatype )
         {
             case 1:{
                 PixelEngine::innerCopyRoiData((unsigned char*)sourceDataPtr,
-                    (unsigned char*)targetDataPtr , 
+                    (unsigned char*)targetDataPtr ,
                     roi1,
                     retFillValue,
                     tilez,tiley,tilex,
@@ -5358,7 +5370,7 @@ void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Val
             }
             case 2:{
                 PixelEngine::innerCopyRoiData((unsigned short*)sourceDataPtr,
-                    (unsigned short*)targetDataPtr , 
+                    (unsigned short*)targetDataPtr ,
                     roi1,
                     retFillValue,
                     tilez,tiley,tilex,
@@ -5367,7 +5379,7 @@ void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Val
             }
             case 3:{
                 PixelEngine::innerCopyRoiData((short*)sourceDataPtr,
-                    (short*)targetDataPtr , 
+                    (short*)targetDataPtr ,
                     roi1,
                     retFillValue,
                     tilez,tiley,tilex,
@@ -5376,7 +5388,7 @@ void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Val
             }
             case 4:{
                 PixelEngine::innerCopyRoiData((unsigned int*)sourceDataPtr,
-                    (unsigned int*)targetDataPtr , 
+                    (unsigned int*)targetDataPtr ,
                     roi1,
                     retFillValue,
                     tilez,tiley,tilex,
@@ -5385,7 +5397,7 @@ void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Val
             }
             case 5:{
                 PixelEngine::innerCopyRoiData((int*)sourceDataPtr,
-                    (int*)targetDataPtr , 
+                    (int*)targetDataPtr ,
                     roi1,
                     retFillValue,
                     tilez,tiley,tilex,
@@ -5394,7 +5406,7 @@ void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Val
             }
             case 6:{
                 PixelEngine::innerCopyRoiData((float*)sourceDataPtr,
-                    (float*)targetDataPtr , 
+                    (float*)targetDataPtr ,
                     roi1,
                     retFillValue,
                     tilez,tiley,tilex,
@@ -5403,13 +5415,13 @@ void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Val
             }
             case 7:{
                 PixelEngine::innerCopyRoiData((double*)sourceDataPtr,
-                    (double*)targetDataPtr , 
+                    (double*)targetDataPtr ,
                     roi1,
                     retFillValue,
                     tilez,tiley,tilex,
                     retwid,rethei,retnbands) ;
                 break;
-            }            
+            }
         }
 		//return dataset
         args.GetReturnValue().Set(outds) ;
@@ -5420,6 +5432,200 @@ void PixelEngine::GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Val
 		return ;
 	}
 }
+
+
+
+/// 2022-3-6
+/// 对应javascript中 dataset.clip2函数
+/// js中调用示例： dataset.clip2("sys:1",0); dataset.clip2("user:1",0);
+/// 如果全部像素不在roi内部，返回null
+void PixelEngine::GlobalFunc_Clip2CallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_Clip2CallBack"<<endl;
+	if (args.Length() != 2 ){
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 2 "<<endl ;
+		return;
+	}
+	PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+
+
+	int tilez = thisPePtr->tileInfo.z  ;
+	int tiley = thisPePtr->tileInfo.y  ;
+	int tilex = thisPePtr->tileInfo.x  ;
+
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> roiIdValue = args[0]; // "sys:1" or "user:2"
+	Local<Value> fillValue  = args[1] ;// nodatavalue
+
+	v8::String::Utf8Value roiIdU8Value(isolate, roiIdValue);
+    string csRoiId(*roiIdU8Value) ;
+    //检查roiid格式是否正确
+    vector<string> roiIdArr = wStringUtils::splitString(csRoiId,":");
+    if( roiIdArr.size()!=2 ){
+        cout<<"Error : roiIdArr size not 2."<<endl ;
+        return ;
+    }
+    int isUserRoi = 1 ;
+    if( roiIdArr[0].compare("sys")==0 ) isUserRoi=0 ;//use sys roi
+    int mysqlRid = (int)atof(roiIdArr[1].c_str()) ;
+
+
+    //解析填充值
+    int retFillValue = 0;
+	bool fillok = convertV8LocalValue2Int(fillValue,retFillValue) ;
+	if( fillok==false ){
+		cout<<"Error : failed to convert int from args[1]"<<endl ;
+		return ;
+	}
+
+	//解析本Dataset对象和相关的属性
+	Local<Object> thisobj =  args.This() ;
+	int retdatatype=0;
+	int retwid=0;
+	int rethei=0;
+	int retnbands=0;
+
+	bool okdt = V8ObjectGetIntValue(isolate,thisobj,context,"dataType",retdatatype);
+ 	bool okwid= V8ObjectGetIntValue(isolate,thisobj,context,"width",retwid);
+ 	bool okhei= V8ObjectGetIntValue(isolate,thisobj,context,"height",rethei);
+ 	bool oknbands= V8ObjectGetIntValue(isolate,thisobj,context,"nband",retnbands);
+
+	if( okdt && okwid && okhei && oknbands ){
+		//allok
+	}else{
+		cout<<"Error : failed to get this dataset object some properties of dataType, width, height, nband."<<endl ;
+		return ;
+	}
+
+
+    //call java api for hseg.tlv data
+    if( thisPePtr->helperPointer != 0 )
+    {
+        //get binary data from java helper
+        vector<unsigned char> retTlvData;
+        bool tlvOk = thisPePtr->helperPointer->getRoiHsegTlv(isUserRoi , mysqlRid, retTlvData) ;
+        if( tlvOk==false ){
+            cout<<"Error : thisPePtr->helperPointer->getRoiHsegTlv return null result."<<endl;
+            return ;
+        }
+
+        //parse tlv object
+        WHsegTlvObject roihseg ;
+        string tlvError;
+        bool tlv2ok = roihseg.readFromBinaryData( retTlvData , tlvError );
+        if( tlv2ok==false ){
+            cout<<"Error : roihseg.readFromBinaryData failed."<<endl ;
+            return ;
+        }
+
+        //is roi overlay this tile
+        bool isTileOverlay = roihseg.isTileOverlay( tilez, tiley, tilex ) ;
+        if( isTileOverlay==false ){
+            cout<<"debug info: roihseg.isTileOverlay do not overlay tile_zyx("<<tilez<<","<<tiley<<","<<tilex<<")"<<endl ;
+            return ;
+        }
+
+        //create a new empty dataset
+        Local<Object> outds = PixelEngine::CPP_NewDataset(isolate,context
+			,retdatatype
+			,retwid
+			,rethei
+			,retnbands );
+
+        void* sourceDataPtr = V8ObjectGetTypedArrayBackPtr(isolate,thisobj,context,"tiledata");
+        void* targetDataPtr = V8ObjectGetTypedArrayBackPtr(isolate,outds,context,"tiledata") ;
+
+        if( sourceDataPtr==nullptr ){
+            cout<<"Error : sourceDataPtr is null"<<endl;
+            return ;
+        }
+
+        if( targetDataPtr==nullptr ){
+            cout<<"Error : targetDataPtr is null"<<endl;
+            return ;
+        }
+
+        //copy datas
+        switch( retdatatype )
+        {
+            case 1:{
+                PixelEngine::innerCopyRoiData2((unsigned char*)sourceDataPtr,(unsigned char*)targetDataPtr ,
+                    roihseg,retFillValue,tilez,tiley,tilex,retwid,rethei,retnbands) ;
+                break;
+            }
+            case 2:{
+                PixelEngine::innerCopyRoiData2((unsigned short*)sourceDataPtr,
+                    (unsigned short*)targetDataPtr ,
+                    roihseg,
+                    retFillValue,
+                    tilez,tiley,tilex,
+                    retwid,rethei,retnbands) ;
+                break;
+            }
+            case 3:{
+                PixelEngine::innerCopyRoiData2((short*)sourceDataPtr,
+                    (short*)targetDataPtr ,
+                    roihseg,
+                    retFillValue,
+                    tilez,tiley,tilex,
+                    retwid,rethei,retnbands) ;
+                break;
+            }
+            case 4:{
+                PixelEngine::innerCopyRoiData2((unsigned int*)sourceDataPtr,
+                    (unsigned int*)targetDataPtr ,
+                    roihseg,
+                    retFillValue,
+                    tilez,tiley,tilex,
+                    retwid,rethei,retnbands) ;
+                break;
+            }
+            case 5:{
+                PixelEngine::innerCopyRoiData2((int*)sourceDataPtr,
+                    (int*)targetDataPtr ,
+                    roihseg,
+                    retFillValue,
+                    tilez,tiley,tilex,
+                    retwid,rethei,retnbands) ;
+                break;
+            }
+            case 6:{
+                PixelEngine::innerCopyRoiData2((float*)sourceDataPtr,
+                    (float*)targetDataPtr ,
+                    roihseg,
+                    retFillValue,
+                    tilez,tiley,tilex,
+                    retwid,rethei,retnbands) ;
+                break;
+            }
+            case 7:{
+                PixelEngine::innerCopyRoiData2((double*)sourceDataPtr,
+                    (double*)targetDataPtr ,
+                    roihseg,
+                    retFillValue,
+                    tilez,tiley,tilex,
+                    retwid,rethei,retnbands) ;
+                break;
+            }
+        }
+		//return dataset
+        args.GetReturnValue().Set(outds) ;
+
+
+
+    }
+    else{
+        cout<<"Error : thisPePtr->helperPointer is null."<<endl;
+        return ;
+    }
+}
+
+
+
+
 
 
 bool PixelEngine::innerTileOutsideRoi(PeRoi& roi,int tilez,int tiley,int tilex,
@@ -5450,7 +5656,7 @@ bool PixelEngine::innerTileOutsideRoi(PeRoi& roi,int tilez,int tiley,int tilex,
 			{
 				for(int iseg=cursorsegindex; iseg<nseg;++iseg ){
 					cursorsegindex=iseg;
-					int currsegy = roi.hsegs[iseg].y; 
+					int currsegy = roi.hsegs[iseg].y;
 					if( currsegy == curtiley ){
 						int currsegx0 = roi.hsegs[iseg].x0;
 						int currsegx1 = roi.hsegs[iseg].x1;
@@ -5478,7 +5684,7 @@ bool PixelEngine::innerTileOutsideRoi(PeRoi& roi,int tilez,int tiley,int tilex,
 
 template<typename T>
 bool PixelEngine::innerCopyRoiData(T* source,T* target,PeRoi& roi,int fillval,
-	int tilez,int tiley,int tilex,int wid,int hei,int nbands) 
+	int tilez,int tiley,int tilex,int wid,int hei,int nbands)
 {
 	int bandsize = wid*hei;
 	int fullsize = nbands*bandsize;
@@ -5508,7 +5714,7 @@ bool PixelEngine::innerCopyRoiData(T* source,T* target,PeRoi& roi,int fillval,
 			{
 				for(int iseg=cursorsegindex; iseg<nseg;++iseg ){
 					cursorsegindex=iseg;
-					int currsegy = roi.hsegs[iseg].y; 
+					int currsegy = roi.hsegs[iseg].y;
 					if( currsegy == curtiley ){
 						int currsegx0 = roi.hsegs[iseg].x0;
 						int currsegx1 = roi.hsegs[iseg].x1;
@@ -5540,16 +5746,146 @@ bool PixelEngine::innerCopyRoiData(T* source,T* target,PeRoi& roi,int fillval,
     return true;
 }
 
+
+
+//拷贝瓦片数据，使用tlv进行roi裁剪 2022-3-6
+template<typename T>
+bool PixelEngine::innerCopyRoiData2(
+    T* source,T* target,
+    WHsegTlvObject& roi,int fillval,
+    int tilez,int tiley,int tilex,
+    int wid,//tile width
+    int hei,//tile height
+    int nbands)
+{
+    int bandsize = wid*hei;
+	int fullsize = nbands*bandsize;
+	for(int it=0;it <fullsize;++it ){
+		target[it] = fillval;
+	}
+
+	int tilefullx0 = tilex * wid;
+	int tilefullx1 = tilefullx0 + wid;
+
+    int tilefully0 = tiley * hei  ;
+    int tilefully1 = tilefully0 + hei ;
+
+	if( roi.allLevelHsegs.size() == 0 ) return false ;//bad roi.hseg.tlv
+	int iroilevel = 0 ;
+	double hseg_scale_to_tilez = 1.0 ;
+	if( tilez < roi.allLevelHsegs.size() ){
+        iroilevel = tilez ;
+	}else{
+        iroilevel = roi.allLevelHsegs.size() - 1 ;
+        for(int izzz = iroilevel ; izzz < tilez ; ++ izzz ){
+            hseg_scale_to_tilez *= 2.0 ;
+        }
+	}
+
+	wLevelHseg& useRoilevel = roi.allLevelHsegs[iroilevel] ;
+
+	if( useRoilevel.hsegs.size()>0 ){
+
+		int nseg = useRoilevel.hsegs.size();
+		int roi_top_y_in_full = useRoilevel.hsegs[0].y     * hseg_scale_to_tilez;
+		int roi_btm_y_in_full = useRoilevel.hsegs.back().y * hseg_scale_to_tilez;
+		if( roi_top_y_in_full >= tilefully1 ){
+			//outside
+		}else if( roi_btm_y_in_full < tilefully0 ){
+			//outside
+		}
+		else
+		{
+            for(int iseg=0 ; iseg<nseg ; ++iseg ){
+                int seg_y0_in_full = useRoilevel.hsegs[iseg].y * hseg_scale_to_tilez ;// include
+                int seg_y1_in_full = seg_y0_in_full            + hseg_scale_to_tilez ;//not include
+                if( tilefully0 >= seg_y1_in_full ){
+                    //go next seg
+                }else if( tilefully1 <= seg_y0_in_full ){
+                    //go out of this tile, just go out of seg loop
+                    break ;
+                }else{
+                    //seg inside tile
+                    for(int curr_y_in_full = seg_y0_in_full ; curr_y_in_full < seg_y1_in_full ; ++ curr_y_in_full )
+                    {
+                        int y_in_tile = curr_y_in_full - tilefully0 ;
+                        if( y_in_tile>=0 && y_in_tile<hei )
+                        {
+                            //y inside
+                            int seg_x0_in_tile = std::max(0  ,  (int)( useRoilevel.hsegs[iseg].x0    * hseg_scale_to_tilez - tilefullx0) ) ;// 260,261, -10 , -5
+                            int seg_x1_in_tile = std::min(wid,  (int)((useRoilevel.hsegs[iseg].x1+1) * hseg_scale_to_tilez - tilefullx0) ) ;//not include
+                            for(int x_in_tile = seg_x0_in_tile ; x_in_tile < seg_x1_in_tile ; ++ x_in_tile )
+                            {
+                                //x inside
+                                for(int ib=0;ib<nbands;++ib){
+									int insideTileit=ib*bandsize + y_in_tile*wid + x_in_tile ;
+									target[insideTileit]=source[insideTileit];
+								}
+                            }
+                        }
+                    }
+                }
+            }
+
+
+//            //y overlay
+//			int cursorsegindex = 0;
+//			for(int curtiley_in_full =tilefully0; curtiley_in_full<tilefully1;++curtiley_in_full )
+//			{
+//                //瓦片从上到下 curtiley_in_full 是全图坐标
+//				for(int iseg=cursorsegindex; iseg<nseg;++iseg ){
+//                    //检查逐个 hseg 对象是否与该行有重叠
+//					cursorsegindex=iseg;// here here ???????????????
+//					int currsegy0_in_full = useRoilevel.hsegs[iseg].y * hseg_scale_to_tilez ;
+//					int currsegy1_in_full = currsegy0_in_full         + hseg_scale_to_tilez ;
+//					if( currsegy0_in_full <= curtiley_in_full && curtiley_in_full < currsegy1_in_full ){
+//                        // curtiley_in_full 在这个 HSeg 之内
+//						int currsegx0_in_full =  useRoilevel.hsegs[iseg].x0    * hseg_scale_to_tilez ;
+//						int currsegx1_in_full = (useRoilevel.hsegs[iseg].x1+1) * hseg_scale_to_tilez ;
+//						if( currsegx0_in_full >= tilefullx1 ){
+//							//outside
+//						}else if( currsegx1_in_full < tilefullx0 ){
+//							//outside
+//						}else{
+//							//inside
+//							// hseg 与这个 tile x 方向有重叠
+//							int startx = max(tilefullx0,currsegx0_in_full) - tilefullx0;//0~(wid-1)
+//							int stopx  = min(tilefullx1,currsegx1_in_full) - tilefullx0;//0~(wid-1)
+//
+//							int insideTiley = curtiley_in_full - tilefully0;
+//
+//							for(int insideTilex=startx; insideTilex < stopx; ++ insideTilex ){
+//								for(int ib=0;ib<nbands;++ib){
+//									int insideTileit=ib*bandsize+insideTiley*wid+insideTilex;
+//									target[insideTileit]=source[insideTileit];
+//								}
+//							}
+//						}
+//					}else // curtiley Y 不在这个 HSeg 之内
+//                        if( currsegy0_in_full > curtiley_in_full )// 这个 HSeg 的上边 y0 大于 当前瓦片行的坐标，说明下面的HSeg也不会有重叠了，可以进行下一行计算了
+//                    {
+//						break;// 跳出本次 hseg 循环，进入下一行  here here ??????????????
+//					}
+//				}//逐个 HSeg 循环
+//			}//Tile 逐个行计算
+		}
+	}
+    return true;
+}
+
+
+
+
 //2020-12-01 copy array data from source to target
 template<typename T, typename U>
-void PixelEngine::innerCopyArrayData(T* srcDataPtr,size_t srcElementCount, U* tarDataPtr) 
+void PixelEngine::innerCopyArrayData(T* srcDataPtr,size_t srcElementCount, U* tarDataPtr)
 {
     for(size_t it = 0 ; it < srcElementCount; ++ it ){
         tarDataPtr[it] = (U)(srcDataPtr[it]) ;
     }
 }
 //copy data
-bool PixelEngine::innerCopyArrayData(void* srcDataPtr,int srcType,size_t srcElementCount, void* tarDataPtr,int tarType) 
+bool PixelEngine::innerCopyArrayData(void* srcDataPtr,int srcType,size_t srcElementCount, void* tarDataPtr,int tarType)
 {
     bool isok = false ;
     switch( srcType ){
@@ -5638,9 +5974,9 @@ bool PixelEngine::innerCopyArrayData(void* srcDataPtr,int srcType,size_t srcElem
 
 
 
-void* PixelEngine::V8ObjectGetTypedArrayBackPtr(Isolate* isolate, 
-    Local<Object>& obj, 
-    Local<Context>& context, 
+void* PixelEngine::V8ObjectGetTypedArrayBackPtr(Isolate* isolate,
+    Local<Object>& obj,
+    Local<Context>& context,
     string key)
 {
 	MaybeLocal<Value> maybe1 = obj->Get(context,
@@ -5673,9 +6009,9 @@ void* PixelEngine::V8ObjectGetTypedArrayBackPtr(Isolate* isolate,
 }
 
 
-void* PixelEngine::V8ObjectGetTypedArrayBackPtr2(Isolate* isolate, 
-    Local<Object>& obj, 
-    Local<Context>& context, 
+void* PixelEngine::V8ObjectGetTypedArrayBackPtr2(Isolate* isolate,
+    Local<Object>& obj,
+    Local<Context>& context,
     string key,
     size_t& byteLen )
 {
@@ -5718,13 +6054,13 @@ bool PixelEngine::MapRedRunScriptForZlevel(void* extra,
 {
     if(! PixelEngine::quietMode)cout<<"in MapRedRunScriptForZlevel"<<endl;
     retZlevel=0;
-    
+
     string tempVariableName = "TEMP_VAR_temp_var_zlevel" ;
-    string script2 = scriptContent 
+    string script2 = scriptContent
         +"; var " + tempVariableName + "=JSON.stringify(zlevelFunc());" ;
     string retResultJsonText, retError;
     bool getok = this->RunScriptAndGetVariableJsonText(
-        extra , 
+        extra ,
         script2,
         0L,
         0,0,0,
@@ -5755,13 +6091,13 @@ bool PixelEngine::MapRedRunScriptForExtent(void* extra,
     right = 180.0;
     up=90.0;
     down=-90.0;
-    
+
     string tempVariableName = "TEMP_VAR_temp_var_extent" ;
-    string script2 = scriptContent 
+    string script2 = scriptContent
         +"; var " + tempVariableName + "=JSON.stringify(extentFunc());" ;
     string retResultJsonText, retError;
     bool getok = this->RunScriptAndGetVariableJsonText(
-        extra , 
+        extra ,
         script2,
         0L,
         0,0,0,
@@ -5773,7 +6109,7 @@ bool PixelEngine::MapRedRunScriptForExtent(void* extra,
     {
         DynamicJsonBuffer jsonBuffer;
         JsonVariant variant = jsonBuffer.parse(retResultJsonText);
-        
+
         JsonArray& temparr = variant.as<JsonArray>() ;
         if( temparr.size() == 4 ){
             left = temparr[0].as<double>();
@@ -5799,11 +6135,11 @@ bool PixelEngine::MapRedRunScriptForSharedObj(void* extra,
     if(! PixelEngine::quietMode)cout<<"in MapRedRunScriptForSharedObj"<<endl;
     retJsonText = "";
     string tempVariableName = "TEMP_VAR_temp_var_shareobj" ;
-    string script2 = scriptContent 
+    string script2 = scriptContent
         +"; var " + tempVariableName + "=JSON.stringify(sharedObjectFunc());" ;
     string retResultJsonText, retError;
     bool getok = this->RunScriptAndGetVariableJsonText(
-        extra , 
+        extra ,
         script2,
         0L,
         0,0,0,
@@ -5820,7 +6156,7 @@ bool PixelEngine::MapRedRunScriptForSharedObj(void* extra,
         return false;
     }
 }
-    
+
 //mapreduce框架 运行map function
 bool PixelEngine::MapRedRunScriptForMapFunc(void* extra,
     string& scriptContent,int64_t dt,int z,int y,int x,
@@ -5829,12 +6165,12 @@ bool PixelEngine::MapRedRunScriptForMapFunc(void* extra,
     if(! PixelEngine::quietMode)cout<<"in MapRedRunScriptForMapFunc"<<endl;
     retJsonText = "";
     string tempVariableName = "TEMP_VAR_temp_var_mapres" ;
-    string script2 = scriptContent 
-        +"; var " + tempVariableName 
+    string script2 = scriptContent
+        +"; var " + tempVariableName
         + "=JSON.stringify(mapFunc(JSON.parse('"+sharedObjJsonText+"')));" ;
     string retResultJsonText, retError;
     bool getok = this->RunScriptAndGetVariableJsonText(
-        extra , 
+        extra ,
         script2,
         dt,
         z,y,x,
@@ -5853,33 +6189,33 @@ bool PixelEngine::MapRedRunScriptForMapFunc(void* extra,
     }
 }
 
- 
+
 //mapreduce框架 运行reduce function
 /// reduceFunc( sharedObj, key, obj1, obj2 )
 bool PixelEngine::MapRedRunScriptForReduceFunc(void* extra,
     string& scriptContent,
     string& sharedObjJsonText,
-    string& keystr, 
+    string& keystr,
     string& obj1JsonText,
-    string& obj2JsonText, 
-    string& retJsonText, 
+    string& obj2JsonText,
+    string& retJsonText,
     string& error)
 {
     if(! PixelEngine::quietMode)cout<<"in MapRedRunScriptForReduceFunc"<<endl;
     retJsonText = "";
     string tempVariableName = "TEMP_VAR_temp_var_reduceres" ;
-    string script2 = scriptContent 
-        +"; var " + tempVariableName 
+    string script2 = scriptContent
+        +"; var " + tempVariableName
         + "=JSON.stringify(reduceFunc("
             +"JSON.parse('"+sharedObjJsonText+"'),'"
-            + keystr 
+            + keystr
             +"',JSON.parse('"+obj1JsonText
-            +"'),JSON.parse('"+obj2JsonText+"') " 
+            +"'),JSON.parse('"+obj2JsonText+"') "
             + ") "
             + ");" ;
     string retResultJsonText, retError;
     bool getok = this->RunScriptAndGetVariableJsonText(
-        extra , 
+        extra ,
         script2,
         0L,
         0,0,0,
@@ -5897,27 +6233,27 @@ bool PixelEngine::MapRedRunScriptForReduceFunc(void* extra,
         return false;
     }
 }
-    
+
     //mapreduce框架 运行main function
 bool PixelEngine::MapRedRunScriptForMainFunc(void* extra,
     string& scriptContent,string& sharedObjJsonText,
-    string& objCollectionJsonText , 
+    string& objCollectionJsonText ,
     string& retJsonText, string& error)
 {
     if(! PixelEngine::quietMode)cout<<"in MapRedRunScriptForMainFunc"<<endl;
     retJsonText = "";
     string tempVariableName = "TEMP_VAR_temp_var_main_res" ;
-    string script2 = scriptContent 
-        +"; var " + tempVariableName 
+    string script2 = scriptContent
+        +"; var " + tempVariableName
         + "=JSON.stringify(main("
             +"JSON.parse('"+sharedObjJsonText+"'),"
             +"JSON.parse('"+objCollectionJsonText
-            +"') " 
+            +"') "
             + ") "
             + ");" ;
     string retResultJsonText, retError;
     bool getok = this->RunScriptAndGetVariableJsonText(
-        extra , 
+        extra ,
         script2,
         0L,
         0,0,0,
@@ -5951,13 +6287,13 @@ bool PixelEngine::MapRedRunScriptForMainFunc(void* extra,
  * @return 返回true、false
  */
 bool PixelEngine::RunScriptAndGetVariableJsonText(void* extra,
-        string& scriptContent, 
+        string& scriptContent,
         int64_t dt,int z,int y,int x,
-        string variableName, 
+        string variableName,
         string& retJsonText,
         string& retError)
 {//返回的结果必须是json化的。
-            
+
     if(! PixelEngine::quietMode)cout<<"in RunScriptAndGetVariableJsonText"<<endl;
 	this->pe_logs.reserve(2048);//max 1k bytes.
 	this->tileInfo.x = x ;
@@ -6001,7 +6337,7 @@ bool PixelEngine::RunScriptAndGetVariableJsonText(void* extra,
 				allOk = false ;
 			}else
 			{
-				MaybeLocal<Value> tempResult = context->Global()->Get(context 
+				MaybeLocal<Value> tempResult = context->Global()->Get(context
 		    		,String::NewFromUtf8(isolate, variableName.c_str()).ToLocalChecked() ) ;
 				if( PixelEngine::IsMaybeLocalOK(tempResult) == false) //IsNullOrUndefined() )
 				{
@@ -6018,7 +6354,7 @@ bool PixelEngine::RunScriptAndGetVariableJsonText(void* extra,
 
 					//
                     Local<Value> localresult = tempResult.ToLocalChecked() ;
-                    
+
                     retJsonText = PixelEngine::convertV8LocalValue2CppString(
                         this->isolate,
                         localresult);
@@ -6037,16 +6373,16 @@ bool PixelEngine::RunScriptAndGetVariableJsonText(void* extra,
 	this->isolate->Dispose();
 	return allOk ;
 }
-   
- 
- 
+
+
+
 //2021-1-21
 // 运行脚本不渲染,增加对extraJsonText支持，因此不需要currentDatetime了
-bool PixelEngine::RunScriptForTileWithoutRenderWithExtra(void* extra, 
+bool PixelEngine::RunScriptForTileWithoutRenderWithExtra(void* extra,
     string& scriptContent,
     string& extraJsonText,
-    int z, int y, int x, 
-    PeTileData& tileData , string& logStr) 
+    int z, int y, int x,
+    PeTileData& tileData , string& logStr)
 {
 
 	if(! PixelEngine::quietMode)cout << "in RunScriptForTileWithoutRenderWithExtra init v8" << endl;
@@ -6078,12 +6414,12 @@ bool PixelEngine::RunScriptForTileWithoutRenderWithExtra(void* extra,
 		this->m_context.Reset(this->isolate, context);
 		TryCatch try_catch(this->isolate);
 		string source = scriptContent + "var PEMainResult=main();";
-        
+
         //2021-1-21 使用外部变量
         if( extraJsonText.length()!= 0 ){ //检查外部变量是否为空字符串
            source = string("pe.extraData=JSON.parse('") + extraJsonText + "');"+source ;
         }
-        
+
 		// Compile the source code.
 		v8::Local<v8::Script> script;
 		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
@@ -6154,10 +6490,10 @@ bool PixelEngine::RunScriptForTileWithoutRenderWithExtra(void* extra,
 
 //2021-1-21
 // 运行脚本并渲染,增加对extraJsonText支持，因此不需要currentDatetime了
-bool PixelEngine::RunScriptForTileWithRenderWithExtra(void* extra, string& scriptContent, 
-    PeStyle& inStyle, 
+bool PixelEngine::RunScriptForTileWithRenderWithExtra(void* extra, string& scriptContent,
+    PeStyle& inStyle,
     string& extraJsonText,
-    int z, int y, int x, 
+    int z, int y, int x,
     vector<unsigned char>& retPngBinary, int& pngwid,int& pnghei, string& logStr)
 {
 
@@ -6165,7 +6501,7 @@ bool PixelEngine::RunScriptForTileWithRenderWithExtra(void* extra, string& scrip
 
 	PeTileData retTileData0 ;
 	string retLogText;
-	bool tiledataok = this->RunScriptForTileWithoutRenderWithExtra(extra, scriptContent, 
+	bool tiledataok = this->RunScriptForTileWithoutRenderWithExtra(extra, scriptContent,
         extraJsonText,
         z, y, x,
 		retTileData0, logStr);

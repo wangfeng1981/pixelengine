@@ -8,7 +8,7 @@
 #define PIXEL_ENGINE_H
 
 //must put this before v8.h
-#define V8_COMPRESS_POINTERS  
+#define V8_COMPRESS_POINTERS
 
 #include <v8.h>
 #include <libplatform/libplatform.h>
@@ -24,6 +24,7 @@
 #include "PeStyle.h"
 #include "PeTileData.h"
 #include "wstringutil.h"
+#include "wstringutils.h" //2022-3-6
 #include "wTextfilereader.h"
 #include "wDatasetDatetime.h"
 #include "wAST.h"
@@ -31,7 +32,8 @@
 #include "peroi.h"
 #include <memory>
 #include "ajson5.h"
-#include "esprimacpptool.h"//2022-2-12 
+#include "esprimacpptool.h"//2022-2-12
+#include "whsegtlvobject.h"//2022-3-6
 
 
 
@@ -46,13 +48,15 @@ using pe::PeStyle;
 using pe::PeTileData;
 
 //PixelEngineHelperInterface
+//v1
+//v2 增加获取hseg.tlv数据接口
 struct PixelEngineHelperInterface {
 	//Í¨¹ýpid»ñÈ¡ÍßÆ¬Êý¾Ý
 	//virtual bool getTileDataByPid(string& tbname,string& fami,long dt,int pid,vector<int> bandindices,int z,int y,int x,vector<unsigned char> retTileData,string& errorText);
 
 	//Í¨¹ýpdtname»ñÈ¡ÍßÆ¬Êý¾Ý
 	virtual bool getTileData(int64_t dt, string& dsName, vector<int> bandindices,
-		int z, int y, int x, vector<unsigned char>& retTileData, 
+		int z, int y, int x, vector<unsigned char>& retTileData,
 		int& dataType,
 		int& wid,
 		int& hei,
@@ -60,7 +64,7 @@ struct PixelEngineHelperInterface {
 		string& errorText)=0;
 
 	//»ñÈ¡Ê±¼ä¶ÎÍßÆ¬Êý¾Ý
-	virtual bool getTileDataArray( 
+	virtual bool getTileDataArray(
 		int64_t fromdtInclusive, int64_t todtInclusive,
 		string& dsName, vector<int> bandindices, int z, int y, int x,
 		int filterMonth,int filterDay,int filterHour,int filterMinu,
@@ -82,6 +86,11 @@ struct PixelEngineHelperInterface {
 	//±£´æÍßÆ¬Êý¾Ýµ½´æ´¢Éè±¸(Õâ¸ö½Ó¿Ú²»Ó¦¸Ã·ÅÔÚPixelEngineHelperÀïÃæ 2020-9-24)
 	//virtual bool writeTileData(string& tb,string& fami,int64_t col,int pid,int z,int y,int x, PeTileData& tileData) = 0;
 
+	//2022-3-6 从外部读取roi hseg.tlv数据 isUserRoi=1为用户roi，isUserRoi=0为系统ROI，rid为关系数据库中主键
+	virtual bool getRoiHsegTlv(int isUserRoi,int rid,vector<unsigned char>& retTlvData)=0 ;
+
+	inline static string version(){ return "v2" ; }
+
 };
 
 
@@ -98,7 +107,7 @@ struct PixelEngineHelperInterface {
 // 		vector<unsigned char>&,//return binary
 // 		int& dt,//return datatype
 // 		int& wid,//return width
-// 		int& hei,//return height 
+// 		int& hei,//return height
 // 		int& nbands );//return nbands
 
 //get data from external by z,y,x
@@ -107,13 +116,13 @@ typedef bool (*PixelEngine_GetDataFromExternal2_FunctionPointer)(
 		string ,//name
 		string ,//datetime
 		vector<int>& ,//bands [0,1,2] , not used actually
-		int tilez, 
-		int tiley, 
+		int tilez,
+		int tiley,
 		int tilex,
 		vector<unsigned char>&,//return binary
 		int& dataType,//return datatype
 		int& wid,//return width
-		int& hei,//return height 
+		int& hei,//return height
 		int& nbands);//return nbands
 
 //get data array from external by z,y,x
@@ -123,8 +132,8 @@ typedef bool (*PixelEngine_GetDataFromExternal2Arr_FunctionPointer)(
 		string ,//from datetime
 		string ,//to datetime
 		vector<int>& ,//bands [0,1,2] , not used actually
-		int tilez, 
-		int tiley, 
+		int tilez,
+		int tiley,
 		int tilex,
 		int filterMonth , //-1 ignored , 1-12
 		int filterDay ,   //-1 ignored , 1-31
@@ -135,7 +144,7 @@ typedef bool (*PixelEngine_GetDataFromExternal2Arr_FunctionPointer)(
 		vector<long>& ,//return time array
 		int& dataType,//return datatype
 		int& wid,//return width
-		int& hei,//return height 
+		int& hei,//return height
 		int& nbands,//return nbands
 		int& numds );//return number of dataset.
 
@@ -190,7 +199,7 @@ struct PixelEngineColorRamp
 	unsigned char b[MAXNUM_COLORS] ;
 	unsigned char a[MAXNUM_COLORS] ;
 	std::string labels[MAXNUM_COLORS] ;
-	double Nodata; 
+	double Nodata;
 	unsigned char NodataColor[4] ;
 	std::string NodataLabel ;
 	bool unwrap( Isolate* isolate , Local<v8::Value> obj) ;//no labels
@@ -200,6 +209,8 @@ struct PixelEngineColorRamp
 	int binary_equal(int val) ;
 } ;
 
+//使用PE前，需要调用静态方法 PixelEngine::initV8()
+//然后传入获取外部数据的接口指针 pe.helperPointer = &helperObj ;//helperObj 需要实现 PixelEngineHelperInterface接口并实例化。
 struct PixelEngine
 {
 	static string pejs_version ;//pixelengine.js version.
@@ -226,8 +237,8 @@ struct PixelEngine
     static void GlobalFunc_DatafileCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//2020-10-30
 	static void GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//load a datetime range dataset.
 	static void GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//from exteranl
-	
-	static void GlobalFunc_LocalDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ; 
+
+	static void GlobalFunc_LocalDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 	static void GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 	//2020-9-13
 	static void GlobalFunc_GetStyleCallBack(const v8::FunctionCallbackInfo<v8::Value>& args);
@@ -244,13 +255,18 @@ struct PixelEngine
 	static void GlobalFunc_ColorRampCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 	//dataset.clip()
 	static void GlobalFunc_ClipCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
-    
-    //2020-12-01 convert dataset into other datatype, 
+
+	/// 2022-3-6
+	/// 对应javascript中 dataset.clip2函数
+	/// js中调用示例： dataset.clip2("sys:1",0); dataset.clip2("user:1",0);
+	static void GlobalFunc_Clip2CallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+
+    //2020-12-01 convert dataset into other datatype,
     //in js var newds = dataset.convertToDataType(pe.DataTypeFloat32);
     static void GlobalFunc_ConvertToDataType(const v8::FunctionCallbackInfo<v8::Value>& args);
-    
-    
-    
+
+
+
 
 	//global methods:
 	static void GlobalFunc_Log(const v8::FunctionCallbackInfo<v8::Value>& args) ;
@@ -276,20 +292,20 @@ struct PixelEngine
     static void* V8ObjectGetTypedArrayBackPtr(Isolate* isolate, Local<Object>& obj, Local<Context>& context, string key);
     //获取数组指针，同时获取字节长度
     static void* V8ObjectGetTypedArrayBackPtr2(Isolate* isolate, Local<Object>& obj, Local<Context>& context, string key,size_t& byteLen);
- 
+
 
 
 	//private method
 	static Local<Object> CPP_NewDataset(Isolate* isolate,Local<Context>& context
-		,const int datatype 
-		,const int width 
+		,const int datatype
+		,const int width
 		,const int height
 		,const int nband );
 	static Local<Object> CPP_NewDatasetArray(Isolate* isolate,Local<Context>& context
-		,const int datatype 
-		,const int width 
+		,const int datatype
+		,const int width
 		,const int height
-		,const int nband 
+		,const int nband
 		,const int numds );
 	static string long2str(long val) ;
 
@@ -325,7 +341,7 @@ struct PixelEngine
 
 	/// 检查脚本语法错误
 	string CheckScriptOk(string& scriptSource) ;
-	inline string GetVersion() { return PixelEngine::pejs_version; }
+	inline string GetVersion() { return PixelEngine::pejs_version + " helper:"+PixelEngineHelperInterface::version() ; }
 	//2020-9-13 get style from script 运行脚本以获得渲染方案
 	bool RunToGetStyleFromScript(string& scriptContent, PeStyle& retstyle, string& retLogText);
 	//2020-9-13
@@ -335,36 +351,36 @@ struct PixelEngine
 	// 运行脚本并渲染
 	bool RunScriptForTileWithRender(void* extra, string& scriptContent, PeStyle& inStyle, int64_t currentDatetime,
 		int z, int y, int x, vector<unsigned char>& retPngBinary, int& pngwid,int& pnghei, string& logStr);//
-        
+
     //2021-1-21
 	// 运行脚本不渲染,增加对extraJsonText支持，因此不需要currentDatetime了
 	bool RunScriptForTileWithoutRenderWithExtra(void* extra, string& scriptContent,
         string& extraJsonText,
-		int z, int y, int x, 
+		int z, int y, int x,
         PeTileData& tileData , string& logStr);
 	//2021-1-21
     // 运行脚本并渲染,增加对extraJsonText支持，因此不需要currentDatetime了
-	bool RunScriptForTileWithRenderWithExtra(void* extra, string& scriptContent, PeStyle& inStyle, 
+	bool RunScriptForTileWithRenderWithExtra(void* extra, string& scriptContent, PeStyle& inStyle,
         string& extraJsonText,
-        int z, int y, int x, 
+        int z, int y, int x,
         vector<unsigned char>& retPngBinary, int& pngwid,int& pnghei, string& logStr);//
-        
-        
+
+
 	// 运行脚本获取语法树 2020-9-19
 	bool RunScriptForAST(void* extra, string& scriptContent, string& retJsonStr, string& errorText);
 	//解析Dataset-Datetime 数据集时间日期对
 	bool RunScriptForDatasetDatetimePairs(void* extra,
 		string& scriptContent,vector<wDatasetDatetime>& retDsDtVec,string& errorText);
-        
-        
+
+
     //获取脚本中全部数据集名称 2022-2-12
     //这个函数没有使用v8,不依赖其他初始化代码，直接使用即可，使用esprima.cpp实现AST解析
     //数据集名称包括 pe.Dataset(...) pe.DatasetArray(...) pe.DataFile(...)
     bool GetDatasetNameArray(void* extra,
 		string& scriptContent,
-        vector<string>& retDsNameArr,  
-        string& errorText) ; 
-        
+        vector<string>& retDsNameArr,
+        string& errorText) ;
+
 
     /**
      * @brief 通用执行js脚本程序，通过关键字获取该变量的值，这个值必须是字符串格式的，一般使用json的文本。
@@ -380,9 +396,9 @@ struct PixelEngine
      * @return 返回true、false
      */
     bool RunScriptAndGetVariableJsonText(void* extra,
-                string& scriptContent, 
+                string& scriptContent,
                 int64_t dt,int z,int y,int x,
-                string variableName, 
+                string variableName,
                 string& retJsonText,
                 string& retError) ;
 
@@ -390,35 +406,35 @@ struct PixelEngine
     //mapreduce框架 获取目标zlevel
 	bool MapRedRunScriptForZlevel(void* extra,
 		string& scriptContent,int& retZlevel, string& error);
-    
+
     //mapreduce框架 获取目标extent
 	bool MapRedRunScriptForExtent(void* extra,
 		string& scriptContent,double& left,double& right,double& up,double& down, string& error);
-    
+
     //mapreduce框架 获取目标sharedobject json text
 	bool MapRedRunScriptForSharedObj(void* extra,
 		string& scriptContent,string& retJsonText, string& error);
-        
+
     //mapreduce框架 运行map function
 	bool MapRedRunScriptForMapFunc(void* extra,
 		string& scriptContent,int64_t dt,int z,int y,int x,
         string& sharedObjJsonText, string& retJsonText, string& error);
-        
+
     //mapreduce框架 运行reduce function
 	bool MapRedRunScriptForReduceFunc(void* extra,
 		string& scriptContent,string& sharedObjJsonText,
         string& keystr, string& obj1JsonText
-        , string& obj2JsonText, 
+        , string& obj2JsonText,
         string& retJsonText, string& error);
-        
+
     //mapreduce框架 运行main function
 	bool MapRedRunScriptForMainFunc(void* extra,
 		string& scriptContent,string& sharedObjJsonText,
-        string& objCollectionJsonText , 
+        string& objCollectionJsonText ,
         string& retJsonText, string& error);
-        
 
-        
+
+
 
 
 	///
@@ -427,7 +443,7 @@ struct PixelEngine
 
 
 	//static PixelEngine_GetDataFromExternal_FunctionPointer GetExternalDatasetCallBack;//will deprecated
-	static PixelEngine_GetDataFromExternal2_FunctionPointer GetExternalTileDataCallBack; 
+	static PixelEngine_GetDataFromExternal2_FunctionPointer GetExternalTileDataCallBack;
 	static PixelEngine_GetDataFromExternal2Arr_FunctionPointer GetExternalTileDataArrCallBack ;
 	static PixelEngine_GetColorRampFromExternal_FunctionPointer GetExternalColorRampCallBack ;
 
@@ -464,7 +480,7 @@ struct PixelEngine
 	private:
 		//2020-9-14
 		bool innerRenderTileDataByPeStyle(PeTileData& tileData, PeStyle& style, vector<unsigned char>& retPngBinary, string& error);
-		
+
 		//for exact,discrete,linear
 		template<typename T>
 		bool innerData2RGBAByPeStyle( T* dataPtr, int width, int height, int nbands, PeStyle& style, vector<unsigned char>& retRGBAData,string& retLogStr);
@@ -475,7 +491,7 @@ struct PixelEngine
 		bool innerRenderTileDataWithoutStyle(PeTileData& tileData, vector<unsigned char>& retPngBinary, string& error);
 		template<typename T>
 		void innerData2RGBAWithoutStyle(T* data, int width, int height, int nbands, vector<unsigned char>& retPngBinary );
-		
+
 		bool innerRGBAData2Png(vector<unsigned char>& rgbaData, int width, int height, vector<unsigned char>& retPngBinary);
 		bool innerV8Dataset2TileData(Isolate* isolate, Local<Context>& context, Local<Value>& v8dsValue, PeTileData& retTileData, string& error);
 		template<typename T>
@@ -487,16 +503,21 @@ struct PixelEngine
 		template<typename T>
 		static bool innerCopyRoiData(T* source,T* target,PeRoi& roi,int fillval,
 			int tilez,int tiley,int tilex,int wid,int hei,int nbands) ;
-            
+
+        //拷贝瓦片数据，使用tlv进行roi裁剪 2022-3-6
+        template<typename T>
+		static bool innerCopyRoiData2(T* source,T* target,WHsegTlvObject& roi,int fillval,
+			int tilez,int tiley,int tilex,int wid,int hei,int nbands) ;
+
         //2020-12-01 copy array data from source to target
         static bool innerCopyArrayData(void* srcDataPtr,int srcType,size_t srcElementCount, void* tarDataPtr,int tarType) ;
         template<typename T, typename U>
         static void innerCopyArrayData(T* srcDataPtr,size_t srcElementCount, U* tarDataPtr) ;
-        
-        
-            
-        
-	
+
+
+
+
+
 } ;
 
 

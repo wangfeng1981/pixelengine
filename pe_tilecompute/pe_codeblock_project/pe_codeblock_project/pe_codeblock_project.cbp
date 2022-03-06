@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="pe_codeblock_project" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/pe_codeblock_project" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add directory="../../../pe_tilecompute" />
+					<Add directory="../../v8include" />
+					<Add directory="/usr/local/jdk1.8.0_192/include" />
+					<Add directory="/usr/local/jdk1.8.0_192/include/linux" />
+					<Add directory="../../../../sharedcodes/zonalstat" />
+				</Compiler>
+				<Linker>
+					<Add option="-fPIC" />
+					<Add option="-lv8_monolith" />
+					<Add option="-lpthread" />
+					<Add option="-ldl" />
+					<Add directory="../../v8lib" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/pe_codeblock_project" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fexceptions" />
+		</Compiler>
+		<Unit filename="../../../../sharedcodes/zonalstat/whsegline.h" />
+		<Unit filename="../../../../sharedcodes/zonalstat/whsegtlvobject.cpp" />
+		<Unit filename="../../../../sharedcodes/zonalstat/whsegtlvobject.h" />
+		<Unit filename="../../../../sharedcodes/zonalstat/wlevelhseg.h" />
+		<Unit filename="../../JavaPixelEngineHelperInterface.cpp" />
+		<Unit filename="../../JavaPixelEngineHelperInterface.h" />
+		<Unit filename="../../OfflineTask.cpp" />
+		<Unit filename="../../OfflineTask.h" />
+		<Unit filename="../../PeProductInfo.cpp" />
+		<Unit filename="../../PeProductInfo.h" />
+		<Unit filename="../../PeStyle.cpp" />
+		<Unit filename="../../PeStyle.h" />
+		<Unit filename="../../PeTileData.cpp" />
+		<Unit filename="../../PeTileData.h" />
+		<Unit filename="../../PixelEngine.cpp" />
+		<Unit filename="../../PixelEngine.h" />
+		<Unit filename="../../esprima.cpp" />
+		<Unit filename="../../esprima.h" />
+		<Unit filename="../../lodepng.cpp" />
+		<Unit filename="../../lodepng.h" />
+		<Unit filename="../../pemultipolygon.cpp" />
+		<Unit filename="../../pemultipolygon.h" />
+		<Unit filename="../../peroi.cpp" />
+		<Unit filename="../../peroi.h" />
+		<Unit filename="../../wAST.cpp" />
+		<Unit filename="../../wAST.h" />
+		<Unit filename="../../wTextfilereader.cpp" />
+		<Unit filename="../../wTextfilereader.h" />
+		<Unit filename="../../wjsontool.cpp" />
+		<Unit filename="../../wjsontool.h" />
+		<Unit filename="../../wstringutil.cpp" />
+		<Unit filename="../../wstringutil.h" />
+		<Unit filename="../../wstringutils.cpp" />
+		<Unit filename="../../wstringutils.h" />
+		<Unit filename="main.cpp" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

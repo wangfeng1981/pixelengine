@@ -1,0 +1,5 @@
+1. libHBasePeHelperCppConnector.so （V8计算引擎）, libCppZonalStat.so (Spark区域统计)拷贝到每个节点 /usr/lib目录下面。
+2. peversion (查看libHBasePeHelperCppConnector.so的帮助程序)拷贝到每个节点~目录下。
+3. 拷贝 pe_tilecompute/offtask_monitor 程序到服务器，配置json文件，调用起来。
+
+/home/hadoop/tempdata/pe-tmpdir/offtaskjsondir

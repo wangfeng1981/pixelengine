@@ -1,0 +1,283 @@
+# depslib dependency file v1.0
+1361059403 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/esprima.cpp
+	"esprima.h"
+	<stdarg.h>
+	<sstream>
+	<set>
+	<map>
+
+1361059403 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/esprima.h
+	<assert.h>
+	<string>
+	<vector>
+
+1646534750 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/JavaPixelEngineHelperInterface.cpp
+	"JavaPixelEngineHelperInterface.h"
+
+1646531767 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/JavaPixelEngineHelperInterface.h
+	<jni.h>
+	<string>
+	<vector>
+	<iostream>
+	"PeStyle.h"
+	"PixelEngine.h"
+
+1538834117 /usr/local/jdk1.8.0_192/include/jni.h
+	<stdio.h>
+	<stdarg.h>
+	"jni_md.h"
+
+1538834117 /usr/local/jdk1.8.0_192/include/linux/jni_md.h
+
+1617671096 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PeStyle.h
+	<string>
+	<vector>
+	<sstream>
+	"ajson5.h"
+
+1586374098 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/ajson5.h
+	<stddef.h>
+	<stdint.h>
+	<string.h>
+	<fstream>
+	<string>
+	<Stream.h>
+	<istream>
+	<WString.h>
+	<string>
+	<stdlib.h>
+	<ostream>
+
+1646543223 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.h
+	<v8.h>
+	<libplatform/libplatform.h>
+	<cstdio>
+	<string>
+	<stdexcept>
+	<memory>
+	<iostream>
+	<ctime>
+	<chrono>
+	"lodepng.h"
+	<algorithm>
+	"PeStyle.h"
+	"PeTileData.h"
+	"wstringutil.h"
+	"wstringutils.h"
+	"wTextfilereader.h"
+	"wDatasetDatetime.h"
+	"wAST.h"
+	"pemultipolygon.h"
+	"peroi.h"
+	<memory>
+	"ajson5.h"
+	"esprimacpptool.h"
+	"whsegtlvobject.h"
+
+1601009675 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/v8include/v8.h
+	<stddef.h>
+	<stdint.h>
+	<stdio.h>
+	<memory>
+	<string>
+	<type_traits>
+	<utility>
+	<vector>
+	"v8-internal.h"
+	"v8-version.h"
+	"v8config.h"
+
+1601009675 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/v8include/v8-internal.h
+	<stddef.h>
+	<stdint.h>
+	<string.h>
+	<type_traits>
+	"v8-version.h"
+	"v8config.h"
+
+1601009675 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/v8include/v8-version.h
+
+1601009675 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/v8include/v8config.h
+	<sys/cdefs.h>
+	<TargetConditionals.h>
+	<features.h>
+
+1601009675 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/v8include/libplatform/libplatform.h
+	<memory>
+	"libplatform/libplatform-export.h"
+	"libplatform/v8-tracing.h"
+	"v8-platform.h"
+	"v8config.h"
+
+1601009675 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/v8include/libplatform/libplatform-export.h
+
+1601009675 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/v8include/libplatform/v8-tracing.h
+	<atomic>
+	<fstream>
+	<memory>
+	<unordered_set>
+	<vector>
+	"libplatform/libplatform-export.h"
+	"v8-platform.h"
+
+1601009675 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/v8include/v8-platform.h
+	<stddef.h>
+	<stdint.h>
+	<stdlib.h>
+	<memory>
+	<string>
+	"v8config.h"
+
+1601009658 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/lodepng.h
+	<string.h>
+	<vector>
+	<string>
+	"lodepng.h"
+	<iostream>
+	"lodepng.h"
+
+1601009658 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PeTileData.h
+	<string>
+	<vector>
+
+1601009673 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wstringutil.h
+	<string>
+	<cctype>
+	<sstream>
+
+1601009673 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wTextfilereader.h
+	<string>
+	<fstream>
+	<vector>
+
+1601009675 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wDatasetDatetime.h
+	<string>
+
+1601009675 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wAST.h
+	"ajson5.h"
+	<string>
+	<vector>
+	<iostream>
+	"wDatasetDatetime.h"
+
+1602822216 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/pemultipolygon.h
+	<vector>
+
+1602842934 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/peroi.h
+	<vector>
+	<string>
+	"pemultipolygon.h"
+	<iostream>
+	<algorithm>
+
+1644671683 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/esprimacpptool.h
+	"esprimacpptool.h"
+	"esprima.h"
+	<sys/time.h>
+	<iostream>
+	<vector>
+	<string>
+
+1601009658 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/lodepng.cpp
+	"lodepng.h"
+	<limits.h>
+	<stdio.h>
+	<stdlib.h>
+
+1601009673 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/OfflineTask.cpp
+	"OfflineTask.h"
+
+1601291166 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/OfflineTask.h
+	<cstdint>
+	<string>
+	<fstream>
+	"ajson5.h"
+	"wstringutil.h"
+
+1602749927 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/pemultipolygon.cpp
+	"pemultipolygon.h"
+
+1601009658 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PeProductInfo.cpp
+	"PeProductInfo.h"
+	<sstream>
+	<fstream>
+
+1601107864 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PeProductInfo.h
+	<string>
+	<vector>
+	"ajson5.h"
+	"compress.h"
+
+1601009658 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/compress.h
+	"zlib.h"
+
+1602840537 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/peroi.cpp
+	"peroi.h"
+
+1617671214 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PeStyle.cpp
+	"PeStyle.h"
+	<exception>
+	<iostream>
+	"wjsontool.h"
+
+1617673835 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wjsontool.h
+	"ajson5.h"
+	<string>
+
+1601009658 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PeTileData.cpp
+	"PeTileData.h"
+
+1646568319 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.cpp
+	"PixelEngine.h"
+	<time.h>
+	"esprimacpptool.h"
+
+1604404669 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wAST.cpp
+	"wAST.h"
+
+1617673883 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wjsontool.cpp
+	"wjsontool.h"
+
+1601009673 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wstringutil.cpp
+	"wstringutil.h"
+
+1601009673 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wTextfilereader.cpp
+	"wTextfilereader.h"
+
+1646570122 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/pe_codeblock_project/pe_codeblock_project/main.cpp
+	<iostream>
+	"../../PixelEngine.h"
+	"../../JavaPixelEngineHelperInterface.h"
+	"../../../../sharedcodes/zonalstat/whsegtlvobject.h"
+
+1617798476 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wstringutils.h
+	<string>
+	<vector>
+	<iostream>
+
+1617798588 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wstringutils.cpp
+	"wstringutils.h"
+
+1646571293 source:/home/hadoop/IdeaProjects/sharedcodes/zonalstat/whsegtlvobject.cpp
+	"whsegtlvobject.h"
+	<stdio.h>
+	<string.h>
+	<fstream>
+
+1646539278 /home/hadoop/IdeaProjects/sharedcodes/zonalstat/whsegtlvobject.h
+	<vector>
+	"whsegline.h"
+	<string>
+	<cmath>
+	"wlevelhseg.h"
+
+1646450064 /home/hadoop/IdeaProjects/sharedcodes/zonalstat/whsegline.h
+	<vector>
+
+1646458234 /home/hadoop/IdeaProjects/sharedcodes/zonalstat/wlevelhseg.h
+	<cmath>
+	<iostream>
+	<vector>
+	"whsegline.h"
+	<algorithm>
+
