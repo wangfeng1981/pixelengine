@@ -35,7 +35,10 @@ using namespace ArduinoJson;
 //string global_connector_version_str = "connector_version:1.0.0 2022-02-12" ;
 
 //2022-3-6 rebuild with new core 
-string global_connector_version_str = "connector_version:1.0.1 2022-03-06" ;
+//string global_connector_version_str = "connector_version:1.0.1 2022-03-06" ;
+
+//2022-3-22 增加1个接口，执行瓦片计算并获取执行后的 (dsname,dt)，roi2，log 
+string global_connector_version_str = "connector_version:1.1.0 2022-03-22" ;
 
 //外部调用，获得connector和core版本信息
 extern "C" void HBasePeHelperCppConnector_GetVersion(){
@@ -422,6 +425,101 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 }
 
 
+
+/* 2022-3-22 增加返回dsname,dt roi2 和 log信息到 TileComputeResultWithRunAfterInfo 里面
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RunScriptForTileWithoutRenderWithExtraWithRunAfterInfo
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III)Lcom/pixelengine/TileComputeResultWithRunAfterInfo;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRenderWithExtraWithRunAfterInfo
+  (
+  	JNIEnv * env, jobject object,
+  	jstring javaPEHelperClassName, 
+  	jstring scriptContent, 
+    jstring extraJsonText, 
+  	jint z, jint y, jint x
+  	)
+{
+	printf("in Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRenderWithExtraWithRunAfterInfo()\n") ;
+	jclass	javaTileComputeResultClass = (env)->FindClass("com/pixelengine/TileComputeResultWithRunAfterInfo");
+	if( javaTileComputeResultClass == NULL )
+	{
+		printf("Error : not find class of com/pixelengine/TileComputeResultWithRunAfterInfo.");
+		return NULL ;
+	}
+	jobject	javaResult = env->AllocObject(javaTileComputeResultClass);
+
+	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ; 
+
+	PixelEngine::initV8() ;
+	PixelEngine pe ;
+	pe.helperPointer = &helper ;
+
+	string cscript = JavaPixelEngineHelperInterface::jstring2cstring(env,scriptContent) ;
+  string cExJsonText = JavaPixelEngineHelperInterface::jstring2cstring(env,extraJsonText) ;
+    
+	PeTileData retTileData;
+	string logStr;
+
+	bool runok = pe.RunScriptForTileWithoutRenderWithExtra(
+        nullptr,
+		cscript , 
+        cExJsonText,
+		z , y , x , 
+		retTileData ,
+		logStr ) ;
+
+	if( runok == false ){
+		cout<<"run script failed : "<<logStr<<endl;
+
+		helper.setJavaObjectIntField(javaResult,"status",1) ;//status=1 bad.
+		helper.setJavaObjectStringField(javaResult,"log",logStr.c_str()) ;
+
+	}else{
+		cout<<"run script ok."<<endl ;
+		helper.setJavaObjectIntField(javaResult,"status",0) ;//status=0 ok.
+		helper.setJavaObjectIntField(javaResult,"outType", 0) ;//0-dataset, 1-png
+		helper.setJavaObjectIntField(javaResult,"dataType", retTileData.dataType ) ;
+		helper.setJavaObjectIntField(javaResult,"width",  retTileData.width ) ;
+		helper.setJavaObjectIntField(javaResult,"height", retTileData.height ) ;
+		helper.setJavaObjectIntField(javaResult,"nbands", retTileData.nbands ) ;
+		helper.setJavaObjectByteArrField(javaResult,"binaryData", retTileData.tiledata ) ;
+		helper.setJavaObjectIntField(javaResult,"z", z) ;
+		helper.setJavaObjectIntField(javaResult,"y", y) ;
+		helper.setJavaObjectIntField(javaResult,"x", x) ;
+		//2022-3-22
+		helper.setJavaObjectStringField(javaResult,"log", pe.GetPeLogs().c_str() ) ;
+		vector<string> dsnamedtArr = pe.GetDsnameDtVec() ;
+		vector<string> roi2Arr = pe.GetRoi2Vec() ;
+		string dsdtstr , roi2str ;
+		for(int iii = 0 ; iii < dsnamedtArr.size() ; ++ iii ) dsdtstr=dsdtstr+dsnamedtArr[iii]+";" ;
+		for(int iii = 0 ; iii < roi2Arr.size()     ; ++ iii ) roi2str=roi2str+roi2Arr[iii] + ";" ;
+		helper.setJavaObjectStringField(javaResult,"dsnameDtArrStr", dsdtstr.c_str() ) ;
+		helper.setJavaObjectStringField(javaResult,"roi2ArrStr",     roi2str.c_str() ) ;
+
+	}
+	return javaResult ;	
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    RunScriptForTileWithRenderWithExtra
@@ -522,6 +620,7 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_CheckSc
 		return JavaPixelEngineHelperInterface::cstring2jstring( env , errorinfo.c_str() ) ;
 	}
 }
+
 
 
 

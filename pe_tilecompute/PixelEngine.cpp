@@ -61,7 +61,12 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 //2022-3-6
 //1. 增加dataset.clip2()方法 支持使用HSeg.Tlv进行数据裁剪
 //2. WHsegTlvObject.isTileOverlay bugfixed
-string PixelEngine::pejs_version = string("2.5.1.2 2022-03-06");
+//string PixelEngine::pejs_version = string("2.5.1.2 2022-03-06");
+
+//2022-3-22
+//1. 给PixelEngine对象增加 m_dsnameDtVec, m_roi2Vec,m_logVec 记录脚本运行过程中的数据集名称时间，roi2的ID，日志信息
+//2. 暂时只考虑Dataset的时间，DatasetArray的时间区间暂时不考虑，还没想好怎么重构
+string PixelEngine::pejs_version = string("2.5.2.0 2022-03-22");
 
 
 
@@ -982,7 +987,7 @@ vector<int> PixelEngine::ColorGrays{
 
 void PixelEngine::log(string& str)
 {
-	if( this->pe_logs.length() > 1024 )
+	if( this->pe_logs.length() > 2048 )
 	{
 		if(! PixelEngine::quietMode)cout<<"log size exceed 1024."<<endl ;
 		this->pe_logs += string("...\n") ;
@@ -2311,13 +2316,18 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 		tilex = (int) (args[5]->ToNumber(context).ToLocalChecked())->Value();
 	}
 
+	{//记录访问过的dsname 2022-3-22
+        string dsnamedt = name +','+wStringUtils::long2str(datetime) ;
+        thisPePtr->m_dsnameDtVec.push_back(dsnamedt) ;
+	}
+
 	if( datetime == PE_CURRENTDATETIME )
-	{
+	{//2022-3-22 这里是老的设计，后面可能会修改
 		//datetime = PixelEngine::long2str(thisPePtr->currentDateTime) ;
 		datetime = thisPePtr->currentDateTime ;
 		if(! PixelEngine::quietMode)cout<<"use current "<<datetime<<endl ;
 	}else if( datetime < 0 )
-	{
+	{//2022-3-22 datetime 这里小于0的情况是老的设计，目前可能要重新设计，所以后面这个地方会修改
 		datetime = PixelEngine::RelativeDatetimeConvert(thisPePtr->currentDateTime , datetime );
 		if(! PixelEngine::quietMode)cout<<"use passed "<<datetime<<endl ;
 	}
@@ -5462,6 +5472,7 @@ void PixelEngine::GlobalFunc_Clip2CallBack(const v8::FunctionCallbackInfo<v8::Va
 
 	v8::String::Utf8Value roiIdU8Value(isolate, roiIdValue);
     string csRoiId(*roiIdU8Value) ;
+    thisPePtr->m_roi2Vec.push_back(csRoiId) ;
     //检查roiid格式是否正确
     vector<string> roiIdArr = wStringUtils::splitString(csRoiId,":");
     if( roiIdArr.size()!=2 ){

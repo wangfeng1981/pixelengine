@@ -23,8 +23,8 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ParseSc
  */
 JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_GetDatasetNameArray
   (JNIEnv *, jobject, jstring, jstring);
-  
-  
+
+
 
 /*
  * Class:     com_pixelengine_HBasePeHelperCppConnector
@@ -49,6 +49,20 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
  */
 JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRenderWithExtra
   (JNIEnv *, jobject, jstring, jstring, jstring, jint, jint, jint);
+
+
+
+/* 2022-3-22 增加返回dsname,dt roi2 和 log信息到 TileComputeResultWithRunAfterInfo 里面
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RunScriptForTileWithoutRenderWithExtraWithRunAfterInfo
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III)Lcom/pixelengine/TileComputeResultWithRunAfterInfo;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRenderWithExtraWithRunAfterInfo
+  (JNIEnv *, jobject, jstring, jstring, jstring, jint, jint, jint);
+
+
+
+
 
 /*
  * Class:     com_pixelengine_HBasePeHelperCppConnector

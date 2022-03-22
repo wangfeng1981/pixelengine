@@ -2,6 +2,7 @@
 //add Custom ColorRamp 2020-6-20
 //version 2.0
 // return ds , if ds has 3 bands use rgb, else use first band render out[0,255];
+//update 2022-3-22 15:45
 
 #ifndef PIXEL_ENGINE_H
 
@@ -320,8 +321,16 @@ struct PixelEngine
 	void* extraPointer ;//do not release.
 	string pe_logs ;//max length 1k bytes.
 	PixelEngineMapReduceContainer mapredContainer ;//not used yet,20200722
-	vector<PeRoi> roiVector ;
+	vector<PeRoi> roiVector ;//不再维护，后续使用roi2.hseg.tlv 2022-3-22
 
+public:
+    //2022-3-22 add
+	vector<string> m_dsnameDtVec ;//2022-3-22 记录脚本中访问的数据集名称与时间，名称与时间使用逗号分割，数据对使用分号分割
+	vector<string> m_roi2Vec ;//2022-3-22 记录脚本中访问的ROI2的ID，类似sys:1,user:2
+	inline vector<string> GetDsnameDtVec() { return m_dsnameDtVec; }
+	inline vector<string> GetRoi2Vec() { return m_roi2Vec; }
+	inline string GetPeLogs() { return pe_logs ; }
+    //2022-3-22 end
 
 	Global<Value> GlobalFunc_ForEachPixelCallBack ;//not static, need Reset
 	Global<Value> GlobalFunc_GetPixelCallBack ;//not static , need reset
@@ -371,6 +380,8 @@ struct PixelEngine
 	//解析Dataset-Datetime 数据集时间日期对
 	bool RunScriptForDatasetDatetimePairs(void* extra,
 		string& scriptContent,vector<wDatasetDatetime>& retDsDtVec,string& errorText);
+
+    //2022-3-22 获取脚本运行后输出的有用信息，比如dsname，dt，roi2，log等信息
 
 
     //获取脚本中全部数据集名称 2022-2-12
