@@ -515,11 +515,15 @@ public:
 		static bool innerCopyRoiData(T* source,T* target,PeRoi& roi,int fillval,
 			int tilez,int tiley,int tilex,int wid,int hei,int nbands) ;
 
+
+        public:
         //拷贝瓦片数据，使用tlv进行roi裁剪 2022-3-6
+        //use for public method 2022-3-23
         template<typename T>
 		static bool innerCopyRoiData2(T* source,T* target,WHsegTlvObject& roi,int fillval,
 			int tilez,int tiley,int tilex,int wid,int hei,int nbands) ;
 
+        private:
         //2020-12-01 copy array data from source to target
         static bool innerCopyArrayData(void* srcDataPtr,int srcType,size_t srcElementCount, void* tarDataPtr,int tarType) ;
         template<typename T, typename U>

@@ -66,9 +66,11 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 //2022-3-22
 //1. 给PixelEngine对象增加 m_dsnameDtVec, m_roi2Vec,m_logVec 记录脚本运行过程中的数据集名称时间，roi2的ID，日志信息
 //2. 暂时只考虑Dataset的时间，DatasetArray的时间区间暂时不考虑，还没想好怎么重构
-string PixelEngine::pejs_version = string("2.5.2.0 2022-03-22");
+//string PixelEngine::pejs_version = string("2.5.2.0 2022-03-22");
 
-
+//2022-3-23
+//1. change innerCopyRoiData2 to public method
+string PixelEngine::pejs_version = string("2.6.2.0 2022-03-23");
 
 
 //// mapreduce not used yet.

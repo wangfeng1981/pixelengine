@@ -1,5 +1,7 @@
 #ifndef JAVAPIXELENGINEHELPERINTERFACE_H
 #define JAVAPIXELENGINEHELPERINTERFACE_H
+//2022-3-23
+
 #include <jni.h>
 #include <string>
 #include <vector>
@@ -56,7 +58,7 @@ public:
 	virtual bool getRoiHsegTlv(int isUserRoi,int rid,vector<unsigned char>& retTlvData) ;
 
 
-private:
+public:
 	bool getJavaObjectIntField(jobject obj,const char* fieldname,int& retval) ;
 	bool getJavaObjectLongArrField(jobject obj,const char* fieldname,vector<int64_t>& retvec) ;
 	bool getJavaObjectByteArrOfArrField(jobject obj,const char* fieldname,vector<vector<unsigned char> >& retvecOfVec) ;

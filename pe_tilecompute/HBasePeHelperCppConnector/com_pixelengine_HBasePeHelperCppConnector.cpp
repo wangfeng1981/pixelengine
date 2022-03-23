@@ -14,6 +14,8 @@
 #include "spdlog/sinks/basic_file_sink.h"
 #include "../ajson5.h"
 #include "PeStyle.h"
+#include <sstream>
+#include "whsegtlvobject.h"//2022-3-23
 
 using namespace std;
 using namespace ArduinoJson;
@@ -38,7 +40,13 @@ using namespace ArduinoJson;
 //string global_connector_version_str = "connector_version:1.0.1 2022-03-06" ;
 
 //2022-3-22 增加1个接口，执行瓦片计算并获取执行后的 (dsname,dt)，roi2，log 
-string global_connector_version_str = "connector_version:1.1.0 2022-03-22" ;
+//string global_connector_version_str = "connector_version:1.1.0 2022-03-22" ;
+
+//2022-3-23 增加1个接口，计算hsegtlv的四角范围
+//string global_connector_version_str = "connector_version:1.2.0 2022-03-23" ;
+
+//2022-3-23 增加1个接口，直接使用hsegtlv裁剪TileComputeResult
+string global_connector_version_str = "connector_version:1.3.0 2022-03-23" ;
 
 //外部调用，获得connector和core版本信息
 extern "C" void HBasePeHelperCppConnector_GetVersion(){
@@ -621,6 +629,192 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_CheckSc
 	}
 }
 
+
+
+
+/* 2022-3-23 工具方法计算hsegtlv 的level0 的四至范围，注意该范围可能略小于实际范围，可以通过向外推一个像素即可肯定完全包括。
+ * 成功返回四至范围数字组成的字符串，由逗号分割，顺序如后 left,right,top,bottom
+ * 失败返回空字符串 
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    UtilsComputeHsegTlvExtent
+ * Signature: ([B)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_UtilsComputeHsegTlvExtent
+  (JNIEnv * env , jobject object, jbyteArray hsegtlvdata)
+{
+	jbyte* barr = (jbyte*)env->GetByteArrayElements(hsegtlvdata,0) ;
+	jsize  blen = env->GetArrayLength(hsegtlvdata) ;
+	//copy data
+	vector<unsigned char> binarydata(blen);
+	memcpy( binarydata.data() , barr , blen ) ;
+	env->ReleaseByteArrayElements(hsegtlvdata,barr,0) ;
+
+	string error ;
+	//WHsegTlvObject 
+	WHsegTlvObject tlv ;
+	bool ok1 = tlv.readFromBinaryData(binarydata,error) ;
+	if( ok1==false ){
+		cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_UtilsComputeHsegTlvExtent bad:"<<error<<endl ;
+		return JavaPixelEngineHelperInterface::cstring2jstring( env , "" ) ;
+	}else{
+		double left(0),right(0),top(0),bottom(0) ;
+		bool ok2 = tlv.computeExtent( left, right, top, bottom) ;
+		if( ok2==false ){
+			cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_UtilsComputeHsegTlvExtent bad:computeExtent failed."<<endl ;
+			return JavaPixelEngineHelperInterface::cstring2jstring( env , "" ) ;
+		}else{
+			stringstream ss ;
+			ss<<left<<","<<right<<","<<top<<","<<bottom ;
+			return JavaPixelEngineHelperInterface::cstring2jstring( env , ss.str().c_str() ) ;
+		}
+	}
+}
+
+
+/* 2022-3-23 TileComputeResult 直接使用hseg.tlv裁剪接口，不经过V8和js代码
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    ClipTileComputeResultByHsegTlv
+ * Signature: (Lcom/pixelengine/TileComputeResult;[BD)Lcom/pixelengine/TileComputeResult;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTileComputeResultByHsegTlv
+  (JNIEnv * env , jobject object,
+  	jstring javaPEHelperClassName,  
+  	jobject oldTileComputeResult, 
+  	jbyteArray hsegtlvdata,
+  	jdouble filldata )
+{
+	jclass	javaTileComputeResultClass = (env)->FindClass("com/pixelengine/TileComputeResult");
+	if( javaTileComputeResultClass == NULL )
+	{
+		printf("Error : not find class of com/pixelengine/TileComputeResult.");
+		return NULL ;
+	}
+	
+	//WHsegTlvObject 
+	WHsegTlvObject tlv ;
+	{
+		vector<unsigned char> tlvdata ;
+		jbyte* tlvbytedata1 = (jbyte*)env->GetByteArrayElements(hsegtlvdata,0) ;
+		jsize  tlvbytelen = env->GetArrayLength(hsegtlvdata) ;
+		//copy data
+		tlvdata.resize(tlvbytelen) ;
+		memcpy( tlvdata.data() , tlvbytedata1 , tlvbytelen ) ;
+		env->ReleaseByteArrayElements(hsegtlvdata,tlvbytedata1,0) ;
+		string error ;
+		bool ok1 = tlv.readFromBinaryData(tlvdata,error) ;
+		if( ok1==false ){
+			cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_ClipTileComputeResultByHsegTlv bad tlv:"<<error<<endl ;
+			return NULL ;
+		}
+	}
+
+
+	double filldata1 = filldata ;
+
+	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ; 
+
+	int dataType = 0 ;
+	int outType = 0 ;
+	int nbands = 0 ;
+	int status= 0 ;
+	vector<unsigned char> olddata , newdata ;
+	int tilez,tiley,tilex ;
+
+	helper.getJavaObjectIntField(oldTileComputeResult,"status",status) ;
+	helper.getJavaObjectIntField(oldTileComputeResult,"outType",outType) ;
+	helper.getJavaObjectIntField(oldTileComputeResult,"dataType",dataType) ;
+	helper.getJavaObjectIntField(oldTileComputeResult,"nbands",nbands) ;
+	helper.getJavaObjectIntField(oldTileComputeResult,"z",tilez) ;
+	helper.getJavaObjectIntField(oldTileComputeResult,"y",tiley) ;
+	helper.getJavaObjectIntField(oldTileComputeResult,"x",tilex) ;
+	if( status==0 ){
+		helper.getJavaObjectByteArrField(oldTileComputeResult,"binaryData",olddata) ;
+		newdata.resize(olddata.size()) ;
+		//clip2
+		bool clipok = false ;
+		PixelEngine pe ;
+		if( dataType==1 ){
+			clipok = pe.innerCopyRoiData2(
+				(unsigned char*)olddata.data() ,
+				(unsigned char*)newdata.data(),
+				tlv,
+				(int)filldata1,
+				tilez, tiley, tilex, 
+				256, 256 , nbands ) ;
+		}else if( dataType==2 ){
+			clipok = pe.innerCopyRoiData2(
+				(unsigned short*)olddata.data() ,
+				(unsigned short*)newdata.data(),
+				tlv,
+				(int)filldata1,
+				tilez, tiley, tilex, 
+				256, 256 , nbands ) ;
+		}else if( dataType==3 ){
+			clipok = pe.innerCopyRoiData2(
+				( short*)olddata.data() ,
+				( short*)newdata.data(),
+				tlv,
+				(int)filldata1,
+				tilez, tiley, tilex, 
+				256, 256 , nbands ) ;
+		}else if( dataType==4 ){
+			clipok = pe.innerCopyRoiData2(
+				(unsigned int*)olddata.data() ,
+				(unsigned int*)newdata.data(),
+				tlv,
+				(int)filldata1,
+				tilez, tiley, tilex, 
+				256, 256 , nbands ) ;
+		}else if( dataType==5 ){
+			clipok = pe.innerCopyRoiData2(
+				(int*)olddata.data() ,
+				(int*)newdata.data(),
+				tlv,
+				(int)filldata1,
+				tilez, tiley, tilex, 
+				256, 256 , nbands ) ;
+		}else if( dataType==6 ){
+			clipok = pe.innerCopyRoiData2(
+				(float*)olddata.data() ,
+				(float*)newdata.data(),
+				tlv,
+				(int)filldata1,
+				tilez, tiley, tilex, 
+				256, 256 , nbands ) ;
+		}else if( dataType==7 ){
+			clipok = pe.innerCopyRoiData2(
+				(double*)olddata.data() ,
+				(double*)newdata.data(),
+				tlv,
+				(int)filldata1,
+				tilez, tiley, tilex, 
+				256, 256 , nbands ) ;
+		}
+		if( clipok==false ){
+			cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_ClipTileComputeResultByHsegTlv bad clip."<<endl ;
+			return NULL ;
+		}
+	}
+
+
+	jobject	newResult = env->AllocObject(javaTileComputeResultClass);
+	helper.setJavaObjectIntField(newResult,"status",status) ;//status=0 ok.
+	helper.setJavaObjectIntField(newResult,"outType", outType) ;//0-dataset, 1-png
+	helper.setJavaObjectIntField(newResult,"dataType", dataType) ;//useful ?
+	helper.setJavaObjectIntField(newResult,"width",  256) ;
+	helper.setJavaObjectIntField(newResult,"height", 256) ;
+	helper.setJavaObjectIntField(newResult,"nbands", nbands) ;//useful ?
+	helper.setJavaObjectIntField(newResult,"z", tilez) ;
+	helper.setJavaObjectIntField(newResult,"y", tiley) ;
+	helper.setJavaObjectIntField(newResult,"x", tilex) ;
+	if( status==0 ){
+		helper.setJavaObjectByteArrField(newResult,"binaryData", newdata) ;
+	}
+
+	return newResult ;
+
+}
 
 
 

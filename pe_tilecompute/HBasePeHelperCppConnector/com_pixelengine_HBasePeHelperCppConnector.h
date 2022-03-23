@@ -64,6 +64,8 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 
 
 
+
+
 /*
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    RunScriptForTileWithRenderWithExtra
@@ -95,6 +97,27 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_GetVers
  */
 JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunToGetStyleFromScript
   (JNIEnv *, jobject, jstring, jstring);
+
+
+/* 2022-3-23 工具方法计算hsegtlv 的level0 的四至范围，注意该范围可能略小于实际范围，可以通过向外推一个像素即可肯定完全包括。
+ * 成功返回四至范围数字组成的字符串，由逗号分割，顺序如后 left,right,top,bottom
+ * 失败返回空字符串 
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    UtilsComputeHsegTlvExtent
+ * Signature: ([B)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_UtilsComputeHsegTlvExtent
+  (JNIEnv *, jobject, jbyteArray);
+
+
+/* 2022-3-23 TileComputeResult 直接使用hseg.tlv裁剪接口，不经过V8和js代码
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    ClipTileComputeResultByHsegTlv
+ * Signature: (Lcom/pixelengine/TileComputeResult;[BD)Lcom/pixelengine/TileComputeResult;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTileComputeResultByHsegTlv
+  (JNIEnv *, jobject, jstring , jobject, jbyteArray, jdouble filldata);
+
 
 #ifdef __cplusplus
 }
