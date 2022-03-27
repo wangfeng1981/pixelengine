@@ -119,7 +119,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTil
   (JNIEnv *, jobject, jstring , jobject, jbyteArray, jdouble filldata);
 
 
-/* 2022-3-26 直接对瓦片结果进行统计，不适用v8
+/* 2022-3-26 直接对瓦片结果进行统计，不用v8
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    ComputeStatisticTileComputeResultByHsegTlv
  * Signature: (Ljava/lang/String;Lcom/pixelengine/TileComputeResult;[BDDD)Lcom/pixelengine/JStatisticData;

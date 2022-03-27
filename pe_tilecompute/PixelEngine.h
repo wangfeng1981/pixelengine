@@ -37,7 +37,10 @@
 #include "whsegtlvobject.h"//2022-3-6
 #include "wstatisticdata.h"//2022-3-26
 
-
+//2022-3-26
+#include "wcomputelonlatarea.h"
+#define W_COMPUTE_LON_LAT_AREA_IMPLEMENT
+#include "wcomputelonlatarea.h"
 
 
 using namespace v8;
@@ -535,20 +538,124 @@ private:
 
         //2022-3-26
 public:
-        /// 使用 hseg.tlv 数据对瓦片数据进行区域统计 2022-3-26
-        /// 统计过程中首先判断filldata，如果是filldata那么无论是否在统计区间内都不参与统计
-        /// @retval 统计过程没有异常返回true，反之返回false，注意即使一个像素没有落在roi中只要没有异常错误仍然返回true，统计结果都是0.
-        template<typename T>
-		static bool computeStatistic(
-            T* source,            //瓦片数据二进制格式强制转换制定类型
-            WHsegTlvObject& roi , //hsegtlv格式roi对象
-            double fillval ,      //数据的填充值
-			int tilez,int tiley,int tilex, //瓦片坐标
-			int wid, int hei , int nbands, //瓦片宽，高，和波段数
-			double valMinInc, //统计区间最小值，包含
-			double valMaxInc, //统计区间最大值，包含
-			vector<WStatisticData>& retBandStatDataVec //返回统计结果，要求是个空的vec
-			) ;
+//        /// 使用 hseg.tlv 数据对瓦片数据进行区域统计 2022-3-26
+//        /// 统计过程中首先判断filldata，如果是filldata那么无论是否在统计区间内都不参与统计
+//        /// @retval 统计过程没有异常返回true，反之返回false，注意即使一个像素没有落在roi中只要没有异常错误仍然返回true，统计结果都是0.
+//        template<typename T>
+//		static bool computeStatistic(
+//            T* source,            //瓦片数据二进制格式强制转换制定类型
+//            WHsegTlvObject& roi , //hsegtlv格式roi对象
+//            double fillval ,      //数据的填充值
+//			int tilez,int tiley,int tilex, //瓦片坐标
+//			int wid, int hei , int nbands, //瓦片宽，高，和波段数
+//			double valMinInc, //统计区间最小值，包含
+//			double valMaxInc, //统计区间最大值，包含
+//			vector<WStatisticData>& retBandStatDataVec //返回统计结果，要求是个空的vec
+//			) ;
+
+    //使用 hseg.tlv 数据对瓦片数据进行区域统计 2022-3-26
+    /// @retval 统计过程没有异常返回true，反之返回false，注意即使一个像素没有落在roi中只要没有异常错误仍然返回true，统计结果都是0.
+    template<typename T>
+    static bool computeStatistic(
+        T* source,            //瓦片数据二进制格式强制转换制定类型
+        WHsegTlvObject& roi , //hsegtlv格式roi对象
+        double fillval ,      //数据的填充值
+        int tilez,int tiley,int tilex, //瓦片坐标
+        int wid, int hei , int nbands, //瓦片宽，高，和波段数
+        double valMinInc, //统计区间最小值，包含
+        double valMaxInc, //统计区间最大值，包含
+        vector<WStatisticData>& retBandStatDataVec //返回统计结果，要求是个空的vec
+        )
+    {
+        retBandStatDataVec.resize(nbands) ;
+        for(int ib = 0;ib<nbands;++ib)
+        {
+            retBandStatDataVec[ib].validMin = valMaxInc;
+            retBandStatDataVec[ib].validMax = valMinInc;
+        }
+
+        int bandsize = wid*hei;
+        int tilefullx0 = tilex * wid;
+        int tilefullx1 = tilefullx0 + wid;
+
+        int tilefully0 = tiley * hei  ;    //inclusive
+        int tilefully1 = tilefully0 + hei ;//exclusive
+
+        if( roi.allLevelHsegs.size() == 0 ) return false ;//bad roi.hseg.tlv
+        int iroilevel = 0 ;
+        double hseg_scale_to_tilez = 1.0 ;
+        if( tilez < roi.allLevelHsegs.size() ){
+            iroilevel = tilez ;
+        }else{
+            iroilevel = roi.allLevelHsegs.size() - 1 ;
+            for(int izzz = iroilevel ; izzz < tilez ; ++ izzz ){
+                hseg_scale_to_tilez *= 2.0 ;
+            }
+        }
+
+        wLevelHseg& useRoilevel = roi.allLevelHsegs[iroilevel] ;
+
+        if( useRoilevel.hsegs.size()>0 ){
+            int nseg = useRoilevel.hsegs.size();
+            int roi_top_y_in_full = useRoilevel.hsegs[0].y     * hseg_scale_to_tilez;
+            int roi_btm_y_in_full = useRoilevel.hsegs.back().y * hseg_scale_to_tilez;
+            if( roi_top_y_in_full >= tilefully1 ){
+                //outside
+            }else if( roi_btm_y_in_full < tilefully0 ){
+                //outside
+            }
+            else
+            {
+                WComputeLonLatArea wclla ;
+                for(int iseg=0 ; iseg<nseg ; ++iseg ){
+                    int seg_y0_in_full = useRoilevel.hsegs[iseg].y * hseg_scale_to_tilez ;// include
+                    int seg_y1_in_full = seg_y0_in_full            + hseg_scale_to_tilez ;//not include
+                    if( tilefully0 >= seg_y1_in_full ){
+                        //go next seg
+                    }else if( tilefully1 <= seg_y0_in_full ){
+                        //go out of this tile, just go out of seg loop
+                        break ;
+                    }else{
+                        //seg inside tile
+                        for(int curr_y_in_full = seg_y0_in_full ; curr_y_in_full < seg_y1_in_full ; ++ curr_y_in_full )
+                        {
+                            int y_in_tile = curr_y_in_full - tilefully0 ;
+                            if( y_in_tile>=0 && y_in_tile<hei )
+                            {
+                                //y inside
+                                int seg_x0_in_tile = std::max(0  ,  (int)( useRoilevel.hsegs[iseg].x0    * hseg_scale_to_tilez - tilefullx0) ) ;// 260,261, -10 , -5
+                                int seg_x1_in_tile = std::min(wid,  (int)((useRoilevel.hsegs[iseg].x1+1) * hseg_scale_to_tilez - tilefullx0) ) ;//not include
+                                for(int x_in_tile = seg_x0_in_tile ; x_in_tile < seg_x1_in_tile ; ++ x_in_tile )
+                                {
+                                    //
+                                    int it_inside_tileband = y_in_tile*wid + x_in_tile ;
+                                    //x inside
+                                    for(int ib=0;ib<nbands;++ib){
+                                        int insideTileit=ib*bandsize + it_inside_tileband ;
+                                        double val = source[insideTileit];
+                                        ++ retBandStatDataVec[ib].allCnt;
+                                        if( val==fillval ){
+                                            ++ retBandStatDataVec[ib].fillCnt;
+                                        }else if( val >= valMinInc && val<= valMaxInc ) {
+                                            ++ retBandStatDataVec[ib].validCnt;
+                                            retBandStatDataVec[ib].sum+=val ;
+                                            retBandStatDataVec[ib].sq_sum+=val*val ;
+                                            retBandStatDataVec[ib].validMin=std::min(val,retBandStatDataVec[ib].validMin);
+                                            retBandStatDataVec[ib].validMax=std::max(val,retBandStatDataVec[ib].validMax);
+                                            retBandStatDataVec[ib].areakm2+=wclla.computeArea(tilez,tiley,y_in_tile) ;//bugfixed
+                                        }
+
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return true ;
+    }
+
 
 
 } ;

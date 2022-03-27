@@ -18,7 +18,7 @@ using namespace std;
 void unit_test_JavaPixelEngineHelperInterface_getRoiHsegTlv() ;
 
 void unit_test_isTileOverlay() ;
-
+void unit_test_tlv_statistic() ;
 
 int main()
 {
@@ -27,7 +27,7 @@ int main()
     PixelEngine pe ;
     cout<<"PE Version:"<<pe.GetVersion()<<endl ;
 
-    cout<<"-----------------unit test------------------"<<endl;
+    cout<<"-----------------unit test 测试等经纬面积计算效率------------------"<<endl;
 //    int64_t startdt =wDatetime::currentMilliSeconds() ;
 //    WComputeLonLatArea clla ;
 //    for(int i = 0 ; i<256*256; ++i ){
@@ -36,6 +36,9 @@ int main()
 //    }
 //    int64_t stopdt =wDatetime::currentMilliSeconds() ;
 //    cout<<256*256<<" dura "<<(stopdt-startdt)<<" ms"<<endl ;
+
+    cout<<"-----------------unit test 测试tlv区域统计------------------"<<endl;
+    unit_test_tlv_statistic() ;
 
 
     cout<<"-----------------unit test------------------"<<endl;
@@ -47,7 +50,39 @@ int main()
 }
 
 
+void unit_test_tlv_statistic()
+{
+    WHsegTlvObject roi ;
+    string error;
+    bool isok = roi.readFromFile( "/var/www/html/pe/roi/test-1100.geojson.hseg.tlv" , error);
+    if( isok==false){
+        cout<<"roi.readFromFile failed."<<endl ;
+        return ;
+    }
+    vector<WStatisticData> statdatavec ;
+    vector<short> tiledata(256*256*3,3) ;
+    PixelEngine::computeStatistic( (short*)tiledata.data(), roi, 0 ,
+        5,4,26,
+        256,256, 3, 1, 255, statdatavec
+    ) ;//beijing inside tile 5,4,26, baike has 16410km2, our compute 16836km2 in level5.
+    cout<<statdatavec[0].allCnt<<endl ;
+    cout<<statdatavec[0].areakm2<<endl ;
+    cout<<statdatavec[0].fillCnt<<endl ;
+    cout<<statdatavec[0].sq_sum<<endl ;
+    cout<<statdatavec[0].sum<<endl ;
+    cout<<statdatavec[0].validCnt<<endl ;
+    cout<<statdatavec[0].validMax<<endl ;
+    cout<<statdatavec[0].validMin<<endl ;
 
+        cout<<statdatavec[1].allCnt<<endl ;
+    cout<<statdatavec[1].areakm2<<endl ;
+    cout<<statdatavec[1].fillCnt<<endl ;
+    cout<<statdatavec[1].sq_sum<<endl ;
+    cout<<statdatavec[1].sum<<endl ;
+    cout<<statdatavec[1].validCnt<<endl ;
+    cout<<statdatavec[1].validMax<<endl ;
+    cout<<statdatavec[1].validMin<<endl ;
+}
 
 
 

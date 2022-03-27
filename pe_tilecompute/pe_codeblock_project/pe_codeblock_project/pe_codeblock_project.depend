@@ -48,7 +48,7 @@
 	<stdlib.h>
 	<ostream>
 
-1648297250 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.h
+1648345177 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.h
 	<v8.h>
 	<libplatform/libplatform.h>
 	<cstdio>
@@ -74,6 +74,8 @@
 	"esprimacpptool.h"
 	"whsegtlvobject.h"
 	"wstatisticdata.h"
+	"wcomputelonlatarea.h"
+	"wcomputelonlatarea.h"
 
 1601009675 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/v8include/v8.h
 	<stddef.h>
@@ -228,12 +230,10 @@
 1601009658 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PeTileData.cpp
 	"PeTileData.h"
 
-1648297220 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.cpp
+1648347784 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.cpp
 	"PixelEngine.h"
 	<time.h>
 	"esprimacpptool.h"
-	"wcomputelonlatarea.h"
-	"wcomputelonlatarea.h"
 
 1604404669 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wAST.cpp
 	"wAST.h"
@@ -247,7 +247,7 @@
 1601009673 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wTextfilereader.cpp
 	"wTextfilereader.h"
 
-1648294045 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/pe_codeblock_project/pe_codeblock_project/main.cpp
+1648350373 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/pe_codeblock_project/pe_codeblock_project/main.cpp
 	<iostream>
 	"../../PixelEngine.h"
 	"../../JavaPixelEngineHelperInterface.h"
@@ -630,7 +630,7 @@
 	<chrono>
 	<stdexcept>
 
-1648293818 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wcomputelonlatarea.h
+1648350515 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wcomputelonlatarea.h
 	<GeographicLib/PolygonArea.hpp>
 	<GeographicLib/DMS.hpp>
 	<GeographicLib/Utility.hpp>
@@ -1016,4 +1016,7 @@
 	<spdlog/sinks/basic_file_sink.h>
 	<spdlog/common.h>
 	<spdlog/details/os.h>
+
+1648350540 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wcomputelonlatarea.cpp
+	"wcomputelonlatarea.h"
 

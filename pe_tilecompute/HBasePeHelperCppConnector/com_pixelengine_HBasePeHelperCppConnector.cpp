@@ -49,7 +49,7 @@ using namespace ArduinoJson;
 //string global_connector_version_str = "connector_version:1.3.0 2022-03-23" ;
 
 //2022-3-26 增加1个接口，直接计算TileComputeResult统计结果
-string global_connector_version_str = "connector_version:1.4.0 2022-03-26" ;
+string global_connector_version_str = "connector_version:1.4.1 2022-03-26" ;
 
 //外部调用，获得connector和core版本信息
 extern "C" void HBasePeHelperCppConnector_GetVersion(){
@@ -827,14 +827,14 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTil
  */
 JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ComputeStatisticTileComputeResultByHsegTlv
   (
-  JNIEnv *env, //jni
-  jobject obj, //jni
-  jstring javaPEHelperClassName,//javahelperclassname
-   jobject tcr, //tilecomputeresult
-   jbyteArray hsegtlvdata, //roi tlv
-   jdouble filldata,
-    jdouble vMinInc,
-    jdouble vMaxInc
+		JNIEnv *env, //jni
+		jobject obj, //jni
+		jstring javaPEHelperClassName,//javahelperclassname
+		jobject tcr, //tilecomputeresult
+		jbyteArray hsegtlvdata, //roi tlv
+		jdouble filldata,
+		jdouble vMinInc,
+		jdouble vMaxInc
     )
 {
     jclass	javaTileComputeResultClass = (env)->FindClass("com/pixelengine/TileComputeResult");
