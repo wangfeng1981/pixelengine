@@ -113,6 +113,7 @@
 		<Unit filename="../../wAST.h" />
 		<Unit filename="../../wTextfilereader.cpp" />
 		<Unit filename="../../wTextfilereader.h" />
+		<Unit filename="../../wcomputelonlatarea.cpp" />
 		<Unit filename="../../wcomputelonlatarea.h" />
 		<Unit filename="../../wjsontool.cpp" />
 		<Unit filename="../../wjsontool.h" />
