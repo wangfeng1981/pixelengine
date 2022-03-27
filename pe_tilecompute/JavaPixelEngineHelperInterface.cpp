@@ -632,7 +632,7 @@ bool JavaPixelEngineHelperInterface::getJavaObjectByteArrField(jobject obj,const
 }
 bool JavaPixelEngineHelperInterface::getJavaObjectStrArrField(jobject obj,const char* fieldname,vector<string>& retval)
 {
-	cout<<"debug in cpp getJavaObjectStrArrField "<<endl;
+	//cout<<"debug in cpp getJavaObjectStrArrField "<<endl;
 	JNIEnv *env = this->env	 ;
 	jclass someClass = env->GetObjectClass(obj);
 	jfieldID fid = env->GetFieldID( someClass, fieldname, "[Ljava/lang/String;");
@@ -646,7 +646,7 @@ bool JavaPixelEngineHelperInterface::getJavaObjectStrArrField(jobject obj,const 
 	jsize len = env->GetArrayLength(jo);
 	int leni = len ;
 	retval.resize(leni) ;
-	cout<<"debug in cpp getJavaObjectStrArrField leni "<<leni<<endl;
+	//cout<<"debug in cpp getJavaObjectStrArrField leni "<<leni<<endl;
 	for(int idt = 0 ; idt < leni; ++ idt ){
 		jstring str1 = (jstring) env->GetObjectArrayElement(jo, idt);
 		retval[idt] = JavaPixelEngineHelperInterface::jstring2cstring(env,str1) ;
@@ -673,7 +673,7 @@ bool JavaPixelEngineHelperInterface::unwrapRangeElement(jobject obj,pe::PeVRange
 
 bool JavaPixelEngineHelperInterface::setJavaObjectIntField(jobject obj,const char* fieldname,int val)
 {
-	cout<<"debug in cpp setJavaObjectIntField "<<endl;
+	//cout<<"debug in cpp setJavaObjectIntField "<<endl;
 	JNIEnv *env = this->env	 ;
 	jclass someClass = env->GetObjectClass(obj);
 	jfieldID fid = env->GetFieldID( someClass, fieldname, "I");
@@ -687,7 +687,7 @@ bool JavaPixelEngineHelperInterface::setJavaObjectIntField(jobject obj,const cha
 }
 bool JavaPixelEngineHelperInterface::setJavaObjectStringField(jobject obj,const char* fieldname,const char* val)
 {
-	cout<<"debug in cpp setJavaObjectStringField "<<endl;
+	//cout<<"debug in cpp setJavaObjectStringField "<<endl;
 	JNIEnv *env = this->env	 ;
 	jclass someClass = env->GetObjectClass(obj);
 	jfieldID fid = env->GetFieldID( someClass, fieldname, "Ljava/lang/String;");
@@ -701,7 +701,7 @@ bool JavaPixelEngineHelperInterface::setJavaObjectStringField(jobject obj,const 
 }
 bool JavaPixelEngineHelperInterface::setJavaObjectByteArrField(jobject obj,const char* fieldname,vector<unsigned char>& val)
 {
-	cout<<"debug in cpp setJavaObjectByteArrField "<<endl;
+	//cout<<"debug in cpp setJavaObjectByteArrField "<<endl;
 	JNIEnv *env = this->env	 ;
 	jclass someClass = env->GetObjectClass(obj);
 	jfieldID fid = env->GetFieldID( someClass, fieldname, "[B");
@@ -714,6 +714,22 @@ bool JavaPixelEngineHelperInterface::setJavaObjectByteArrField(jobject obj,const
 	const signed char* sptr = (signed char*)val.data();
 	env->SetByteArrayRegion(jarr ,0, val.size() , sptr );
 	env->SetObjectField( obj, fid, jarr ) ;
+	return true;
+}
+
+//2022-3-26
+bool JavaPixelEngineHelperInterface::setJavaObjectDoubleField(jobject obj,const char* fieldname,double val)
+{
+	//cout<<"debug in cpp setJavaObjectDoubleField "<<endl;
+	JNIEnv *env = this->env	 ;
+	jclass someClass = env->GetObjectClass(obj);
+	jfieldID fid = env->GetFieldID( someClass, fieldname, "D");
+	if (NULL == fid) {
+			cout<<"Error : failed to get field "<<fieldname<< " from java object."<<endl;
+			return false;
+	}
+
+	env->SetDoubleField(obj,fid, (jdouble)val) ;
 	return true;
 }
 

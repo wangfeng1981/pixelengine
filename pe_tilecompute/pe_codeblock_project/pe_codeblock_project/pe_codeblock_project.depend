@@ -11,10 +11,10 @@
 	<string>
 	<vector>
 
-1646534750 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/JavaPixelEngineHelperInterface.cpp
+1648296166 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/JavaPixelEngineHelperInterface.cpp
 	"JavaPixelEngineHelperInterface.h"
 
-1646531767 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/JavaPixelEngineHelperInterface.h
+1648296030 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/JavaPixelEngineHelperInterface.h
 	<jni.h>
 	<string>
 	<vector>
@@ -48,7 +48,7 @@
 	<stdlib.h>
 	<ostream>
 
-1648028833 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.h
+1648297250 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.h
 	<v8.h>
 	<libplatform/libplatform.h>
 	<cstdio>
@@ -73,6 +73,7 @@
 	"ajson5.h"
 	"esprimacpptool.h"
 	"whsegtlvobject.h"
+	"wstatisticdata.h"
 
 1601009675 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/v8include/v8.h
 	<stddef.h>
@@ -227,10 +228,12 @@
 1601009658 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PeTileData.cpp
 	"PeTileData.h"
 
-1647940820 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.cpp
+1648297220 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.cpp
 	"PixelEngine.h"
 	<time.h>
 	"esprimacpptool.h"
+	"wcomputelonlatarea.h"
+	"wcomputelonlatarea.h"
 
 1604404669 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wAST.cpp
 	"wAST.h"
@@ -244,11 +247,13 @@
 1601009673 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wTextfilereader.cpp
 	"wTextfilereader.h"
 
-1646570122 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/pe_codeblock_project/pe_codeblock_project/main.cpp
+1648294045 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/pe_codeblock_project/pe_codeblock_project/main.cpp
 	<iostream>
 	"../../PixelEngine.h"
 	"../../JavaPixelEngineHelperInterface.h"
 	"../../../../sharedcodes/zonalstat/whsegtlvobject.h"
+	"../../wcomputelonlatarea.h"
+	"wdatetime.h"
 
 1617798476 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wstringutils.h
 	<string>
@@ -258,7 +263,7 @@
 1617798588 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wstringutils.cpp
 	"wstringutils.h"
 
-1646571293 source:/home/hadoop/IdeaProjects/sharedcodes/zonalstat/whsegtlvobject.cpp
+1648005346 source:/home/hadoop/IdeaProjects/sharedcodes/zonalstat/whsegtlvobject.cpp
 	"whsegtlvobject.h"
 	<stdio.h>
 	<string.h>
@@ -280,4 +285,735 @@
 	<vector>
 	"whsegline.h"
 	<algorithm>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/Accumulator.cpp
+	<GeographicLib/Accumulator.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/Accumulator.hpp
+	<GeographicLib/Constants.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/Constants.hpp
+	<GeographicLib/Config.h>
+	<stdexcept>
+	<string>
+	<GeographicLib/Math.hpp>
+
+1624311047 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/Config.h
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/Math.hpp
+	<GeographicLib/Constants.hpp>
+	<cmath>
+	<algorithm>
+	<limits>
+	<boost/version.hpp>
+	<boost/multiprecision/float128.hpp>
+	<boost/math/special_functions.hpp>
+	<mpreal.h>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/AlbersEqualArea.cpp
+	<GeographicLib/AlbersEqualArea.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/AlbersEqualArea.hpp
+	<GeographicLib/Constants.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/AzimuthalEquidistant.cpp
+	<GeographicLib/AzimuthalEquidistant.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/AzimuthalEquidistant.hpp
+	<GeographicLib/Geodesic.hpp>
+	<GeographicLib/Constants.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/Geodesic.hpp
+	<GeographicLib/Constants.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/CassiniSoldner.cpp
+	<GeographicLib/CassiniSoldner.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/CassiniSoldner.hpp
+	<GeographicLib/Geodesic.hpp>
+	<GeographicLib/GeodesicLine.hpp>
+	<GeographicLib/Constants.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/GeodesicLine.hpp
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/Geodesic.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/CircularEngine.cpp
+	<GeographicLib/CircularEngine.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/CircularEngine.hpp
+	<vector>
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/SphericalEngine.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/SphericalEngine.hpp
+	<vector>
+	<istream>
+	<GeographicLib/Constants.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/DMS.cpp
+	<GeographicLib/DMS.hpp>
+	<GeographicLib/Utility.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/DMS.hpp
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/Utility.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/Utility.hpp
+	<GeographicLib/Constants.hpp>
+	<iomanip>
+	<vector>
+	<sstream>
+	<cctype>
+	<ctime>
+	<cstring>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/Ellipsoid.cpp
+	<GeographicLib/Ellipsoid.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/Ellipsoid.hpp
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/TransverseMercator.hpp>
+	<GeographicLib/EllipticFunction.hpp>
+	<GeographicLib/AlbersEqualArea.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/TransverseMercator.hpp
+	<GeographicLib/Constants.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/EllipticFunction.hpp
+	<GeographicLib/Constants.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/EllipticFunction.cpp
+	<GeographicLib/EllipticFunction.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/GARS.cpp
+	<GeographicLib/GARS.hpp>
+	<GeographicLib/Utility.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/GARS.hpp
+	<GeographicLib/Constants.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/Geocentric.cpp
+	<GeographicLib/Geocentric.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/Geocentric.hpp
+	<vector>
+	<GeographicLib/Constants.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/GeoCoords.cpp
+	<GeographicLib/GeoCoords.hpp>
+	<GeographicLib/MGRS.hpp>
+	<GeographicLib/DMS.hpp>
+	<GeographicLib/Utility.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/GeoCoords.hpp
+	<GeographicLib/UTMUPS.hpp>
+	<GeographicLib/Constants.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/UTMUPS.hpp
+	<GeographicLib/Constants.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/MGRS.hpp
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/UTMUPS.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/Geodesic.cpp
+	<GeographicLib/Geodesic.hpp>
+	<GeographicLib/GeodesicLine.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/GeodesicExact.cpp
+	<GeographicLib/GeodesicExact.hpp>
+	<GeographicLib/GeodesicLineExact.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/GeodesicExact.hpp
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/EllipticFunction.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/GeodesicLineExact.hpp
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/GeodesicExact.hpp>
+	<GeographicLib/EllipticFunction.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/GeodesicExactC4.cpp
+	<GeographicLib/GeodesicExact.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/GeodesicLine.cpp
+	<GeographicLib/GeodesicLine.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/GeodesicLineExact.cpp
+	<GeographicLib/GeodesicLineExact.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/Geohash.cpp
+	<GeographicLib/Geohash.hpp>
+	<GeographicLib/Utility.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/Geohash.hpp
+	<GeographicLib/Constants.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/Geoid.cpp
+	<GeographicLib/Geoid.hpp>
+	<cstdlib>
+	<GeographicLib/Utility.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/Geoid.hpp
+	<vector>
+	<fstream>
+	<GeographicLib/Constants.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/Georef.cpp
+	<GeographicLib/Georef.hpp>
+	<GeographicLib/Utility.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/Georef.hpp
+	<GeographicLib/Constants.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/Gnomonic.cpp
+	<GeographicLib/Gnomonic.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/Gnomonic.hpp
+	<GeographicLib/Geodesic.hpp>
+	<GeographicLib/GeodesicLine.hpp>
+	<GeographicLib/Constants.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/GravityCircle.cpp
+	<GeographicLib/GravityCircle.hpp>
+	<fstream>
+	<sstream>
+	<GeographicLib/Geocentric.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/GravityCircle.hpp
+	<vector>
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/CircularEngine.hpp>
+	<GeographicLib/GravityModel.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/GravityModel.hpp
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/NormalGravity.hpp>
+	<GeographicLib/SphericalHarmonic.hpp>
+	<GeographicLib/SphericalHarmonic1.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/NormalGravity.hpp
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/Geocentric.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/SphericalHarmonic.hpp
+	<vector>
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/SphericalEngine.hpp>
+	<GeographicLib/CircularEngine.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/SphericalHarmonic1.hpp
+	<vector>
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/SphericalEngine.hpp>
+	<GeographicLib/CircularEngine.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/GravityModel.cpp
+	<GeographicLib/GravityModel.hpp>
+	<fstream>
+	<limits>
+	<GeographicLib/SphericalEngine.hpp>
+	<GeographicLib/GravityCircle.hpp>
+	<GeographicLib/Utility.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/LambertConformalConic.cpp
+	<GeographicLib/LambertConformalConic.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/LambertConformalConic.hpp
+	<GeographicLib/Constants.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/LocalCartesian.cpp
+	<GeographicLib/LocalCartesian.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/LocalCartesian.hpp
+	<GeographicLib/Geocentric.hpp>
+	<GeographicLib/Constants.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/MagneticCircle.cpp
+	<GeographicLib/MagneticCircle.hpp>
+	<fstream>
+	<sstream>
+	<GeographicLib/Geocentric.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/MagneticCircle.hpp
+	<vector>
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/CircularEngine.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/MagneticModel.cpp
+	<GeographicLib/MagneticModel.hpp>
+	<fstream>
+	<GeographicLib/SphericalEngine.hpp>
+	<GeographicLib/MagneticCircle.hpp>
+	<GeographicLib/Utility.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/MagneticModel.hpp
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/Geocentric.hpp>
+	<GeographicLib/SphericalHarmonic.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/Math.cpp
+	<GeographicLib/Math.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/MGRS.cpp
+	<GeographicLib/MGRS.hpp>
+	<GeographicLib/Utility.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/NormalGravity.cpp
+	<GeographicLib/NormalGravity.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/OSGB.cpp
+	<GeographicLib/OSGB.hpp>
+	<GeographicLib/Utility.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/OSGB.hpp
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/TransverseMercator.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/PolarStereographic.cpp
+	<GeographicLib/PolarStereographic.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/PolarStereographic.hpp
+	<GeographicLib/Constants.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/PolygonArea.cpp
+	<GeographicLib/PolygonArea.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/PolygonArea.hpp
+	<GeographicLib/Geodesic.hpp>
+	<GeographicLib/GeodesicExact.hpp>
+	<GeographicLib/Rhumb.hpp>
+	<GeographicLib/Accumulator.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/Rhumb.hpp
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/Ellipsoid.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/Rhumb.cpp
+	<algorithm>
+	<GeographicLib/Rhumb.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/SphericalEngine.cpp
+	<GeographicLib/SphericalEngine.hpp>
+	<GeographicLib/CircularEngine.hpp>
+	<GeographicLib/Utility.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/TransverseMercator.cpp
+	<complex>
+	<GeographicLib/TransverseMercator.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/TransverseMercatorExact.cpp
+	<GeographicLib/TransverseMercatorExact.hpp>
+
+1624311033 /home/hadoop/IdeaProjects/sharedcodes/GeographicLib/include/GeographicLib/TransverseMercatorExact.hpp
+	<GeographicLib/Constants.hpp>
+	<GeographicLib/EllipticFunction.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/Utility.cpp
+	<cstdlib>
+	<GeographicLib/Utility.hpp>
+
+1624311033 source:/home/hadoop/IdeaProjects/sharedcodes/GeographicLib/src/UTMUPS.cpp
+	<GeographicLib/UTMUPS.hpp>
+	<GeographicLib/MGRS.hpp>
+	<GeographicLib/PolarStereographic.hpp>
+	<GeographicLib/TransverseMercator.hpp>
+	<GeographicLib/Utility.hpp>
+
+1621106019 source:/home/hadoop/IdeaProjects/sharedcodes/wdatetime.cpp
+	"wdatetime.h"
+
+1621064095 /home/hadoop/IdeaProjects/sharedcodes/wdatetime.h
+	<ctime>
+	<string>
+	<chrono>
+	<stdexcept>
+
+1648293818 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wcomputelonlatarea.h
+	<GeographicLib/PolygonArea.hpp>
+	<GeographicLib/DMS.hpp>
+	<GeographicLib/Utility.hpp>
+	<GeographicLib/GeoCoords.hpp>
+	<GeographicLib/Ellipsoid.hpp>
+	<cmath>
+	<vector>
+
+1648290648 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wstatisticdata.h
+
+1648305841 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/HBasePeHelperCppConnector/com_pixelengine_HBasePeHelperCppConnector.cpp
+	"com_pixelengine_HBasePeHelperCppConnector.h"
+	<string>
+	<vector>
+	<iostream>
+	"lodepng.h"
+	"PixelEngine.h"
+	<random>
+	"../JavaPixelEngineHelperInterface.h"
+	"../wDatasetDatetime.h"
+	"spdlog/spdlog.h"
+	"spdlog/sinks/stdout_color_sinks.h"
+	"spdlog/sinks/basic_file_sink.h"
+	"../ajson5.h"
+	"PeStyle.h"
+	<sstream>
+	"whsegtlvobject.h"
+
+1648296479 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/HBasePeHelperCppConnector/com_pixelengine_HBasePeHelperCppConnector.h
+	<jni.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/spdlog.h
+	<spdlog/common.h>
+	<spdlog/details/registry.h>
+	<spdlog/logger.h>
+	<spdlog/version.h>
+	<spdlog/details/synchronous_factory.h>
+	<chrono>
+	<functional>
+	<memory>
+	<string>
+	"spdlog-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/common.h
+	<spdlog/tweakme.h>
+	<spdlog/details/null_mutex.h>
+	<atomic>
+	<chrono>
+	<initializer_list>
+	<memory>
+	<exception>
+	<string>
+	<type_traits>
+	<functional>
+	<spdlog/fmt/fmt.h>
+	"common-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/tweakme.h
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/null_mutex.h
+	<atomic>
+	<utility>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/fmt/fmt.h
+	<spdlog/fmt/bundled/core.h>
+	<spdlog/fmt/bundled/format.h>
+	<fmt/core.h>
+	<fmt/format.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/fmt/bundled/core.h
+	<cstdio>
+	<cstring>
+	<functional>
+	<iterator>
+	<memory>
+	<string>
+	<type_traits>
+	<vector>
+	<string_view>
+	<experimental/string_view>
+	<fmt/core.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/fmt/bundled/format.h
+	<algorithm>
+	<cerrno>
+	<cmath>
+	<cstdint>
+	<limits>
+	<memory>
+	<stdexcept>
+	"core.h"
+	"os.h"
+	<intrin.h>
+	<fmt/format.h>
+	"format-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/fmt/bundled/format-inl.h
+	<cassert>
+	<cctype>
+	<climits>
+	<cmath>
+	<cstdarg>
+	<cstring>
+	<cwchar>
+	"format.h"
+	<locale>
+	<io.h>
+	<windows.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/common-inl.h
+	<spdlog/common.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/registry.h
+	<spdlog/common.h>
+	<spdlog/cfg/log_levels.h>
+	<chrono>
+	<functional>
+	<memory>
+	<string>
+	<unordered_map>
+	<mutex>
+	"registry-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/cfg/log_levels.h
+	<spdlog/common.h>
+	<string>
+	<unordered_map>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/registry-inl.h
+	<spdlog/details/registry.h>
+	<spdlog/common.h>
+	<spdlog/details/periodic_worker.h>
+	<spdlog/logger.h>
+	<spdlog/pattern_formatter.h>
+	<spdlog/sinks/wincolor_sink.h>
+	<spdlog/sinks/ansicolor_sink.h>
+	<chrono>
+	<functional>
+	<memory>
+	<string>
+	<unordered_map>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/periodic_worker.h
+	<chrono>
+	<condition_variable>
+	<functional>
+	<mutex>
+	<thread>
+	"periodic_worker-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/periodic_worker-inl.h
+	<spdlog/details/periodic_worker.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/logger.h
+	<spdlog/common.h>
+	<spdlog/details/log_msg.h>
+	<spdlog/details/backtracer.h>
+	<spdlog/details/os.h>
+	<vector>
+	"logger-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/log_msg.h
+	<spdlog/common.h>
+	<string>
+	"log_msg-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/log_msg-inl.h
+	<spdlog/details/log_msg.h>
+	<spdlog/details/os.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/os.h
+	<spdlog/common.h>
+	<ctime>
+	"os-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/os-inl.h
+	<spdlog/details/os.h>
+	<spdlog/common.h>
+	<algorithm>
+	<chrono>
+	<cstdio>
+	<cstdlib>
+	<cstring>
+	<ctime>
+	<string>
+	<thread>
+	<array>
+	<sys/stat.h>
+	<sys/types.h>
+	<io.h>
+	<process.h>
+	<spdlog/details/windows_include.h>
+	<share.h>
+	<limits>
+	<direct.h>
+	<fcntl.h>
+	<unistd.h>
+	<sys/syscall.h>
+	<pthread.h>
+	<pthread_np.h>
+	<lwp.h>
+	<thread.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/windows_include.h
+	<windows.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/backtracer.h
+	<spdlog/details/log_msg_buffer.h>
+	<spdlog/details/circular_q.h>
+	<atomic>
+	<mutex>
+	<functional>
+	"backtracer-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/log_msg_buffer.h
+	<spdlog/details/log_msg.h>
+	"log_msg_buffer-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/log_msg_buffer-inl.h
+	<spdlog/details/log_msg_buffer.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/circular_q.h
+	<vector>
+	<cassert>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/backtracer-inl.h
+	<spdlog/details/backtracer.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/logger-inl.h
+	<spdlog/logger.h>
+	<spdlog/sinks/sink.h>
+	<spdlog/details/backtracer.h>
+	<spdlog/pattern_formatter.h>
+	<cstdio>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/sinks/sink.h
+	<spdlog/details/log_msg.h>
+	<spdlog/formatter.h>
+	"sink-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/formatter.h
+	<spdlog/fmt/fmt.h>
+	<spdlog/details/log_msg.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/sinks/sink-inl.h
+	<spdlog/sinks/sink.h>
+	<spdlog/common.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/pattern_formatter.h
+	<spdlog/common.h>
+	<spdlog/details/log_msg.h>
+	<spdlog/details/os.h>
+	<spdlog/formatter.h>
+	<chrono>
+	<ctime>
+	<memory>
+	<string>
+	<vector>
+	<unordered_map>
+	"pattern_formatter-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/pattern_formatter-inl.h
+	<spdlog/pattern_formatter.h>
+	<spdlog/details/fmt_helper.h>
+	<spdlog/details/log_msg.h>
+	<spdlog/details/os.h>
+	<spdlog/fmt/fmt.h>
+	<spdlog/formatter.h>
+	<array>
+	<chrono>
+	<ctime>
+	<cctype>
+	<cstring>
+	<memory>
+	<mutex>
+	<string>
+	<thread>
+	<utility>
+	<vector>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/fmt_helper.h
+	<chrono>
+	<type_traits>
+	<spdlog/fmt/fmt.h>
+	<spdlog/common.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/sinks/wincolor_sink.h
+	<spdlog/common.h>
+	<spdlog/details/console_globals.h>
+	<spdlog/details/null_mutex.h>
+	<spdlog/sinks/sink.h>
+	<memory>
+	<mutex>
+	<string>
+	<array>
+	<spdlog/details/windows_include.h>
+	<wincon.h>
+	"wincolor_sink-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/console_globals.h
+	<spdlog/details/null_mutex.h>
+	<mutex>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/sinks/wincolor_sink-inl.h
+	<spdlog/sinks/wincolor_sink.h>
+	<spdlog/common.h>
+	<spdlog/pattern_formatter.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/sinks/ansicolor_sink.h
+	<spdlog/details/console_globals.h>
+	<spdlog/details/null_mutex.h>
+	<spdlog/sinks/sink.h>
+	<memory>
+	<mutex>
+	<string>
+	<array>
+	"ansicolor_sink-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/sinks/ansicolor_sink-inl.h
+	<spdlog/sinks/ansicolor_sink.h>
+	<spdlog/pattern_formatter.h>
+	<spdlog/details/os.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/version.h
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/synchronous_factory.h
+	"registry.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/spdlog-inl.h
+	<spdlog/spdlog.h>
+	<spdlog/common.h>
+	<spdlog/pattern_formatter.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/sinks/stdout_color_sinks.h
+	<spdlog/sinks/wincolor_sink.h>
+	<spdlog/sinks/ansicolor_sink.h>
+	<spdlog/details/synchronous_factory.h>
+	"stdout_color_sinks-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/sinks/stdout_color_sinks-inl.h
+	<spdlog/sinks/stdout_color_sinks.h>
+	<spdlog/logger.h>
+	<spdlog/common.h>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/sinks/basic_file_sink.h
+	<spdlog/details/file_helper.h>
+	<spdlog/details/null_mutex.h>
+	<spdlog/sinks/base_sink.h>
+	<spdlog/details/synchronous_factory.h>
+	<mutex>
+	<string>
+	"basic_file_sink-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/file_helper.h
+	<spdlog/common.h>
+	<tuple>
+	"file_helper-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/details/file_helper-inl.h
+	<spdlog/details/file_helper.h>
+	<spdlog/details/os.h>
+	<spdlog/common.h>
+	<cerrno>
+	<chrono>
+	<cstdio>
+	<string>
+	<thread>
+	<tuple>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/sinks/base_sink.h
+	<spdlog/common.h>
+	<spdlog/details/log_msg.h>
+	<spdlog/sinks/sink.h>
+	"base_sink-inl.h"
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/sinks/base_sink-inl.h
+	<spdlog/sinks/base_sink.h>
+	<spdlog/common.h>
+	<spdlog/pattern_formatter.h>
+	<memory>
+
+1601009659 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/spdlog/sinks/basic_file_sink-inl.h
+	<spdlog/sinks/basic_file_sink.h>
+	<spdlog/common.h>
+	<spdlog/details/os.h>
 

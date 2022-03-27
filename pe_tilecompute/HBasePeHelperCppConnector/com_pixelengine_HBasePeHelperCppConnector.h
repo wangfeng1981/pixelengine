@@ -101,7 +101,7 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunToGe
 
 /* 2022-3-23 工具方法计算hsegtlv 的level0 的四至范围，注意该范围可能略小于实际范围，可以通过向外推一个像素即可肯定完全包括。
  * 成功返回四至范围数字组成的字符串，由逗号分割，顺序如后 left,right,top,bottom
- * 失败返回空字符串 
+ * 失败返回空字符串
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    UtilsComputeHsegTlvExtent
  * Signature: ([B)Ljava/lang/String;
@@ -117,6 +117,15 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_UtilsCo
  */
 JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTileComputeResultByHsegTlv
   (JNIEnv *, jobject, jstring , jobject, jbyteArray, jdouble filldata);
+
+
+/* 2022-3-26 直接对瓦片结果进行统计，不适用v8
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    ComputeStatisticTileComputeResultByHsegTlv
+ * Signature: (Ljava/lang/String;Lcom/pixelengine/TileComputeResult;[BDDD)Lcom/pixelengine/JStatisticData;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ComputeStatisticTileComputeResultByHsegTlv
+  (JNIEnv *env, jobject obj, jstring clsname, jobject tcr, jbyteArray hsegtlvdata, jdouble filldata, jdouble vMinInc,jdouble vMaxInc);
 
 
 #ifdef __cplusplus

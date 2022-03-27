@@ -18,6 +18,8 @@
 					<Add directory="/usr/local/jdk1.8.0_192/include" />
 					<Add directory="/usr/local/jdk1.8.0_192/include/linux" />
 					<Add directory="../../../../sharedcodes/zonalstat" />
+					<Add directory="../../../../sharedcodes/GeographicLib/include" />
+					<Add directory="../../../../sharedcodes" />
 				</Compiler>
 				<Linker>
 					<Add option="-fPIC" />
@@ -44,6 +46,45 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/Accumulator.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/AlbersEqualArea.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/AzimuthalEquidistant.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/CassiniSoldner.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/CircularEngine.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/DMS.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/Ellipsoid.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/EllipticFunction.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/GARS.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/GeoCoords.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/Geocentric.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/Geodesic.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/GeodesicExact.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/GeodesicExactC4.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/GeodesicLine.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/GeodesicLineExact.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/Geohash.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/Geoid.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/Georef.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/Gnomonic.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/GravityCircle.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/GravityModel.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/LambertConformalConic.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/LocalCartesian.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/MGRS.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/MagneticCircle.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/MagneticModel.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/Math.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/NormalGravity.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/OSGB.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/PolarStereographic.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/PolygonArea.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/Rhumb.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/SphericalEngine.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/TransverseMercator.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/TransverseMercatorExact.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/UTMUPS.cpp" />
+		<Unit filename="../../../../sharedcodes/GeographicLib/src/Utility.cpp" />
+		<Unit filename="../../../../sharedcodes/wdatetime.cpp" />
 		<Unit filename="../../../../sharedcodes/zonalstat/whsegline.h" />
 		<Unit filename="../../../../sharedcodes/zonalstat/whsegtlvobject.cpp" />
 		<Unit filename="../../../../sharedcodes/zonalstat/whsegtlvobject.h" />
@@ -72,6 +113,7 @@
 		<Unit filename="../../wAST.h" />
 		<Unit filename="../../wTextfilereader.cpp" />
 		<Unit filename="../../wTextfilereader.h" />
+		<Unit filename="../../wcomputelonlatarea.h" />
 		<Unit filename="../../wjsontool.cpp" />
 		<Unit filename="../../wjsontool.h" />
 		<Unit filename="../../wstringutil.cpp" />

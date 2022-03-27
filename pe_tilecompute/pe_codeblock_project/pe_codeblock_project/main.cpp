@@ -5,6 +5,14 @@
 #include "../../JavaPixelEngineHelperInterface.h"
 #include "../../../../sharedcodes/zonalstat/whsegtlvobject.h"
 
+
+#include "../../wcomputelonlatarea.h"
+
+
+
+#include "wdatetime.h"
+
+
 using namespace std;
 
 void unit_test_JavaPixelEngineHelperInterface_getRoiHsegTlv() ;
@@ -18,6 +26,17 @@ int main()
     PixelEngine::initV8() ;
     PixelEngine pe ;
     cout<<"PE Version:"<<pe.GetVersion()<<endl ;
+
+    cout<<"-----------------unit test------------------"<<endl;
+//    int64_t startdt =wDatetime::currentMilliSeconds() ;
+//    WComputeLonLatArea clla ;
+//    for(int i = 0 ; i<256*256; ++i ){
+//        int iy = i % 128 ;
+//        clla.computeArea(0 , 0 , iy) ;
+//    }
+//    int64_t stopdt =wDatetime::currentMilliSeconds() ;
+//    cout<<256*256<<" dura "<<(stopdt-startdt)<<" ms"<<endl ;
+
 
     cout<<"-----------------unit test------------------"<<endl;
     unit_test_JavaPixelEngineHelperInterface_getRoiHsegTlv() ;

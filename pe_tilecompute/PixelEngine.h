@@ -35,6 +35,8 @@
 #include "ajson5.h"
 #include "esprimacpptool.h"//2022-2-12
 #include "whsegtlvobject.h"//2022-3-6
+#include "wstatisticdata.h"//2022-3-26
+
 
 
 
@@ -516,21 +518,37 @@ public:
 			int tilez,int tiley,int tilex,int wid,int hei,int nbands) ;
 
 
-        public:
+
+public:
         //拷贝瓦片数据，使用tlv进行roi裁剪 2022-3-6
         //use for public method 2022-3-23
         template<typename T>
 		static bool innerCopyRoiData2(T* source,T* target,WHsegTlvObject& roi,int fillval,
 			int tilez,int tiley,int tilex,int wid,int hei,int nbands) ;
 
-        private:
+private:
         //2020-12-01 copy array data from source to target
         static bool innerCopyArrayData(void* srcDataPtr,int srcType,size_t srcElementCount, void* tarDataPtr,int tarType) ;
         template<typename T, typename U>
         static void innerCopyArrayData(T* srcDataPtr,size_t srcElementCount, U* tarDataPtr) ;
 
 
-
+        //2022-3-26
+public:
+        /// 使用 hseg.tlv 数据对瓦片数据进行区域统计 2022-3-26
+        /// 统计过程中首先判断filldata，如果是filldata那么无论是否在统计区间内都不参与统计
+        /// @retval 统计过程没有异常返回true，反之返回false，注意即使一个像素没有落在roi中只要没有异常错误仍然返回true，统计结果都是0.
+        template<typename T>
+		static bool computeStatistic(
+            T* source,            //瓦片数据二进制格式强制转换制定类型
+            WHsegTlvObject& roi , //hsegtlv格式roi对象
+            double fillval ,      //数据的填充值
+			int tilez,int tiley,int tilex, //瓦片坐标
+			int wid, int hei , int nbands, //瓦片宽，高，和波段数
+			double valMinInc, //统计区间最小值，包含
+			double valMaxInc, //统计区间最大值，包含
+			vector<WStatisticData>& retBandStatDataVec //返回统计结果，要求是个空的vec
+			) ;
 
 
 } ;

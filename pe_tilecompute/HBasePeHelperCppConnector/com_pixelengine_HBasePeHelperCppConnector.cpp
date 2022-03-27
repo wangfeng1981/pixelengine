@@ -36,17 +36,20 @@ using namespace ArduinoJson;
 //(1)Java_com_pixelengine_HBasePeHelperCppConnector_GetDatasetNameArray
 //string global_connector_version_str = "connector_version:1.0.0 2022-02-12" ;
 
-//2022-3-6 rebuild with new core 
+//2022-3-6 rebuild with new core
 //string global_connector_version_str = "connector_version:1.0.1 2022-03-06" ;
 
-//2022-3-22 增加1个接口，执行瓦片计算并获取执行后的 (dsname,dt)，roi2，log 
+//2022-3-22 增加1个接口，执行瓦片计算并获取执行后的 (dsname,dt)，roi2，log
 //string global_connector_version_str = "connector_version:1.1.0 2022-03-22" ;
 
 //2022-3-23 增加1个接口，计算hsegtlv的四角范围
 //string global_connector_version_str = "connector_version:1.2.0 2022-03-23" ;
 
 //2022-3-23 增加1个接口，直接使用hsegtlv裁剪TileComputeResult
-string global_connector_version_str = "connector_version:1.3.0 2022-03-23" ;
+//string global_connector_version_str = "connector_version:1.3.0 2022-03-23" ;
+
+//2022-3-26 增加1个接口，直接计算TileComputeResult统计结果
+string global_connector_version_str = "connector_version:1.4.0 2022-03-26" ;
 
 //外部调用，获得connector和core版本信息
 extern "C" void HBasePeHelperCppConnector_GetVersion(){
@@ -57,7 +60,7 @@ extern "C" void HBasePeHelperCppConnector_GetVersion(){
 
 
 
-jstring cstring2jstring(JNIEnv *env, 
+jstring cstring2jstring(JNIEnv *env,
 	const char* str) {
 	return env->NewStringUTF(str) ;
 }
@@ -89,7 +92,7 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunToGe
 {
 	printf("in Java_com_pixelengine_HBasePeHelperCppConnector_RunToGetStyleFromScript\n");
 	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
-	JavaPixelEngineHelperInterface helper(env, helperclassname) ;  
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ;
 
 	PixelEngine::initV8() ;
 	PixelEngine pe ;
@@ -119,19 +122,19 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunToGe
 {
 	"dsdtarr":[] ,
 	"error":"",
-	"status":0   //0 for good, 1 for error	
+	"status":0   //0 for good, 1 for error
 }
 
  */
 JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ParseScriptForDsDt
-  (JNIEnv * env, jobject object , 
-  	jstring javaPEHelperClassName, 
-  	jstring scriptContent ) 
+  (JNIEnv * env, jobject object ,
+  	jstring javaPEHelperClassName,
+  	jstring scriptContent )
 {
 	printf("in Java_com_pixelengine_HBasePeHelperCppConnector_ParseScriptForDsDt()\n") ;
 
 	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
-	JavaPixelEngineHelperInterface helper(env, helperclassname) ; 
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ;
 
 	PixelEngine::initV8() ;
 	PixelEngine pe ;
@@ -158,7 +161,7 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ParseSc
 			dobj["dt1"] = retdsdtvec[ids].dt1 ;
 		}
 	}else{
-		root["status"] = 1 ; 
+		root["status"] = 1 ;
 		root["error"] = errorText ;
 		//root["dsdtarr"]
 		root.createNestedArray("dsdtarr") ;
@@ -179,18 +182,18 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ParseSc
  * {
 	"data":["fy4","fy3","modis/ndvi","ls/08"] ,
 	"error":"",
-	"status":0   //0 for good, 1 for error	
+	"status":0   //0 for good, 1 for error
     }
  */
 JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_GetDatasetNameArray
-  (JNIEnv * env, jobject object , 
-  	jstring javaPEHelperClassName, 
+  (JNIEnv * env, jobject object ,
+  	jstring javaPEHelperClassName,
   	jstring scriptContent)
 {
     printf("in Java_com_pixelengine_HBasePeHelperCppConnector_GetDatasetNameArray()\n") ;
 
 	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
-	JavaPixelEngineHelperInterface helper(env, helperclassname) ; 
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ;
 	PixelEngine pe ;
 	string cscriptContent = JavaPixelEngineHelperInterface::jstring2cstring(env,scriptContent) ;
 
@@ -210,7 +213,7 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_GetData
             jdsNameArr.add(retDsNameArr[ids]) ;
 		}
 	}else{
-		root["status"] = 9 ; 
+		root["status"] = 9 ;
 		root["error"] = errorText ;
 		root.createNestedArray("data") ;
 	}
@@ -232,9 +235,9 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_GetData
  */
 JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRender
   (JNIEnv * env, jobject object,
-  	jstring javaPEHelperClassName, 
-  	jstring scriptContent, 
-  	jlong datetime, 
+  	jstring javaPEHelperClassName,
+  	jstring scriptContent,
+  	jlong datetime,
   	jint z, jint y, jint x)
 {
 
@@ -248,7 +251,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 	jobject	javaResult = env->AllocObject(javaTileComputeResultClass);
 
 	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
-	JavaPixelEngineHelperInterface helper(env, helperclassname) ; 
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ;
 
 	PixelEngine::initV8() ;
 	PixelEngine pe ;
@@ -259,9 +262,9 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 	string logStr;
 
 	bool runok = pe.RunScriptForTileWithoutRender(nullptr,
-		cscript , 
-		datetime , 
-		z , y , x , 
+		cscript ,
+		datetime ,
+		z , y , x ,
 		retTileData ,
 		logStr ) ;
 
@@ -284,7 +287,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 		helper.setJavaObjectIntField(javaResult,"y", y) ;
 		helper.setJavaObjectIntField(javaResult,"x", x) ;
 	}
-	return javaResult ;	
+	return javaResult ;
 }
 
 
@@ -294,13 +297,13 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
  * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JIII)Lcom/pixelengine/TileComputeResult;
  */
 JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithRender
-  (JNIEnv * env , jobject object , 
-  	jstring javaPEHelperClassName, 
-  	jstring scriptContent, 
-  	jstring styleJson, 
-  	jlong datetime , 
-  	jint z, 
-  	jint y, 
+  (JNIEnv * env , jobject object ,
+  	jstring javaPEHelperClassName,
+  	jstring scriptContent,
+  	jstring styleJson,
+  	jlong datetime ,
+  	jint z,
+  	jint y,
   	jint x
   	)
 {
@@ -315,8 +318,8 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 	jobject	javaResult = env->AllocObject(javaTileComputeResultClass);
 
 	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
-	JavaPixelEngineHelperInterface helper(env, helperclassname) ; 
-	
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ;
+
 	PixelEngine::initV8() ;
 	PixelEngine pe ;
 	pe.helperPointer = &helper ;
@@ -336,10 +339,10 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 	int pnghei=0;
 
 	bool runok = pe.RunScriptForTileWithRender(nullptr,
-			cscript , 
+			cscript ,
 			tstyle,
-			(int64_t)datetime , 
-			z , y , x , 
+			(int64_t)datetime ,
+			z , y , x ,
 			retPngBinary ,
 			pngwid,
 			pnghei,
@@ -374,9 +377,9 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
  */
 JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRenderWithExtra
   (JNIEnv * env, jobject object,
-  	jstring javaPEHelperClassName, 
-  	jstring scriptContent, 
-    jstring extraJsonText, 
+  	jstring javaPEHelperClassName,
+  	jstring scriptContent,
+    jstring extraJsonText,
   	jint z, jint y, jint x)
 {
 
@@ -390,7 +393,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 	jobject	javaResult = env->AllocObject(javaTileComputeResultClass);
 
 	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
-	JavaPixelEngineHelperInterface helper(env, helperclassname) ; 
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ;
 
 	PixelEngine::initV8() ;
 	PixelEngine pe ;
@@ -398,15 +401,15 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 
 	string cscript = JavaPixelEngineHelperInterface::jstring2cstring(env,scriptContent) ;
     string cExJsonText = JavaPixelEngineHelperInterface::jstring2cstring(env,extraJsonText) ;
-    
+
 	PeTileData retTileData;
 	string logStr;
 
 	bool runok = pe.RunScriptForTileWithoutRenderWithExtra(
         nullptr,
-		cscript , 
+		cscript ,
         cExJsonText,
-		z , y , x , 
+		z , y , x ,
 		retTileData ,
 		logStr ) ;
 
@@ -429,7 +432,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 		helper.setJavaObjectIntField(javaResult,"y", y) ;
 		helper.setJavaObjectIntField(javaResult,"x", x) ;
 	}
-	return javaResult ;	
+	return javaResult ;
 }
 
 
@@ -442,9 +445,9 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithoutRenderWithExtraWithRunAfterInfo
   (
   	JNIEnv * env, jobject object,
-  	jstring javaPEHelperClassName, 
-  	jstring scriptContent, 
-    jstring extraJsonText, 
+  	jstring javaPEHelperClassName,
+  	jstring scriptContent,
+    jstring extraJsonText,
   	jint z, jint y, jint x
   	)
 {
@@ -458,7 +461,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 	jobject	javaResult = env->AllocObject(javaTileComputeResultClass);
 
 	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
-	JavaPixelEngineHelperInterface helper(env, helperclassname) ; 
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ;
 
 	PixelEngine::initV8() ;
 	PixelEngine pe ;
@@ -466,15 +469,15 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 
 	string cscript = JavaPixelEngineHelperInterface::jstring2cstring(env,scriptContent) ;
   string cExJsonText = JavaPixelEngineHelperInterface::jstring2cstring(env,extraJsonText) ;
-    
+
 	PeTileData retTileData;
 	string logStr;
 
 	bool runok = pe.RunScriptForTileWithoutRenderWithExtra(
         nullptr,
-		cscript , 
+		cscript ,
         cExJsonText,
-		z , y , x , 
+		z , y , x ,
 		retTileData ,
 		logStr ) ;
 
@@ -507,7 +510,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 		helper.setJavaObjectStringField(javaResult,"roi2ArrStr",     roi2str.c_str() ) ;
 
 	}
-	return javaResult ;	
+	return javaResult ;
 
 
 }
@@ -534,13 +537,13 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
  * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III)Lcom/pixelengine/TileComputeResult;
  */
 JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTileWithRenderWithExtra
-  (JNIEnv * env , jobject object , 
-  	jstring javaPEHelperClassName, 
-  	jstring scriptContent, 
-  	jstring styleJson, 
-    jstring extraJsonText, 
-  	jint z, 
-  	jint y, 
+  (JNIEnv * env , jobject object ,
+  	jstring javaPEHelperClassName,
+  	jstring scriptContent,
+  	jstring styleJson,
+    jstring extraJsonText,
+  	jint z,
+  	jint y,
   	jint x
   	)
 {
@@ -555,8 +558,8 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 	jobject	javaResult = env->AllocObject(javaTileComputeResultClass);
 
 	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
-	JavaPixelEngineHelperInterface helper(env, helperclassname) ; 
-	
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ;
+
 	PixelEngine::initV8() ;
 	PixelEngine pe ;
 	pe.helperPointer = &helper ;
@@ -578,10 +581,10 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 
 	bool runok = pe.RunScriptForTileWithRenderWithExtra(
             nullptr,
-			cscript , 
+			cscript ,
 			tstyle,
             cExJsonText,
-			z , y , x , 
+			z , y , x ,
 			retPngBinary ,
 			pngwid,
 			pnghei,
@@ -634,7 +637,7 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_CheckSc
 
 /* 2022-3-23 工具方法计算hsegtlv 的level0 的四至范围，注意该范围可能略小于实际范围，可以通过向外推一个像素即可肯定完全包括。
  * 成功返回四至范围数字组成的字符串，由逗号分割，顺序如后 left,right,top,bottom
- * 失败返回空字符串 
+ * 失败返回空字符串
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    UtilsComputeHsegTlvExtent
  * Signature: ([B)Ljava/lang/String;
@@ -650,7 +653,7 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_UtilsCo
 	env->ReleaseByteArrayElements(hsegtlvdata,barr,0) ;
 
 	string error ;
-	//WHsegTlvObject 
+	//WHsegTlvObject
 	WHsegTlvObject tlv ;
 	bool ok1 = tlv.readFromBinaryData(binarydata,error) ;
 	if( ok1==false ){
@@ -678,8 +681,8 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_UtilsCo
  */
 JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTileComputeResultByHsegTlv
   (JNIEnv * env , jobject object,
-  	jstring javaPEHelperClassName,  
-  	jobject oldTileComputeResult, 
+  	jstring javaPEHelperClassName,
+  	jobject oldTileComputeResult,
   	jbyteArray hsegtlvdata,
   	jdouble filldata )
 {
@@ -689,8 +692,8 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTil
 		printf("Error : not find class of com/pixelengine/TileComputeResult.");
 		return NULL ;
 	}
-	
-	//WHsegTlvObject 
+
+	//WHsegTlvObject
 	WHsegTlvObject tlv ;
 	{
 		vector<unsigned char> tlvdata ;
@@ -712,7 +715,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTil
 	double filldata1 = filldata ;
 
 	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
-	JavaPixelEngineHelperInterface helper(env, helperclassname) ; 
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ;
 
 	int dataType = 0 ;
 	int outType = 0 ;
@@ -740,7 +743,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTil
 				(unsigned char*)newdata.data(),
 				tlv,
 				(int)filldata1,
-				tilez, tiley, tilex, 
+				tilez, tiley, tilex,
 				256, 256 , nbands ) ;
 		}else if( dataType==2 ){
 			clipok = pe.innerCopyRoiData2(
@@ -748,7 +751,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTil
 				(unsigned short*)newdata.data(),
 				tlv,
 				(int)filldata1,
-				tilez, tiley, tilex, 
+				tilez, tiley, tilex,
 				256, 256 , nbands ) ;
 		}else if( dataType==3 ){
 			clipok = pe.innerCopyRoiData2(
@@ -756,7 +759,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTil
 				( short*)newdata.data(),
 				tlv,
 				(int)filldata1,
-				tilez, tiley, tilex, 
+				tilez, tiley, tilex,
 				256, 256 , nbands ) ;
 		}else if( dataType==4 ){
 			clipok = pe.innerCopyRoiData2(
@@ -764,7 +767,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTil
 				(unsigned int*)newdata.data(),
 				tlv,
 				(int)filldata1,
-				tilez, tiley, tilex, 
+				tilez, tiley, tilex,
 				256, 256 , nbands ) ;
 		}else if( dataType==5 ){
 			clipok = pe.innerCopyRoiData2(
@@ -772,7 +775,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTil
 				(int*)newdata.data(),
 				tlv,
 				(int)filldata1,
-				tilez, tiley, tilex, 
+				tilez, tiley, tilex,
 				256, 256 , nbands ) ;
 		}else if( dataType==6 ){
 			clipok = pe.innerCopyRoiData2(
@@ -780,7 +783,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTil
 				(float*)newdata.data(),
 				tlv,
 				(int)filldata1,
-				tilez, tiley, tilex, 
+				tilez, tiley, tilex,
 				256, 256 , nbands ) ;
 		}else if( dataType==7 ){
 			clipok = pe.innerCopyRoiData2(
@@ -788,7 +791,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTil
 				(double*)newdata.data(),
 				tlv,
 				(int)filldata1,
-				tilez, tiley, tilex, 
+				tilez, tiley, tilex,
 				256, 256 , nbands ) ;
 		}
 		if( clipok==false ){
@@ -817,6 +820,156 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipTil
 }
 
 
+/* 2022-3-26 直接对瓦片结果进行统计，不适用v8
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    ComputeStatisticTileComputeResultByHsegTlv
+ * Signature: (Ljava/lang/String;Lcom/pixelengine/TileComputeResult;[BDDD)[Lcom/pixelengine/JStatisticData;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ComputeStatisticTileComputeResultByHsegTlv
+  (
+  JNIEnv *env, //jni
+  jobject obj, //jni
+  jstring javaPEHelperClassName,//javahelperclassname
+   jobject tcr, //tilecomputeresult
+   jbyteArray hsegtlvdata, //roi tlv
+   jdouble filldata,
+    jdouble vMinInc,
+    jdouble vMaxInc
+    )
+{
+    jclass	javaTileComputeResultClass = (env)->FindClass("com/pixelengine/TileComputeResult");
+	if( javaTileComputeResultClass == NULL )
+	{
+		printf("Error : Java_com_pixelengine_HBasePeHelperCppConnector_ComputeStatisticTileComputeResultByHsegTlv not find class of com/pixelengine/TileComputeResult.");
+		return NULL ;
+	}
+
+    jclass	jstatisticDataClass = (env)->FindClass("com/pixelengine/JStatisticData");
+	if( jstatisticDataClass == NULL )
+	{
+		printf("Error : Java_com_pixelengine_HBasePeHelperCppConnector_ComputeStatisticTileComputeResultByHsegTlv not find class of com/pixelengine/JStatisticData.");
+		return NULL ;
+	}
+
+
+	//WHsegTlvObject
+	WHsegTlvObject tlv ;
+	{
+		vector<unsigned char> tlvdata ;
+		jbyte* tlvbytedata1 = (jbyte*)env->GetByteArrayElements(hsegtlvdata,0) ;
+		jsize  tlvbytelen = env->GetArrayLength(hsegtlvdata) ;
+		//copy data
+		tlvdata.resize(tlvbytelen) ;
+		memcpy( tlvdata.data() , tlvbytedata1 , tlvbytelen ) ;
+		env->ReleaseByteArrayElements(hsegtlvdata,tlvbytedata1,0) ;
+		string error ;
+		bool ok1 = tlv.readFromBinaryData(tlvdata,error) ;
+		if( ok1==false ){
+			cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_ComputeStatisticTileComputeResultByHsegTlv bad tlv:"<<error<<endl ;
+			return NULL ;
+		}
+	}
+
+
+	double filldata1 = filldata ;
+	double validmin1 = vMinInc;
+	double validmax1 = vMaxInc;
+
+	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ;
+
+	int dataType = 0 ;
+	int outType = 0 ;//png or binary
+	int nbands = 0 ;
+	int status= 0 ;
+	vector<unsigned char> tcrdata ;
+	int tilez,tiley,tilex ;
+
+	helper.getJavaObjectIntField(tcr,"status",status) ;
+	helper.getJavaObjectIntField(tcr,"outType",outType) ;
+	helper.getJavaObjectIntField(tcr,"dataType",dataType) ;
+	helper.getJavaObjectIntField(tcr,"nbands",nbands) ;
+	helper.getJavaObjectIntField(tcr,"z",tilez) ;
+	helper.getJavaObjectIntField(tcr,"y",tiley) ;
+	helper.getJavaObjectIntField(tcr,"x",tilex) ;
+
+	vector<WStatisticData> statDataResults ;
+	if( status==0 ){
+		helper.getJavaObjectByteArrField(tcr,"binaryData",tcrdata) ;
+		PixelEngine pe ;
+		bool statok = false ;
+		if( dataType==1 ){
+			statok = PixelEngine::computeStatistic<unsigned char>(
+                (unsigned char*)tcrdata.data(),
+                tlv, filldata1, tilez, tiley, tilex ,256,256, nbands,
+                validmin1,validmax1,statDataResults
+			) ;
+		}else if( dataType==2 ){
+			statok = pe.computeStatistic(
+                (unsigned short*)tcrdata.data(),
+                tlv, filldata1, tilez, tiley, tilex ,256,256, nbands,
+                validmin1,validmax1,statDataResults
+			) ;
+		}else if( dataType==3 ){
+			statok = pe.computeStatistic(
+                (short*)tcrdata.data(),
+                tlv, filldata1, tilez, tiley, tilex ,256,256, nbands,
+                validmin1,validmax1,statDataResults
+			) ;
+		}else if( dataType==4 ){
+			statok = pe.computeStatistic(
+                (unsigned int*)tcrdata.data(),
+                tlv, filldata1, tilez, tiley, tilex ,256,256, nbands,
+                validmin1,validmax1,statDataResults
+			) ;
+		}else if( dataType==5 ){
+			statok = pe.computeStatistic(
+                (int*)tcrdata.data(),
+                tlv, filldata1, tilez, tiley, tilex ,256,256, nbands,
+                validmin1,validmax1,statDataResults
+			) ;
+		}else if( dataType==6 ){
+			statok = pe.computeStatistic(
+                (float*)tcrdata.data(),
+                tlv, filldata1, tilez, tiley, tilex ,256,256, nbands,
+                validmin1,validmax1,statDataResults
+			) ;
+		}else if( dataType==7 ){
+			statok = pe.computeStatistic(
+                (double*)tcrdata.data(),
+                tlv, filldata1, tilez, tiley, tilex ,256,256, nbands,
+                validmin1,validmax1,statDataResults
+			) ;
+		}
+		if( statok==false ){
+			cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_ComputeStatisticTileComputeResultByHsegTlv bad statistic."<<endl ;
+			return NULL ;
+		}
+	}
+
+
+    // jstatisticDataClass
+	jobjectArray outStatDataArray = env->NewObjectArray( statDataResults.size() , jstatisticDataClass ,NULL) ;
+	if( outStatDataArray == NULL ){
+        cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_ComputeStatisticTileComputeResultByHsegTlv bad outStatDataArray."<<endl ;
+		return NULL ;
+	}
+	for( int ib ; ib < statDataResults.size() ; ++ib )
+	{
+        jobject	jstatdata1 = env->AllocObject(jstatisticDataClass);
+        helper.setJavaObjectDoubleField(jstatdata1, "sum" ,         statDataResults[ib].sum ) ;
+        helper.setJavaObjectDoubleField(jstatdata1, "sq_sum" ,      statDataResults[ib].sq_sum ) ;
+        helper.setJavaObjectDoubleField(jstatdata1, "validCnt" ,    statDataResults[ib].validCnt ) ;
+        helper.setJavaObjectDoubleField(jstatdata1, "validMin" ,    statDataResults[ib].validMin ) ;
+        helper.setJavaObjectDoubleField(jstatdata1, "validMax" ,    statDataResults[ib].validMax ) ;
+        helper.setJavaObjectDoubleField(jstatdata1, "areakm2" ,     statDataResults[ib].areakm2 ) ;
+        helper.setJavaObjectDoubleField(jstatdata1, "allCnt" ,      statDataResults[ib].allCnt ) ;
+        helper.setJavaObjectDoubleField(jstatdata1, "fillCnt" ,     statDataResults[ib].fillCnt ) ;
+        env->SetObjectArrayElement(outStatDataArray , ib , jstatdata1) ;
+	}
+	return outStatDataArray ;
+
+}
 
 
 // /// check script syntax ok

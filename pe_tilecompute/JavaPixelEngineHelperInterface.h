@@ -1,6 +1,7 @@
 #ifndef JAVAPIXELENGINEHELPERINTERFACE_H
 #define JAVAPIXELENGINEHELPERINTERFACE_H
 //2022-3-23
+//2022-3-26
 
 #include <jni.h>
 #include <string>
@@ -99,6 +100,7 @@ public :
 	bool setJavaObjectIntField(jobject obj,const char* fieldname,int val);
 	bool setJavaObjectStringField(jobject obj,const char* fieldname,const char* val);
 	bool setJavaObjectByteArrField(jobject obj,const char* fieldname,vector<unsigned char>& val);
+	bool setJavaObjectDoubleField(jobject obj,const char* fieldname,double val);//2022-3-26
 
 } ;
 
