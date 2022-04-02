@@ -20,6 +20,7 @@
 					<Add directory="../../../../sharedcodes/zonalstat" />
 					<Add directory="../../../../sharedcodes/GeographicLib/include" />
 					<Add directory="../../../../sharedcodes" />
+					<Add directory="PixelEngine_TileCompute/pe_tilecompute" />
 				</Compiler>
 				<Linker>
 					<Add option="-fPIC" />
@@ -36,6 +37,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add directory="PixelEngine_TileCompute/pe_tilecompute" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -101,6 +103,10 @@
 		<Unit filename="../../PeTileData.h" />
 		<Unit filename="../../PixelEngine.cpp" />
 		<Unit filename="../../PixelEngine.h" />
+		<Unit filename="../../datetimecollection.cpp" />
+		<Unit filename="../../datetimecollection.h" />
+		<Unit filename="../../debugpixelenginehelperinterface.cpp" />
+		<Unit filename="../../debugpixelenginehelperinterface.h" />
 		<Unit filename="../../esprima.cpp" />
 		<Unit filename="../../esprima.h" />
 		<Unit filename="../../lodepng.cpp" />
@@ -109,6 +115,8 @@
 		<Unit filename="../../pemultipolygon.h" />
 		<Unit filename="../../peroi.cpp" />
 		<Unit filename="../../peroi.h" />
+		<Unit filename="../../template_methods.cpp" />
+		<Unit filename="../../template_methods.h" />
 		<Unit filename="../../wAST.cpp" />
 		<Unit filename="../../wAST.h" />
 		<Unit filename="../../wTextfilereader.cpp" />

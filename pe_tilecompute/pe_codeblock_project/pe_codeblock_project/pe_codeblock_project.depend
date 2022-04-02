@@ -48,7 +48,7 @@
 	<stdlib.h>
 	<ostream>
 
-1648345177 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.h
+1648886089 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.h
 	<v8.h>
 	<libplatform/libplatform.h>
 	<cstdio>
@@ -76,6 +76,8 @@
 	"wstatisticdata.h"
 	"wcomputelonlatarea.h"
 	"wcomputelonlatarea.h"
+	"datetimecollection.h"
+	"template_methods.h"
 
 1601009675 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/v8include/v8.h
 	<stddef.h>
@@ -230,7 +232,7 @@
 1601009658 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PeTileData.cpp
 	"PeTileData.h"
 
-1648347784 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.cpp
+1648887313 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/PixelEngine.cpp
 	"PixelEngine.h"
 	<time.h>
 	"esprimacpptool.h"
@@ -247,13 +249,14 @@
 1601009673 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wTextfilereader.cpp
 	"wTextfilereader.h"
 
-1648350373 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/pe_codeblock_project/pe_codeblock_project/main.cpp
+1648887648 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/pe_codeblock_project/pe_codeblock_project/main.cpp
 	<iostream>
 	"../../PixelEngine.h"
 	"../../JavaPixelEngineHelperInterface.h"
 	"../../../../sharedcodes/zonalstat/whsegtlvobject.h"
 	"../../wcomputelonlatarea.h"
 	"wdatetime.h"
+	"debugpixelenginehelperinterface.h"
 
 1617798476 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wstringutils.h
 	<string>
@@ -1019,4 +1022,25 @@
 
 1648350540 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/wcomputelonlatarea.cpp
 	"wcomputelonlatarea.h"
+
+1648887879 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/debugpixelenginehelperinterface.cpp
+	"debugpixelenginehelperinterface.h"
+
+1648798613 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/debugpixelenginehelperinterface.h
+	<PixelEngine.h>
+
+1648853874 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/datetimecollection.h
+	<vector>
+	<string>
+	<ctime>
+
+1648856805 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/datetimecollection.cpp
+	"datetimecollection.h"
+
+1648886999 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/template_methods.cpp
+	"template_methods.h"
+
+1648886489 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/template_methods.h
+	<vector>
+	<algorithm>
 

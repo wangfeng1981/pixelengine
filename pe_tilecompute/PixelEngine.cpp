@@ -18,6 +18,12 @@ PixelEngine_GetDataFromExternal2Arr_FunctionPointer PixelEngine::GetExternalTile
 PixelEngine_GetColorRampFromExternal_FunctionPointer PixelEngine::GetExternalColorRampCallBack = nullptr ;
 std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 
+const int PixelEngine::s_CompositeMethodMin=1;
+const int PixelEngine::s_CompositeMethodMax=2;
+const int PixelEngine::s_CompositeMethodAve=3;
+const int PixelEngine::s_CompositeMethodSum=4;
+
+
 //string PixelEngine::pejs_version = string("2.2") ;
 //string PixelEngine::pejs_version = string("2.4.1.1 2020-10-11"); //2020-9-13
 //string PixelEngine::pejs_version = string("2.4.2.0 2020-10-15");
@@ -81,7 +87,14 @@ std::unique_ptr<v8::Platform> PixelEngine::v8Platform = nullptr;
 //2022-3-27
 //1. bugfixed for area compute
 //2. bugfixed for WComputeLonLatArea use double for cached area
-string PixelEngine::pejs_version = string("2.7.2.1 2022-03-27");
+//string PixelEngine::pejs_version = string("2.7.2.1 2022-03-27");
+
+//2022-3-31
+//1. add DatasetCollection API
+//2. DatasetArray is deprecated
+//3. add DatasetCollections API 2022-4-1
+//4. add dataset.subtract method 2022-4-1
+string PixelEngine::pejs_version = string("2.8.2.0 2022-03-31");
 
 
 //// mapreduce not used yet.
@@ -1188,11 +1201,26 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
            FunctionTemplate::New(isolate,
            	PixelEngine::GlobalFunc_ClipCallBack)->GetFunction(context).ToLocalChecked() );
 
-    //dataset.clip() 2020-10-16
+    //dataset.clip2() 2022-3-20
 	Maybe<bool> ok20_1 = ds->Set(context
 		,String::NewFromUtf8(isolate, "clip2").ToLocalChecked(),
            FunctionTemplate::New(isolate,
            	PixelEngine::GlobalFunc_Clip2CallBack)->GetFunction(context).ToLocalChecked() );
+
+    //dataset.subtract() 2022-4-2
+    /// let dsResult = datasetA.subtract( datasetB, validmin, validmax, filldata [,outDataType] )
+	Maybe<bool> ok402_1 = ds->Set(context
+		,String::NewFromUtf8(isolate, "subtract").ToLocalChecked(),
+           FunctionTemplate::New(isolate,
+           	PixelEngine::GlobalFunc_SubtractCallBack)->GetFunction(context).ToLocalChecked() );
+
+    //dataset.exract() 2022-4-2
+    /// let onebandds = datasetA.extract(iband)
+	Maybe<bool> ok402_2 = ds->Set(context
+		,String::NewFromUtf8(isolate, "extract").ToLocalChecked(),
+           FunctionTemplate::New(isolate,
+           	PixelEngine::GlobalFunc_ExtractCallBack)->GetFunction(context).ToLocalChecked() );
+
 
 
     //convert datatype methods
@@ -1200,6 +1228,12 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 		,String::NewFromUtf8(isolate, "convertToDataType").ToLocalChecked(),
            FunctionTemplate::New(isolate,
            	PixelEngine::GlobalFunc_ConvertToDataType)->GetFunction(context).ToLocalChecked() );
+
+
+
+
+
+
     {
         Local<Value> tempFuncJs1 = global->Get(context,String::NewFromUtf8(isolate, "globalFunc_ds_toByteCallBack")
             .ToLocalChecked() ).ToLocalChecked() ;
@@ -1238,6 +1272,43 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
 
 
 	return handle_scope.Escape(ds);
+}
+//2022-4-2
+Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& context
+    ,const int datatype
+    ,const int width
+    ,const int height
+    ,const int nband
+    ,string dsname
+    ,int64_t datetime
+    ,const int z
+    ,const int y
+    ,const int x )
+{
+    if(! PixelEngine::quietMode)cout<<"inside CPP_NewDataset v2 datatype,w,h,nb:"
+        <<datatype<<","<<width<<","<<height<<","<<nband<<endl;
+	v8::EscapableHandleScope handle_scope(isolate);
+
+	Local<Object> ds = CPP_NewDataset(isolate,context,datatype,width,height,nband) ;
+
+	Maybe<bool> ok13 = ds->Set(context
+		,String::NewFromUtf8(isolate, "dsName").ToLocalChecked()
+		,String::NewFromUtf8(isolate,  dsname.c_str() ).ToLocalChecked() ) ;
+	Maybe<bool> ok14 = ds->Set(context
+		,String::NewFromUtf8(isolate, "dsDt").ToLocalChecked()
+		,Number::New(isolate, datetime ) ) ;//long
+	Maybe<bool> ok15 = ds->Set(context
+		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
+		,Integer::New(isolate,x) ) ;
+	Maybe<bool> ok16 = ds->Set(context
+		,String::NewFromUtf8(isolate, "y").ToLocalChecked()
+		,Integer::New(isolate,y) ) ;
+	Maybe<bool> ok17 = ds->Set(context
+		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
+		,Integer::New(isolate,z) ) ;
+
+	return handle_scope.Escape(ds);
+
 }
 
 
@@ -1297,7 +1368,7 @@ Local<Object> PixelEngine::CPP_NewDatasetArray(Isolate* isolate,Local<Context>& 
 
 
 	Local<ArrayBuffer> timeArrayAB = ArrayBuffer::New(isolate,numds*8) ;
-	Local<BigInt64Array> timeArrayInt64 = BigInt64Array::New(timeArrayAB,0,numds) ;
+	Local<BigInt64Array> timeArrayInt64 = BigInt64Array::New(timeArrayAB,0,numds) ;//datasetarray deprecated 2022-4-2
 	Maybe<bool> ok13 = ds->Set(context
 		,String::NewFromUtf8(isolate, "timeArr").ToLocalChecked()
 		,timeArrayInt64 ) ;
@@ -2759,13 +2830,13 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 	Local<Value> timeArrValue = ds->Get( context
 		,String::NewFromUtf8(isolate, "timeArr").ToLocalChecked())
 		.ToLocalChecked() ;
-	BigInt64Array* timeArrInt64 = BigInt64Array::Cast(*timeArrValue) ;
+	BigInt64Array* timeArrInt64 = BigInt64Array::Cast(*timeArrValue) ;//datasetarray deprecated 2022-4-2
 
 
 	for(int ids = 0 ; ids < retnumds ; ++ ids )
 	{
 		//set time
-		Maybe<bool> ok5 = timeArrInt64->Set(context,ids,BigInt::New(isolate,externalTimeArr[ids]));
+		Maybe<bool> ok5 = timeArrInt64->Set(context,ids,BigInt::New(isolate,externalTimeArr[ids]));//datasetarray deprecated 2022-4-2
 
 		//set data
 		vector<unsigned char>& indatavec = externalDataArr[ids] ;
@@ -3462,13 +3533,52 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_DatasetArrayCallBack)->GetFunction(context).ToLocalChecked() );
 	//2020-9-13
 	Maybe<bool> ok19 = pe->Set(context
-		, String::NewFromUtf8(isolate, "getStyle").ToLocalChecked(),
+		, String::NewFromUtf8(isolate, "GetStyle").ToLocalChecked(),  //2022-4-1 use Uppercase G
 		FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_GetStyleCallBack)->GetFunction(context).ToLocalChecked());
 
 	//pe function log
 	Maybe<bool> ok20 = pe->Set(context
 		,String::NewFromUtf8(isolate, "log").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_Log)->GetFunction(context).ToLocalChecked() );
+
+    //2022-3-31
+    Maybe<bool> ok0331_1 = pe->Set(context
+		,String::NewFromUtf8(isolate, "DatasetCollection").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_DatasetCollectionCallBack)
+           ->GetFunction(context).ToLocalChecked() );
+    //2022-4-1
+    Maybe<bool> ok0401_1 = pe->Set(context
+		,String::NewFromUtf8(isolate, "DatasetCollections").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_DatasetCollectionsCallBack)
+           ->GetFunction(context).ToLocalChecked() );
+    //2022-4-1
+    Maybe<bool> ok0401_2 = pe->Set(context
+		,String::NewFromUtf8(isolate, "RemoteBuildDtCollections").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_RemoteBuildDtCollectionsCallBack)
+           ->GetFunction(context).ToLocalChecked() );
+    //2022-4-1
+    Maybe<bool> ok0401_3 = pe->Set(context
+		,String::NewFromUtf8(isolate, "LocalBuildDtCollectionByStopDt").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_LocalBuildDtCollectionByStopDtCallBack)
+           ->GetFunction(context).ToLocalChecked() );
+    //2022-4-1
+    Maybe<bool> ok0401_4 = pe->Set(context
+		,String::NewFromUtf8(isolate, "CompositeDsCollection").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_CompositeDsCollectionCallBack)
+           ->GetFunction(context).ToLocalChecked() );//
+    //2022-4-2
+    Maybe<bool> ok0401_5 = pe->Set(context
+		,String::NewFromUtf8(isolate, "CompositeDsCollections").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_CompositeDsCollectionsCallBack)
+           ->GetFunction(context).ToLocalChecked() );
+    //2022-4-2
+    Maybe<bool> ok0401_6 = pe->Set(context
+		,String::NewFromUtf8(isolate, "StackDatasets").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_StackDatasetsCallBack)
+           ->GetFunction(context).ToLocalChecked() );
+
+
+
 
 
     {//DataTypes
@@ -3488,6 +3598,18 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
         Integer::New(isolate,6));
         Maybe<bool> ok37 = pe->Set(context,String::NewFromUtf8(isolate, "DataTypeFloat64").ToLocalChecked(),
         Integer::New(isolate,7));
+    }
+
+    {//Composite Methods
+        Maybe<bool> ok31 = pe->Set(context,String::NewFromUtf8(isolate, "CompositeMethodMin").ToLocalChecked(),
+        Integer::New(isolate,s_CompositeMethodMin));
+        Maybe<bool> ok32 = pe->Set(context,String::NewFromUtf8(isolate, "CompositeMethodMax").ToLocalChecked(),
+        Integer::New(isolate,s_CompositeMethodMax));
+        Maybe<bool> ok33 = pe->Set(context,String::NewFromUtf8(isolate, "CompositeMethodAve").ToLocalChecked(),
+        Integer::New(isolate,s_CompositeMethodAve));
+        Maybe<bool> ok34 = pe->Set(context,String::NewFromUtf8(isolate, "CompositeMethodSum").ToLocalChecked(),
+        Integer::New(isolate,s_CompositeMethodSum));
+
     }
 
 
@@ -6564,6 +6686,1010 @@ bool PixelEngine::RunScriptForTileWithRenderWithExtra(void* extra, string& scrip
 		return false;
 	}
 }
+
+
+
+///2022-4-1 数据类型换算字节数量
+int PixelEngine::datatype2bytelen(const int datatype)
+{
+    assert( datatype>=1 && datatype<=7 ) ;
+    //                      0   b   u16 i16 u32 i32 f32 f64
+    const int bytelen[8] = {0,  1,  2   ,2, 4,  4,  4,  8} ;
+    return bytelen[datatype] ;
+}
+
+/// 2022-3-31
+/// 对应js中pe.DatasetCollection("dsname",[20010101030405,...]) 的C++ 方法
+///       pe.DatasetCollection("dsname",datetimeCollection)
+/// @retval DatasetCollection对象
+/// DatasetCollection对象的定义为
+///
+/// PixelEngine.DatasetCollection = {
+///   "key":"2010",//可以为空
+///   //注意dtArr的元素数量与dataArr元素数量是一致的
+///   "dtArr":[
+///     20010101090909,20010102090909,...,20010131090909],
+///   "dataArr":[
+///     ByteArray/Int16Array/.../DoubleArray,
+///     ByteArray/Int16Array/.../DoubleArray,
+///     ...
+///     ByteArray/Int16Array/.../DoubleArray
+///   ],
+///   "x":0 , "y":0 , "z":0 ,
+///   "width":256, "height":256,
+///   "nband":1,
+///   "dataType":1/2/3/../7
+/// }
+void PixelEngine::GlobalFunc_DatasetCollectionCallBack(
+    const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_DatasetCollectionCallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 2 )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length!=2 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> v8dsname = args[0];
+	Local<Value> v8DtArrOrDtCollection = args[1] ;
+
+	String::Utf8Value dsnameutf8( isolate , v8dsname) ;
+	string dsname( *dsnameutf8 ) ;
+
+	string dtColKey = "" ;
+	vector<int64_t> dtColDts ;
+	//检查 v8DtArrOrDtCollection 是不是 日期时间 数组
+	if( v8DtArrOrDtCollection->IsArray() )
+	{
+        Array* tempArray1 = v8::Array::Cast(*v8DtArrOrDtCollection) ;
+        if( tempArray1->Length() == 0 ){
+            if(! PixelEngine::quietMode)cout<<"Error: tempArray1 empty."<<endl ;
+            return;
+        }
+        dtColDts.resize( tempArray1->Length() ) ;
+        for(int tempi = 0 ; tempi < tempArray1->Length(); ++ tempi ){
+            dtColDts[tempi] = tempArray1->Get(context,tempi)
+                .ToLocalChecked()->NumberValue(context).ToChecked();
+        }
+	}
+	//检查 v8DtArrOrDtCollection 是不是 DatetimeCollection 对象
+	else if( v8DtArrOrDtCollection->IsObject() )
+	{
+        cout<<"debug 402-1"<<endl ;
+        v8::Object* dtcollObject = v8::Object::Cast(*v8DtArrOrDtCollection) ;
+        Local<Value> dtcoll_key = dtcollObject->Get(
+            context,
+            String::NewFromUtf8(isolate,"key").ToLocalChecked()
+            ).ToLocalChecked() ;
+        String::Utf8Value temp_key( isolate , dtcoll_key) ;
+        dtColKey = string( *temp_key ) ;
+        cout<<"debug 402-2"<<endl ;
+
+        Local<Value> dtcoll_dtarr = dtcollObject->Get(
+            context,
+            String::NewFromUtf8(isolate,"datetimes").ToLocalChecked()
+            ).ToLocalChecked() ;
+        cout<<"debug 402-3"<<endl ;
+
+        Array* tempArray1 = v8::Array::Cast(*dtcoll_dtarr) ;
+        if( tempArray1->Length() == 0 ){
+            if(! PixelEngine::quietMode)cout<<"Error: tempArray1 empty."<<endl ;
+            return;
+        }
+
+        cout<<"debug 402-4 "<< tempArray1->Length() <<endl ;
+
+        dtColDts.resize( tempArray1->Length() ) ;
+        for(int tempi = 0 ; tempi < tempArray1->Length(); ++ tempi ){
+//            Local<String> typeofarrelement = tempArray1->Get(context,tempi)
+//                .ToLocalChecked()->TypeOf(isolate) ;
+//            cout<<"type of arr element:"<< *String::Utf8Value(isolate,typeofarrelement)<<endl ;
+
+            dtColDts[tempi] = tempArray1->Get(context,tempi)
+                .ToLocalChecked()->NumberValue(context).ToChecked();
+        }
+
+        cout<<"debug 402-5"<<endl ;
+
+	}else{
+        if(! PixelEngine::quietMode)cout<<"Error: args[1] is not dtarr nor dtcollection object."<<endl ;
+		return;
+	}
+
+    //debug
+    cout<<"debug dsname "<<dsname<<endl ;
+    cout<<"debug dtColKey "<<dtColKey<<endl ;
+    cout<<"debug dtcollection: [" <<endl;
+    for(int i = 0 ; i<dtColDts.size();++i ){
+        cout<<dtColDts[i]<<endl ;
+    }
+    cout<<"]"<<endl ;
+
+    int tilex = thisPePtr->tileInfo.x ;
+    int tiley = thisPePtr->tileInfo.y ;
+    int tilez = thisPePtr->tileInfo.z ;
+
+    vector< vector<unsigned char> > retTileDataArr ;
+
+    vector<int64_t> retDtArr ;
+    int retdatatype = 0 ;
+    int retwid = 0 ;
+    int rethei = 0 ;
+    int retnband = 0 ;
+
+    if (thisPePtr->helperPointer != nullptr) {
+		string errorText;
+		bool dataok = thisPePtr->helperPointer->getTileDataCollection(
+        dsname,   //输入数据集名称
+		dtColDts, //输入日期时间数组，注意实际返回的数据不一定全部都有，具体要看retdtArr
+		tilez, tiley, tilex, //瓦片坐标
+		retTileDataArr, //返回二进制数据，一个datetime对应一个vector<unsigned char>
+		retDtArr ,//返回成功获取的 datetime数组，数量与retTileDataArr一致
+		retdatatype,//返回数据类型 1 byte，2 u16,3 i16, 4 u32, 5 i32, 6 f32, 7 f64
+		retwid,     //返回瓦片宽度
+		rethei,     //返回瓦片高度
+		retnband,  //返回瓦片波段数量
+		errorText);
+
+		if (dataok==false) {
+			if(! PixelEngine::quietMode)cout << "Error: PixelEngine.helperPointer.getTileDataCollection failed:"<<errorText << endl;
+			return;//return null in javascript.
+		}
+
+
+        Local<Object> theDsCollection = CPP_NewDatasetCollection(
+            isolate, context ,
+            dsname ,
+            dtColKey,
+            retDtArr,
+            retTileDataArr,
+            retdatatype,
+            retwid,
+            rethei,
+            retnband,
+            tilez,
+            tiley,
+            tilex
+        );
+        args.GetReturnValue().Set(theDsCollection) ;
+	}
+	else
+	{
+		if(! PixelEngine::quietMode)cout << "Error: PixelEngine::helperPointer is null." << endl;
+		return;//return null in javascript.
+	}
+}
+
+/// 2022-3-31
+/// 对应js中pe.DatasetCollections("dsname",datetimeCollArray) 的C++ 方法
+/// @retval DatasetCollection Array
+void PixelEngine::GlobalFunc_DatasetCollectionsCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_DatasetCollectionsCallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 2 )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length!=2 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> v8dsname = args[0];
+	Local<Value> v8DtCollections = args[1] ;
+
+	String::Utf8Value dsnameutf8( isolate , v8dsname) ;
+	string dsname( *dsnameutf8 ) ;
+
+	//检查 v8DtCollections 是不是 DatetimeCollection 数组
+	if( v8DtCollections->IsArray()==false )
+	{
+        if(! PixelEngine::quietMode)cout<<"Error: args[1] is not array."<<endl ;
+		return;
+	}
+
+    int tilex = thisPePtr->tileInfo.x ;
+    int tiley = thisPePtr->tileInfo.y ;
+    int tilez = thisPePtr->tileInfo.z ;
+
+    Array* dtCollectionV8Array = Array::Cast(*v8DtCollections) ;
+	int dtcoll_len = dtCollectionV8Array->Length() ;
+
+	Local<Array> dsCollectionArray = Array::New(isolate, dtcoll_len ) ;//返回结果
+
+	for(int icoll = 0 ; icoll < dtcoll_len ; ++ icoll )
+	{
+        Local<Object> oneDtCollObj = dtCollectionV8Array->Get(context,icoll).ToLocalChecked()
+                                        ->ToObject(context).ToLocalChecked() ;
+
+        Local<Value> dtcoll_key = oneDtCollObj->Get(
+            context,
+            String::NewFromUtf8(isolate,"key").ToLocalChecked()
+            ).ToLocalChecked() ;
+        String::Utf8Value temp_key( isolate , dtcoll_key) ;
+        string dtColKey = string( *temp_key ) ;
+
+        Local<Value> dtcoll_dtarr = oneDtCollObj->Get(
+            context,
+            String::NewFromUtf8(isolate,"datetimes").ToLocalChecked()
+            ).ToLocalChecked() ;
+        Array* tempArray1 = v8::Array::Cast(*dtcoll_dtarr) ;
+        if( tempArray1->Length() == 0 ){
+            if(! PixelEngine::quietMode)cout<<"Error: tempArray1 empty."<<endl ;
+            return;
+        }
+        vector<int64_t> dtColDts( tempArray1->Length() ) ;
+        for(int idt_in_dtcoll = 0 ; idt_in_dtcoll < tempArray1->Length(); ++ idt_in_dtcoll ){
+            dtColDts[idt_in_dtcoll] = tempArray1->Get(context,idt_in_dtcoll)
+                .ToLocalChecked()->NumberValue(context).ToChecked();
+        }
+
+        //debug
+        cout<<"debug *** "<<endl ;
+        cout<<"debug icoll "<<icoll<<endl ;
+        cout<<"debug dsname "<<dsname<<endl ;
+        cout<<"debug dtColKey "<<dtColKey<<endl ;
+        cout<<"debug dtcollection: [" <<endl;
+        for(int i = 0 ; i<dtColDts.size();++i ){
+            cout<<dtColDts[i]<<endl ;
+        }
+        cout<<"]"<<endl ;
+
+
+
+        vector< vector<unsigned char> > retTileDataArr ;
+        vector<int64_t> retDtArr ;
+        int retdatatype = 0 ;
+        int retwid = 0 ;
+        int rethei = 0 ;
+        int retnband = 0 ;
+
+        if (thisPePtr->helperPointer != nullptr) {
+            string errorText;
+            bool dataok = thisPePtr->helperPointer->getTileDataCollection(
+            dsname,   //输入数据集名称
+            dtColDts, //输入日期时间数组，注意实际返回的数据不一定全部都有，具体要看retdtArr
+            tilez, tiley, tilex, //瓦片坐标
+            retTileDataArr, //返回二进制数据，一个datetime对应一个vector<unsigned char>
+            retDtArr ,//返回成功获取的 datetime数组，数量与retTileDataArr一致
+            retdatatype,//返回数据类型 1 byte，2 u16,3 i16, 4 u32, 5 i32, 6 f32, 7 f64
+            retwid,     //返回瓦片宽度
+            rethei,     //返回瓦片高度
+            retnband,  //返回瓦片波段数量
+            errorText);
+
+            if (dataok==false) {
+                if(! PixelEngine::quietMode)cout << "Error: PixelEngine.helperPointer.getTileDataCollection failed:"<<errorText << endl;
+                return;//return null in javascript.
+            }
+
+
+            Local<Object> theDsCollection = CPP_NewDatasetCollection(
+                isolate, context ,
+                dsname ,
+                dtColKey,
+                retDtArr,
+                retTileDataArr,
+                retdatatype,
+                retwid,
+                rethei,
+                retnband,
+                tilez,
+                tiley,
+                tilex
+            );
+            Maybe<bool> tempMaybeOk1 = dsCollectionArray->Set(context, icoll ,theDsCollection ) ;
+        }
+        else
+        {
+            if(! PixelEngine::quietMode)cout << "Error: PixelEngine::helperPointer is null." << endl;
+            return;//return null in javascript.
+        }
+	}
+	args.GetReturnValue().Set(dsCollectionArray) ;
+    cout<<"out c++ GlobalFunc_DatasetCollectionsCallBack"<<endl;
+}
+
+/// 2022-4-1 使用获取的数据够建一个DatasetCollection对象
+/// PixelEngine.DatasetCollection = {
+///   "dsname":"can be empty",
+///   "key":"2010",//可以为空
+///   //注意dtArr的元素数量与dataArr元素数量是一致的
+///   "dtArr":[
+///     20010101090909,20010102090909,...,20010131090909],
+///   "dataArr":[
+///     ByteArray/Int16Array/.../DoubleArray,
+///     ByteArray/Int16Array/.../DoubleArray,
+///     ...
+///     ByteArray/Int16Array/.../DoubleArray
+///   ],
+///   "x":0 , "y":0 , "z":0 ,
+///   "width":256, "height":256,
+///   "nband":1,
+///   "dataType":1/2/3/../7
+/// }
+Local<Object> PixelEngine::CPP_NewDatasetCollection(
+    Isolate* isolate,Local<Context>& context
+    ,string dsname
+    ,string key
+    ,vector<int64_t>& dtArr
+    ,vector< vector<unsigned char> >& dataArr
+    ,const int datatype
+    ,const int width
+    ,const int height
+    ,const int nband
+    ,const int tilez,const int tiley,const int tilex
+    )
+{
+    if(! PixelEngine::quietMode)cout<<"inside CPP_NewDatasetCollection"<<endl;
+	v8::EscapableHandleScope handle_scope(isolate);
+
+	Local<Object> global = context->Global() ;
+
+	Local<Object> retobj = Object::New(isolate) ;
+	Maybe<bool> ok2 = retobj->Set(context
+		,String::NewFromUtf8(isolate, "width").ToLocalChecked()
+		,Integer::New(isolate,width) ) ;
+	Maybe<bool> ok3 = retobj->Set(context
+		,String::NewFromUtf8(isolate, "height").ToLocalChecked()
+		,Integer::New(isolate,height) ) ;
+	Maybe<bool> ok4 = retobj->Set(context
+		,String::NewFromUtf8(isolate, "nband").ToLocalChecked()
+		,Integer::New(isolate,nband) ) ;
+	Maybe<bool> ok5 = retobj->Set(context
+		,String::NewFromUtf8(isolate, "dataType").ToLocalChecked()
+		,Integer::New(isolate,datatype) ) ;
+	Maybe<bool> ok7 = retobj->Set(context
+		,String::NewFromUtf8(isolate, "dsName").ToLocalChecked()
+		,String::NewFromUtf8(isolate, dsname.c_str()).ToLocalChecked() ) ;
+    Maybe<bool> ok8 = retobj->Set(context
+		,String::NewFromUtf8(isolate, "key").ToLocalChecked()
+		,String::NewFromUtf8(isolate, key.c_str()).ToLocalChecked() ) ;
+
+	Maybe<bool> ok10 = retobj->Set(context
+		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
+		,Integer::New(isolate,tilex) ) ;
+	Maybe<bool> ok11 = retobj->Set(context
+		,String::NewFromUtf8(isolate, "y").ToLocalChecked()
+		,Integer::New(isolate,tiley) ) ;
+	Maybe<bool> ok12 = retobj->Set(context
+		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
+		,Integer::New(isolate,tilez) ) ;
+
+    int numofdt = dtArr.size() ;
+    assert( numofdt == dataArr.size() ) ;
+
+    //时间日期数组 dtArr
+	Local<Array> dtArrArray = Array::New(isolate, numofdt) ;
+	for(int idt = 0 ; idt < numofdt; ++ idt){
+        dtArrArray->Set(context, idt , Number::New(isolate,dtArr[idt]) ) ;
+	}
+	Maybe<bool> ok13 = retobj->Set(context
+		,String::NewFromUtf8(isolate, "dtArr").ToLocalChecked()
+		,dtArrArray ) ;
+
+    const int databytelen = datatype2bytelen( datatype ) ;
+    //数据数组 dataArr
+    Local<Array> dataArr_v8Array = Array::New(isolate, numofdt ) ;
+    Maybe<bool> ok14 = retobj->Set(context
+            ,String::NewFromUtf8(isolate, "dataArr").ToLocalChecked()
+            ,dataArr_v8Array ) ;
+    for(int idt = 0; idt < numofdt ; ++ idt )
+    {
+        Local<ArrayBuffer>   onedata_ArrayBuffer = ArrayBuffer::New(isolate, width*height*nband*databytelen ) ;
+        if( datatype==1 )
+        {
+            Local<Uint8Array> onedata_typeArray  = Uint8Array::New(onedata_ArrayBuffer ,0 , width*height*nband) ;
+            memcpy( onedata_typeArray->Buffer()->GetBackingStore()->Data() , dataArr[idt].data() , width*height*nband*databytelen);
+            dataArr_v8Array->Set(context, idt , onedata_typeArray ) ;
+        }else if( datatype==2 )
+        {
+            Local<Uint16Array> onedata_typeArray  = Uint16Array::New(onedata_ArrayBuffer ,0 , width*height*nband) ;
+            memcpy( onedata_typeArray->Buffer()->GetBackingStore()->Data() , dataArr[idt].data() , width*height*nband*databytelen);
+            dataArr_v8Array->Set(context, idt , onedata_typeArray ) ;
+
+        }else if( datatype==3 )
+        {
+            Local<Int16Array> onedata_typeArray  = Int16Array::New(onedata_ArrayBuffer ,0 , width*height*nband) ;
+            memcpy( onedata_typeArray->Buffer()->GetBackingStore()->Data() , dataArr[idt].data() , width*height*nband*databytelen);
+            dataArr_v8Array->Set(context, idt , onedata_typeArray ) ;
+        }else if( datatype==4 )
+        {
+            Local<Uint32Array> onedata_typeArray  = Uint32Array::New(onedata_ArrayBuffer ,0 , width*height*nband) ;
+            memcpy( onedata_typeArray->Buffer()->GetBackingStore()->Data() , dataArr[idt].data() , width*height*nband*databytelen);
+            dataArr_v8Array->Set(context, idt , onedata_typeArray ) ;
+        }else if( datatype==5 )
+        {
+            Local<Int32Array> onedata_typeArray  = Int32Array::New(onedata_ArrayBuffer ,0 , width*height*nband) ;
+            memcpy( onedata_typeArray->Buffer()->GetBackingStore()->Data() , dataArr[idt].data() , width*height*nband*databytelen);
+            dataArr_v8Array->Set(context, idt , onedata_typeArray ) ;
+        }else if( datatype==6 )
+        {
+            Local<Float32Array> onedata_typeArray  = Float32Array::New(onedata_ArrayBuffer ,0 , width*height*nband) ;
+            memcpy( onedata_typeArray->Buffer()->GetBackingStore()->Data() , dataArr[idt].data() , width*height*nband*databytelen);
+            dataArr_v8Array->Set(context, idt , onedata_typeArray ) ;
+        }else if( datatype==7 )
+        {
+            Local<Float64Array> onedata_typeArray  = Float64Array::New(onedata_ArrayBuffer ,0 , width*height*nband) ;
+            memcpy( onedata_typeArray->Buffer()->GetBackingStore()->Data() , dataArr[idt].data() , width*height*nband*databytelen);
+            dataArr_v8Array->Set(context, idt , onedata_typeArray ) ;
+        }
+    }
+	return handle_scope.Escape(retobj);
+
+}
+
+
+/// 2022-4-1 通过远端构建 DatetimeCollection 数组
+/// 该方法会在cpp中生成JDtCollectionBuilder类对象，然后转为Json
+/// 这个Json作为参数调用 helper接口，从外部服务进行 DatetimeCollection构建
+/// 用于构建DtCollections的辅助类
+/// public class JDtCollectionBuilder {
+/// 	//总体时间区间
+///     public JDtPair wholePeriod ;
+///     //重复类型，为空表示不重复，m逐月重复，y逐年重复
+///     public String  repeatType ;
+///     //重复时间区间
+///     public JDtPair repeatPeriod;
+/// }
+/// public class JDtPair {
+///     long startDt ;//开始时间
+///     long stopDt ;//结束时间
+///     boolean startInclusive = true ;//是否包含开始时间
+///     boolean stopInclusive = true ;//是否包含结束时间
+///     int stopInNextYear=0 ;//结束时间是否在下一年
+/// }
+///
+/// 返回的 DatetimeCollection[] 与 DatetimeCollection 定义示例如下
+/// [
+/// 	{
+/// 		"key":"",
+/// 		"datetimes":[20200101235959,20200102235959,...]
+/// 	},
+/// 	...
+/// ]
+///
+/// js调用示例
+/// const dtcollections=pe.RemoteBuildDtCollections(
+///   whole_start,    //int64
+///   whole_start_inc,//0 or 1
+///   whole_stop,
+///   whole_stop_inc,
+///   repeatType,     // '' 'm' 'y'
+///   repeat_start,   //int64
+///   repeat_start_inc, //0 or 1
+///   repeat_stop,      //int64
+///   repeat_stop_inc,  //0 or 1
+///   repeat_stop_nextyear  //0 or 1
+///   ) ;
+void PixelEngine::GlobalFunc_RemoteBuildDtCollectionsCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_RemoteBuildDtCollectionsCallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 10 )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: RemoteBuildDtCollections args.Length!=10 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+	int64_t wstart = args[0]->ToInteger(context).ToLocalChecked()->Value() ;
+	int wstartinc = args[1]->ToInt32(context).ToLocalChecked()->Value() ;
+	int64_t wstop = args[2]->ToInteger(context).ToLocalChecked()->Value() ;
+	int wstopinc = args[3]->ToInt32(context).ToLocalChecked()->Value() ;
+	string rtype = string(  *String::Utf8Value(isolate,args[4])  ) ;
+	int64_t rstart = args[5]->ToInteger(context).ToLocalChecked()->Value() ;
+	int rstartinc = args[6]->ToInt32(context).ToLocalChecked()->Value() ;
+	int64_t rstop = args[7]->ToInteger(context).ToLocalChecked()->Value() ;
+	int rstopinc = args[8]->ToInt32(context).ToLocalChecked()->Value() ;
+	int rstopnextyear = args[9]->ToInt32(context).ToLocalChecked()->Value() ;
+
+    if (thisPePtr->helperPointer == nullptr) {
+        cout<<"Error: RemoteBuildDtCollections helperPointer is null."<<endl ;
+        return ;
+    }
+    vector<DatetimeCollection> dtcollarray ;
+    bool isok = thisPePtr->helperPointer->buildDatetimeCollections(
+        wstart ,
+        wstartinc , //0 or 1
+        wstop ,
+        wstopinc ,
+        rtype ,    // '' 'm' 'y'
+        rstart,
+        rstartinc,
+        rstop,
+        rstopinc,
+        rstopnextyear, //0 or 1
+        dtcollarray
+    ) ;
+    if( isok==false ){
+        cout<<"Error: RemoteBuildDtCollections helperPointer->buildDatetimeCollections failed."<<endl ;
+        return ;
+    }
+
+    if( dtcollarray.size()==0 ){
+        cout<<"Error: RemoteBuildDtCollections dtcollarray is empty."<<endl ;
+        return ;
+    }
+    Local<Array> retDtCollArr = Array::New(isolate , dtcollarray.size() ) ;
+    for(int icoll = 0 ; icoll < dtcollarray.size() ; ++ icoll )
+    {
+        Local<String> temp_key = String::NewFromUtf8(isolate, dtcollarray[icoll].key.c_str() ).ToLocalChecked() ;
+        Local<Array>  temp_datetimes = Array::New(isolate , dtcollarray[icoll].datetimes.size() ) ;
+        for(int idt = 0 ; idt < dtcollarray[icoll].datetimes.size() ; ++ idt )
+        {
+            temp_datetimes->Set(context, idt , Number::New(isolate, dtcollarray[icoll].datetimes[idt] ) ) ;
+        }
+        Local<Object> temp_dtcollobj = Object::New(isolate) ;
+        temp_dtcollobj->Set(context , String::NewFromUtf8(isolate, "key").ToLocalChecked(), temp_key ) ;
+        temp_dtcollobj->Set(context , String::NewFromUtf8(isolate, "datetimes").ToLocalChecked(), temp_datetimes ) ;
+        retDtCollArr->Set(context , icoll , temp_dtcollobj) ;
+    }
+    args.GetReturnValue().Set(retDtCollArr) ;
+    cout<<"out c++ GlobalFunc_RemoteBuildDtCollectionsCallBack"<<endl;
+}
+
+/// 2022-4-1 本地构造一个连续几天的 DatetimeCollection 对象
+/// 比较基础常用的一个dtcoll接口是给定基础时间，构造前N天的时间序列 js调用示例如下
+/// const dtcollection=pe.BuildDtCollectionByStopDt(
+///   2021,//stopyyyy
+///   3,   //stopmm
+///   31,  //stopdd
+///   5    //n days before, e.g. this will make 3-26~3-31 total 6days
+/// );
+void PixelEngine::GlobalFunc_LocalBuildDtCollectionByStopDtCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_LocalBuildDtCollectionByStopDtCallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 4 )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: RemoteBuildDtCollections args.Length!=4 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+	int stopyear = args[0]->ToInt32(context).ToLocalChecked()->Value() ;
+	int stopmonth = args[1]->ToInt32(context).ToLocalChecked()->Value() ;
+	int stopday = args[2]->ToInt32(context).ToLocalChecked()->Value() ;
+	int ndaysbefore = args[3]->ToInt32(context).ToLocalChecked()->Value() ;
+
+    vector<int64_t> dtArr ;
+    bool makeok = DatetimeCollection::makeDateList(stopyear,stopmonth,stopday,ndaysbefore,dtArr) ;
+    if(makeok==false){
+        cout<<"Error: DatetimeCollection::makeDateList failed for "<<stopyear<<" "<<stopmonth<<" "<<stopday<<" "<<ndaysbefore<<endl ;
+        return ;
+    }
+
+
+    Local<Array> dtArr_v8Obj = Array::New(isolate , dtArr.size() ) ;
+    Local<Object> dtcollobj = Object::New(isolate) ;
+    dtcollobj->Set(context , String::NewFromUtf8(isolate, "key").ToLocalChecked(), String::NewFromUtf8(isolate,"").ToLocalChecked() ) ;
+    dtcollobj->Set(context , String::NewFromUtf8(isolate, "datetimes").ToLocalChecked(), dtArr_v8Obj ) ;
+    for(int ii = 0 ; ii < dtArr.size() ; ++ ii )
+    {
+        dtArr_v8Obj->Set(context ,  ii ,  Number::New(isolate, dtArr[ii]) ) ;
+    }
+
+    args.GetReturnValue().Set(dtcollobj) ;
+	cout<<"out c++ GlobalFunc_LocalBuildDtCollectionByStopDtCallBack"<<endl;
+}
+
+/// 2020-4-1 单个DatasetCollection合成 返回结果是一个Dataset
+/// let ds1 = PixelEngine.CompositeDsCollection(
+/// dsCollection
+/// ,method    //参考下面
+/// ,validMin
+/// ,validMax
+/// ,filldata
+/// [,outDataType]  //默认与输入数据一致
+/// ) ;
+void PixelEngine::GlobalFunc_CompositeDsCollectionCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_CompositeDsCollectionCallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 5 || args.Length()==6  )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: GlobalFunc_CompositeDsCollectionCallBack args.Length!=5 and !=6 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Object> dsCollection = args[0]->ToObject(context).ToLocalChecked() ;
+
+	int datatype = dsCollection->Get(context, String::NewFromUtf8(isolate,"dataType")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int z = dsCollection->Get(context, String::NewFromUtf8(isolate,"z")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int y = dsCollection->Get(context, String::NewFromUtf8(isolate,"y")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int x = dsCollection->Get(context, String::NewFromUtf8(isolate,"x")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int width = dsCollection->Get(context, String::NewFromUtf8(isolate,"width")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int height = dsCollection->Get(context, String::NewFromUtf8(isolate,"height")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int nband = dsCollection->Get(context, String::NewFromUtf8(isolate,"nband")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+
+	int method = args[1]->IntegerValue(context).ToChecked() ;
+	double validmin = args[2]->NumberValue(context).ToChecked() ;
+	double validmax = args[3]->NumberValue(context).ToChecked() ;
+	double filldata = args[4]->NumberValue(context).ToChecked() ;
+	int outDataType = datatype ;
+	if( args.Length()== 6 ){
+        outDataType = args[5]->IntegerValue(context).ToChecked() ;
+	}
+
+    Local<Object> ds = CPP_NewDataset(isolate,context,outDataType,width,height,nband,"composite",0,z,y,x) ;
+
+    Local<Object> collectionDataArrObj = dsCollection->Get(context, String::NewFromUtf8(isolate,"dataArr")
+        .ToLocalChecked()).ToLocalChecked()->ToObject(context).ToLocalChecked() ;
+    Array* collectionDataArray = Array::Cast( *collectionDataArrObj ) ;
+    int numdata = collectionDataArray->Length() ;
+    cout<<"debug num data in collection "<<numdata<<endl ;
+    vector<void*> collectionDataPtrArray(numdata,0) ;
+    for(int idata = 0 ; idata < numdata; ++ idata )
+    {
+        ArrayBuffer* arrbuffer = ArrayBuffer::Cast(* collectionDataArray->Get(context,idata).ToLocalChecked()) ;
+        void * tempPtr =  arrbuffer->GetBackingStore()->Data() ;
+        int bytelen = arrbuffer->GetBackingStore()->ByteLength() ;
+        cout<<"byte len :"<<bytelen<<endl ;// here 这里为空，是 here here here
+        collectionDataPtrArray[idata] = tempPtr ;
+        cout<<"debug tempPtr[1] "<< ((unsigned char*)tempPtr)[1]<<endl ;
+    }
+
+    void* outDataPtr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,ds,context,"tiledata") ;
+    TemplateMethods_CompositeMethod cmethod = TemplateMethods_CompositeMethod::CM_MIN;
+    if( method== PixelEngine::s_CompositeMethodAve ) cmethod = CM_AVE ;
+    if( method== PixelEngine::s_CompositeMethodMax ) cmethod = CM_MAX ;
+    if( method== PixelEngine::s_CompositeMethodSum ) cmethod = CM_SUM ;
+
+    cout<<"debug 402 elementSize:"<< nband*width*height <<endl ;
+    cout<<"debug 402 intype outtype "<< datatype<< " "<<outDataType<<endl ;
+    CallTemplateMethods_ForCollectionComposite(
+        collectionDataPtrArray, outDataPtr, datatype, outDataType,
+        nband*width*height, validmin , validmax , filldata,cmethod
+    );
+
+    args.GetReturnValue().Set(ds) ;
+}
+
+/// 2020-4-1 DatasetCollection[] 合成 返回结果是一个Dataset
+/// let ds2 = PixelEngine.CompositeDsCollections(
+/// dsCollectionArr
+/// ,method //pe.CompositeMethodMin 1
+///         //pe.CompositeMethodMax 2
+///         //pe.CompositeMethodAve 3
+///         //pe.CompositeMethodSum 4
+/// ,validMin
+/// ,validMax
+/// ,filldata
+/// [,outDataType]  //默认与输入数据一致
+/// );
+void PixelEngine::GlobalFunc_CompositeDsCollectionsCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+
+}
+
+
+/// 2020-4-1  Dataset 差值(A-B)合成 返回结果是一个Dataset
+/// let dsResult = datasetA.subtract( datasetB, validmin, validmax, filldata )
+/// 两个数据集必须波段一致， 数据类型也要求一致
+void PixelEngine::GlobalFunc_SubtractCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_SubtractCallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 4  )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: GlobalFunc_SubtractCallBack args.Length!=4 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+	Local<Object> dsObjThis = args.This() ;
+
+	Local<Object> datasetB = args[0]->ToObject(context).ToLocalChecked() ;
+	double validMin        = args[1]->NumberValue(context).ToChecked() ;
+    double validMax        = args[2]->NumberValue(context).ToChecked() ;
+    double filldata        = args[3]->NumberValue(context).ToChecked() ;
+
+	int datatypeA = dsObjThis->Get(context, String::NewFromUtf8(isolate,"dataType")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int widthA =    dsObjThis->Get(context, String::NewFromUtf8(isolate,"width")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int heightA =   dsObjThis->Get(context, String::NewFromUtf8(isolate,"height")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int nbandA =    dsObjThis->Get(context, String::NewFromUtf8(isolate,"nband")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+
+	int datatypeB = datasetB->Get(context, String::NewFromUtf8(isolate,"dataType")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int widthB =    datasetB->Get(context, String::NewFromUtf8(isolate,"width")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int heightB =   datasetB->Get(context, String::NewFromUtf8(isolate,"height")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int nbandB =    datasetB->Get(context, String::NewFromUtf8(isolate,"nband")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+
+    if( widthA!=widthB || heightA!=heightB || nbandA!=nbandB || datatypeA != datatypeB )
+    {
+        cout<<"Error: wid,hei,nband,dataType are not equal for datasetA and datasetB."<<endl ;
+        return ;
+    }
+
+	Local<Object> ds = PixelEngine::CPP_NewDataset( isolate
+		,context
+		,datatypeA
+		,widthA
+		,heightA
+		,nbandA );
+
+    int elementSize = widthA*heightA*nbandA ;
+    void* dataAptr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,dsObjThis,context,"tiledata") ;
+    void* dataBptr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,datasetB ,context,"tiledata") ;
+    void* dataDs =   PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,ds       ,context,"tiledata") ;
+
+    int databytesize = elementSize * datatype2bytelen(datatypeA) ;
+    memcpy( dataDs , dataAptr , databytesize) ;
+
+    if( datatypeA==1 )
+    {
+        innerDataASubtractB( (unsigned char*)dataDs, (unsigned char*)dataBptr, elementSize, validMin, validMax , filldata) ;
+    }else if( datatypeA==2 )
+    {
+        innerDataASubtractB( (unsigned short*)dataDs, (unsigned short*)dataBptr, elementSize, validMin, validMax , filldata) ;
+    }else if( datatypeA==3 )
+    {
+        innerDataASubtractB( (short*)dataDs, (short*)dataBptr, elementSize, validMin, validMax , filldata) ;
+    }else if( datatypeA==4 )
+    {
+        innerDataASubtractB( (unsigned int*)dataDs, (unsigned int*)dataBptr, elementSize, validMin, validMax , filldata) ;
+    }else if( datatypeA==5 )
+    {
+        innerDataASubtractB( (int*)dataDs, (int*)dataBptr, elementSize, validMin, validMax , filldata) ;
+    }else if( datatypeA==6 )
+    {
+        innerDataASubtractB( (float*)dataDs, (float*)dataBptr, elementSize, validMin, validMax , filldata) ;
+    }else if( datatypeA==7 )
+    {
+        innerDataASubtractB( (double*)dataDs, (double*)dataBptr, elementSize, validMin, validMax , filldata) ;
+    }else
+    {
+        cout<<"Error: unsupported datatype "<<datatypeA <<endl ;
+        return ;
+    }
+
+	int tilez = thisPePtr->tileInfo.z  ;
+	int tiley = thisPePtr->tileInfo.y  ;
+	int tilex = thisPePtr->tileInfo.x  ;
+    Maybe<bool> ok3 = ds->Set(context
+		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
+		,Integer::New(isolate, tilex) ) ;
+	Maybe<bool> ok4 = ds->Set(context
+		,String::NewFromUtf8(isolate, "y").ToLocalChecked()
+		,Integer::New(isolate, tiley) ) ;
+	Maybe<bool> ok5 = ds->Set(context
+		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
+		,Integer::New(isolate, tilez) ) ;
+    args.GetReturnValue().Set(ds) ;
+}
+
+
+/// 2022-4-2 Dataset 提取单个波段 返回结果是一个单波段Dataset
+/// let onebandDataset = dataset.extract(iband) ;// iband is zero based.
+void PixelEngine::GlobalFunc_ExtractCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_ExtractCallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 1)
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: GlobalFunc_ExtractCallBack args.Length!=1 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Object> dsObjThis = args.This() ;
+    int srcBandIndex = args[0]->IntegerValue(context).ToChecked() ;
+
+
+	int datatype = dsObjThis->Get(context, String::NewFromUtf8(isolate,"dataType")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int width = dsObjThis->Get(context, String::NewFromUtf8(isolate,"width")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int height = dsObjThis->Get(context, String::NewFromUtf8(isolate,"height")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int nband = dsObjThis->Get(context, String::NewFromUtf8(isolate,"nband")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+
+    if( srcBandIndex < 0 || srcBandIndex > nband-1 ){
+        cout<<"Error: bad srcBandIndex "<<srcBandIndex <<endl ;
+        return ;
+    }
+
+	int tilez = thisPePtr->tileInfo.z  ;
+	int tiley = thisPePtr->tileInfo.y  ;
+	int tilex = thisPePtr->tileInfo.x  ;
+
+	Local<Object> ds = PixelEngine::CPP_NewDataset( isolate
+		,context
+		,datatype
+		,width
+		,height
+		,1 );
+    int byteoffset_for_sourceDataPtr = srcBandIndex * width*height * datatype2bytelen(datatype) ;
+    void* targetDataPtr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate, ds        ,context,"tiledata") ;
+    void* sourceDataPtr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate, dsObjThis ,context,"tiledata") + byteoffset_for_sourceDataPtr ;
+	memcpy(targetDataPtr , sourceDataPtr, width*height*datatype2bytelen(datatype) );
+
+
+	Maybe<bool> ok1 = ds->Set(context
+		,String::NewFromUtf8(isolate, "dsName").ToLocalChecked()
+		,dsObjThis->Get(context , String::NewFromUtf8(isolate,"dsName").ToLocalChecked()).ToLocalChecked() ) ;
+	Maybe<bool> ok2 = ds->Set(context
+		,String::NewFromUtf8(isolate, "dsDt").ToLocalChecked()
+		,dsObjThis->Get(context , String::NewFromUtf8(isolate,"dsDt").ToLocalChecked()).ToLocalChecked() ) ;
+
+
+	Maybe<bool> ok3 = ds->Set(context
+		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
+		,Integer::New(isolate, tilex) ) ;
+	Maybe<bool> ok4 = ds->Set(context
+		,String::NewFromUtf8(isolate, "y").ToLocalChecked()
+		,Integer::New(isolate, tiley) ) ;
+	Maybe<bool> ok5 = ds->Set(context
+		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
+		,Integer::New(isolate, tilez) ) ;
+
+    args.GetReturnValue().Set(ds) ;
+
+}
+
+
+/// 2022-4-2 整合多个 Dataset 反回结果是包含全部波段 Dataset  数据类型必须一致
+/// let multiDs = pe.StackDatasets( [ds0,ds1,...,dsN] ) ;//如果有一个ds为空，构造失败
+void PixelEngine::GlobalFunc_StackDatasetsCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_StackDatasetsCallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 1  )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: GlobalFunc_StackDatasetsCallBack args.Length!=1 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+	if(  args[0]->IsArray()==false )
+	{
+        cout<<"args[0] type:"<< *String::Utf8Value( isolate, args[0]->TypeOf(isolate) ) <<endl ;
+        cout<<"Error: args[0] is not array. "<<endl ;
+        return ;
+	}
+
+	Array* dsArray = Array::Cast(*args[0]) ;
+	int numds = dsArray->Length() ;
+	int datatype = 0 ;
+	int width = 0 ;
+	int height = 0 ;
+	int totbands = 0 ;
+    vector<int> nbandArr;
+
+	for(int ids = 0 ; ids < numds; ++ ids )
+	{
+        MaybeLocal<Object> onedsMaybe = dsArray->Get(context,ids).ToLocalChecked()->ToObject(context) ;
+        if( onedsMaybe.IsEmpty() ){
+            cout<<"Error: appear a empty dataset element. "<<endl ;
+            return ;
+        }
+        Local<Object> oneds = onedsMaybe.ToLocalChecked() ;
+
+        int tdatatype = oneds->Get(context, String::NewFromUtf8(isolate,"dataType")
+            .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+        int twidth =    oneds->Get(context, String::NewFromUtf8(isolate,"width")
+            .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+        int theight =   oneds->Get(context, String::NewFromUtf8(isolate,"height")
+            .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+        int tnband =    oneds->Get(context, String::NewFromUtf8(isolate,"nband")
+            .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+
+        if( ids==0 ){
+            datatype = tdatatype;
+            width = twidth ;
+            height = theight ;
+            totbands = tnband ;
+        }
+        else {
+
+            if( datatype != tdatatype || width != twidth || height != theight )
+            {
+                cout<<"Error: datatype , width , height not same."<<endl ;
+                return;
+            }
+            totbands +=tnband ;
+        }
+        if( tnband==0 )
+        {
+            cout<<"Error: dataset has zero bands."<<endl ;
+            return;
+        }
+        nbandArr.push_back(tnband) ;
+	}
+
+	Local<Object> ds = PixelEngine::CPP_NewDataset( isolate
+		,context
+		,datatype
+		,width
+		,height
+		,totbands );
+
+    void* targetDataPtr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate, ds ,context,"tiledata") ;
+    int iband = 0 ;
+	for(int ids = 0 ; ids <numds; ++ ids )
+	{
+        Local<Object> oneds = dsArray->Get(context,ids).ToLocalChecked()->ToObject(context).ToLocalChecked() ;
+        int nband = nbandArr[ids] ;
+
+        int byteoffset_for_target = iband * width*height * datatype2bytelen(datatype) ;
+        void* targetPtrWithOffset = targetDataPtr + byteoffset_for_target ;
+        void* sourceDataPtr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate, oneds ,context,"tiledata") ;
+        memcpy(targetPtrWithOffset , sourceDataPtr, nband*width*height*datatype2bytelen(datatype) );
+
+        iband += nband ;
+	}
+
+	int tilez = thisPePtr->tileInfo.z  ;
+	int tiley = thisPePtr->tileInfo.y  ;
+	int tilex = thisPePtr->tileInfo.x  ;
+    Maybe<bool> ok3 = ds->Set(context
+		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
+		,Integer::New(isolate, tilex) ) ;
+	Maybe<bool> ok4 = ds->Set(context
+		,String::NewFromUtf8(isolate, "y").ToLocalChecked()
+		,Integer::New(isolate, tiley) ) ;
+	Maybe<bool> ok5 = ds->Set(context
+		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
+		,Integer::New(isolate, tilez) ) ;
+
+    args.GetReturnValue().Set(ds) ;
+}
+
 
 
 

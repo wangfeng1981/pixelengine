@@ -42,6 +42,11 @@
 #define W_COMPUTE_LON_LAT_AREA_IMPLEMENT
 #include "wcomputelonlatarea.h"
 
+//2022-4-1
+#include "datetimecollection.h"
+//2022-4-2
+#include "template_methods.h"
+
 
 using namespace v8;
 using namespace std;
@@ -57,10 +62,10 @@ using pe::PeTileData;
 //v1
 //v2 增加获取hseg.tlv数据接口
 struct PixelEngineHelperInterface {
-	//Í¨¹ýpid»ñÈ¡ÍßÆ¬Êý¾Ý
+	//
 	//virtual bool getTileDataByPid(string& tbname,string& fami,long dt,int pid,vector<int> bandindices,int z,int y,int x,vector<unsigned char> retTileData,string& errorText);
 
-	//Í¨¹ýpdtname»ñÈ¡ÍßÆ¬Êý¾Ý
+	//
 	virtual bool getTileData(int64_t dt, string& dsName, vector<int> bandindices,
 		int z, int y, int x, vector<unsigned char>& retTileData,
 		int& dataType,
@@ -69,7 +74,7 @@ struct PixelEngineHelperInterface {
 		int& nbands,
 		string& errorText)=0;
 
-	//»ñÈ¡Ê±¼ä¶ÎÍßÆ¬Êý¾Ý
+	//
 	virtual bool getTileDataArray(
 		int64_t fromdtInclusive, int64_t todtInclusive,
 		string& dsName, vector<int> bandindices, int z, int y, int x,
@@ -83,20 +88,46 @@ struct PixelEngineHelperInterface {
 		int& nbands,
 		string& errorText)=0;
 
-	//»ñµÃÑÕÉ«ÁÐ±í
+	//
 	virtual bool getColorRamp(string& crid , PixelEngineColorRamp& crobj , string& errorText)=0;
 
 	//get render style by id from system
 	virtual bool getStyle(string& styleid, PeStyle& retStyle, string& errorText) =0;
 
-	//±£´æÍßÆ¬Êý¾Ýµ½´æ´¢Éè±¸(Õâ¸ö½Ó¿Ú²»Ó¦¸Ã·ÅÔÚPixelEngineHelperÀïÃæ 2020-9-24)
+	//PixelEngineHelper 2020-9-24
 	//virtual bool writeTileData(string& tb,string& fami,int64_t col,int pid,int z,int y,int x, PeTileData& tileData) = 0;
 
 	//2022-3-6 从外部读取roi hseg.tlv数据 isUserRoi=1为用户roi，isUserRoi=0为系统ROI，rid为关系数据库中主键
 	virtual bool getRoiHsegTlv(int isUserRoi,int rid,vector<unsigned char>& retTlvData)=0 ;
 
-	inline static string version(){ return "v2" ; }
+	inline static string version(){ return "v3" ; }
 
+	//2022-3-31 从外部获取 DatasetCollection 数据
+    virtual bool getTileDataCollection(
+        string& dsName,   //输入数据集名称
+		vector<int64_t> datetimes, //输入日期时间数组，注意实际返回的数据不一定全部都有，具体要看retdtArr
+		int z, int y, int x, //瓦片坐标
+		vector<vector<unsigned char>>& retTileDataArr, //返回二进制数据，一个datetime对应一个vector<unsigned char>
+		vector<int64_t>& retdtArr ,//返回成功获取的 datetime数组，数量与retTileDataArr一致
+		int& retdataType,//返回数据类型 1 byte，2 u16,3 i16, 4 u32, 5 i32, 6 f32, 7 f64
+		int& retwid,     //返回瓦片宽度
+		int& rethei,     //返回瓦片高度
+		int& retnbands,  //返回瓦片波段数量
+		string& errorText)=0;
+
+    virtual bool buildDatetimeCollections(
+        int64_t whole_start ,
+        int whole_start_inc , //0 or 1
+        int64_t whole_stop ,
+        int whole_stop_inc ,
+        string repeat_type , // '' 'm' 'y'
+        int64_t repeat_start,
+        int repeat_start_inc,
+        int64_t repeat_stop,
+        int repeat_stop_inc,
+        int repeat_stop_nextyear, //0 or 1
+        vector<DatetimeCollection>& dtcollarray
+    ) = 0 ;
 };
 
 
@@ -307,6 +338,18 @@ struct PixelEngine
 		,const int width
 		,const int height
 		,const int nband );
+	//2022-4-2
+    static Local<Object> CPP_NewDataset(Isolate* isolate,Local<Context>& context
+		,const int datatype
+		,const int width
+		,const int height
+		,const int nband
+		,string dsname
+		,int64_t datetime
+		,const int z
+		,const int y
+		,const int x );
+
 	static Local<Object> CPP_NewDatasetArray(Isolate* isolate,Local<Context>& context
 		,const int datatype
 		,const int width
@@ -655,6 +698,173 @@ public:
         }
         return true ;
     }
+
+    protected:
+        ///2022-4-1 数据类型换算字节数量
+        static int datatype2bytelen(const int datatype) ;
+
+
+    //2022-3-31 DatasetCollection APIs
+    protected:
+        /// 2022-3-31
+        /// 对应js中pe.DatasetCollection("dsname",[20010101030405,...]) 的C++ 方法
+        ///       pe.DatasetCollection("dsname",datetimeCollection)
+        /// @retval DatasetCollection对象
+        /// DatasetCollection对象的定义为
+        ///
+        /// PixelEngine.DatasetCollection = {
+        ///   "dsname":"can be empty",
+        ///   "key":"2010",//可以为空
+        ///   //注意dtArr的元素数量与dataArr元素数量是一致的
+        ///   "dtArr":[
+        ///     20010101090909,20010102090909,...,20010131090909],
+        ///   "dataArr":[
+        ///     ByteArray/Int16Array/.../DoubleArray,
+        ///     ByteArray/Int16Array/.../DoubleArray,
+        ///     ...
+        ///     ByteArray/Int16Array/.../DoubleArray
+        ///   ],
+        ///   "x":0 , "y":0 , "z":0 ,
+        ///   "width":256, "height":256,
+        ///   "nband":1,
+        ///   "dataType":1/2/3/../7
+        /// }
+        static void GlobalFunc_DatasetCollectionCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+        /// 2022-3-31
+        /// 对应js中pe.DatasetCollections("dsname",datetimeCollArray) 的C++ 方法
+        /// @retval DatasetCollection Array
+        static void GlobalFunc_DatasetCollectionsCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+        /// 2022-4-1 使用获取的数据够建一个DatasetCollection对象
+        static Local<Object> CPP_NewDatasetCollection(
+            Isolate* isolate,Local<Context>& context
+            ,string dsname
+            ,string key
+            ,vector<int64_t>& dtArr
+            ,vector< vector<unsigned char> >& dataArr
+            ,const int datatype
+            ,const int width
+            ,const int height
+            ,const int nband
+            ,const int tilez,const int tiley,const int tilex
+            );
+
+        /// 2022-4-1 通过远端构建 DatetimeCollection 数组
+        /// 该方法会在cpp中生成JDtCollectionBuilder类对象，然后转为Json
+        /// 这个Json作为参数调用 helper接口，从外部服务进行 DatetimeCollection构建
+        /// 用于构建DtCollections的辅助类
+        /// public class JDtCollectionBuilder {
+        /// 	//总体时间区间
+        ///     public JDtPair wholePeriod ;
+        ///     //重复类型，为空表示不重复，m逐月重复，y逐年重复
+        ///     public String  repeatType ;
+        ///     //重复时间区间
+        ///     public JDtPair repeatPeriod;
+        /// }
+        /// public class JDtPair {
+        ///     long startDt ;//开始时间
+        ///     long stopDt ;//结束时间
+        ///     boolean startInclusive = true ;//是否包含开始时间
+        ///     boolean stopInclusive = true ;//是否包含结束时间
+        ///     int stopInNextYear=0 ;//结束时间是否在下一年
+        /// }
+        ///
+        /// 返回的 DatetimeCollection[] 与 DatetimeCollection 定义示例如下
+        /// [
+        /// 	{
+        /// 		"key":"",
+        /// 		"datetimes":[20200101235959,20200102235959,...]
+        /// 	},
+        /// 	...
+        /// ]
+        ///
+        /// js调用示例
+        /// const dtcollections=pe.RemoteBuildDtCollections(
+        ///   whole_start,    //int64
+        ///   whole_start_inc,//0 or 1
+        ///   whole_stop,
+        ///   whole_stop_inc,
+        ///   repeatType,     // '' 'm' 'y'
+        ///   repeat_start,   //int64
+        ///   repeat_start_inc, //0 or 1
+        ///   repeat_stop,      //int64
+        ///   repeat_stop_inc,  //0 or 1
+        ///   repeat_stop_nextyear  //0 or 1
+        ///   ) ;
+        static void GlobalFunc_RemoteBuildDtCollectionsCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+
+        /// 2022-4-1 本地构造一个连续几天的 DatetimeCollection 对象
+        /// 比较基础常用的一个dtcoll接口是给定基础时间，构造前N天的时间序列 js调用示例如下
+        /// const dtcollection=pe.LocalBuildDtCollectionByStopDt(
+        ///   2021,//stopyyyy
+        ///   3,   //stopmm
+        ///   31,  //stopdd
+        ///   5    //n days before, e.g. this will make 3-26~3-31 total 6days
+        /// );
+        static void GlobalFunc_LocalBuildDtCollectionByStopDtCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+
+        /// 2022-4-1 单个DatasetCollection合成 返回结果是一个Dataset
+        /// let ds1 = PixelEngine.CompositeDsCollection(
+        /// dsCollection
+        /// ,method    //参考下面
+        /// ,validMin
+        /// ,validMax
+        /// ,filldata
+        /// [,outDataType]  //默认与输入数据一致
+        /// ) ;
+        static void GlobalFunc_CompositeDsCollectionCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+
+
+        const static int s_CompositeMethodMin;//1
+        const static int s_CompositeMethodMax;//2
+        const static int s_CompositeMethodAve;//3
+        const static int s_CompositeMethodSum;//4
+
+        /// 2022-4-1 DatasetCollection[] 合成 返回结果是一个Dataset
+        /// let ds2 = PixelEngine.CompositeDsCollections(
+        /// dsCollectionArr
+        /// ,method //pe.CompositeMethodMin 1
+        ///         //pe.CompositeMethodMax 2
+        ///         //pe.CompositeMethodAve 3
+        ///         //pe.CompositeMethodSum 4
+        /// ,validMin
+        /// ,validMax
+        /// ,filldata
+        /// [,outDataType]  //默认与输入数据一致
+        /// );
+        static void GlobalFunc_CompositeDsCollectionsCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+
+        /// 2022-4-1  Dataset 差值(A-B)合成 返回结果是一个Dataset 波段和数据类型必须一致
+        /// let dsResult = datasetA.subtract( datasetB, validmin, validmax, filldata )
+        static void GlobalFunc_SubtractCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+
+        /// 2022-4-2 Dataset 提取单个波段 返回结果是一个单波段Dataset
+        /// let onebandDataset = dataset.extract(iband) ;// iband is zero based.
+        static void GlobalFunc_ExtractCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+
+        /// 2022-4-2 整合多个 Dataset 反回结果是包含全部波段 Dataset 数据类型必须一致
+        /// let multiDs = pe.StackDatasets( [ds0,ds1,...,dsN] ) ;//如果有一个ds为空，构造失败
+        static void GlobalFunc_StackDatasetsCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+
+        /// 2022-4-2 两个数组求差值，结果写入 dataA，  dataA=dataA-dataB
+        /// A与B的值都在valid范围内才计算，反之填充filldata
+        template<typename T> static bool innerDataASubtractB(
+            T* dataA,T* dataB,
+            int dataElementSize,
+            double validMin,double validMax,double fillval
+        ){
+            for(int it = 0 ; it < dataElementSize; ++ it )
+            {
+                if( dataA[it]>=validMin && dataA[it]<=validMax
+                 && dataB[it]>=validMin && dataB[it]<=validMax )
+                 {
+                    dataA[it] =dataA[it] - dataB[it] ;
+                 }else{
+                    dataA[it] =fillval ;
+                 }
+            }
+            return true ;
+        }
+
 
 
 
