@@ -22,6 +22,8 @@ void unit_test_js_ds_extract_method();//2022-4-2
 void unit_test_js_ds_subtract_method() ;
 void unit_test_js_pe_stackdatasets_method() ;
 void unit_test_js_compositedatasetcollection() ;
+void unit_test_js_RemoteDtCollections_DsCollections();//2022-4-3
+
 
 int main()
 {
@@ -64,6 +66,8 @@ int main()
     unit_test_js_pe_stackdatasets_method() ;
 
     unit_test_js_compositedatasetcollection() ;
+
+    unit_test_js_RemoteDtCollections_DsCollections();
 
     return 0;
 }
@@ -376,10 +380,13 @@ void unit_test_js_compositedatasetcollection()
                 "pe.log( dtc1.datetimes[2] );"
                 "let dsc=pe.DatasetCollection('test',dtc1);"
                 "pe.log(dsc.dataArr.length);"
-                "let ds1 = pe.CompositeDsCollection(dsc,pe.CompositeMethodMin,1,10,-9999) ;"
-                "let ds2 = pe.CompositeDsCollection(dsc,pe.CompositeMethodMax,1,10,-9999) ;"
-                "let ds3 = pe.CompositeDsCollection(dsc,pe.CompositeMethodAve,1,10,-9999) ;"
-                "let ds4 = pe.CompositeDsCollection(dsc,pe.CompositeMethodSum,1,10,-9999) ;"
+                "pe.log(dsc.dataArr[0][0]);"
+                "pe.log(dsc.dataArr[1][0]);"
+                "pe.log(dsc.dataArr[2][0]);"
+                "let ds1 = pe.CompositeDsCollection(dsc,pe.CompositeMethodMin,1,235,255) ;"
+                "let ds2 = pe.CompositeDsCollection(dsc,pe.CompositeMethodMax,1,240,255) ;"
+                "let ds3 = pe.CompositeDsCollection(dsc,pe.CompositeMethodAve,1,240,255,6) ;"
+                "let ds4 = pe.CompositeDsCollection(dsc,pe.CompositeMethodSum,1,250,255,6) ;"
                 "pe.log(ds1.tiledata[1]);"
                 "pe.log(ds2.tiledata[1]);"
                 "pe.log(ds3.tiledata[1]);"
@@ -400,6 +407,51 @@ void unit_test_js_compositedatasetcollection()
     ) ;
 
 }
+
+//2022-4-3
+void unit_test_js_RemoteDtCollections_DsCollections()
+{
+    cout<<"-----------------unit_test_js_RemoteDtCollections ---------------"<<endl;
+    DebugPixelEngineHelperInterface debugHelper ;
+    PixelEngine::initV8() ;
+    PixelEngine pe ;
+    pe.helperPointer = &debugHelper ;
+
+    string script1 =
+                "function main(){"
+                "let dtcs=pe.RemoteBuildDtCollections('test',20010000000000,1,20020000000000,1,'y',19000101000000,1,19000228000000,1,0);"
+                "pe.log( JSON.stringify(dtcs) );"
+                "let dscs = pe.DatasetCollections('test',dtcs);"
+                "let ds1=pe.CompositeDsCollections(dscs,pe.CompositeMethodMin,1,210,255);"
+                "let ds2=pe.CompositeDsCollections(dscs,pe.CompositeMethodMax,1,220,255);"
+                "let ds3=pe.CompositeDsCollections(dscs,pe.CompositeMethodAve,1,220,255,6);"
+                "let ds4=pe.CompositeDsCollections(dscs,pe.CompositeMethodSum,1,220,255,6);"
+                "pe.log(ds1.tiledata[1]);"
+                "pe.log(ds2.tiledata[1]);"
+                "pe.log(ds2.tiledata[65536+1]);"
+                "pe.log(ds3.tiledata[1]);"
+                "pe.log(ds4.tiledata[1]);"
+                "return null;"
+                "}"
+
+     ;
+
+
+    PeTileData tiledata ;
+    string extrastr = "" ;
+    string logstr ;
+    pe.RunScriptForTileWithoutRenderWithExtra(0,
+        script1 ,
+        extrastr ,
+        1,2,3,
+        tiledata,
+        logstr
+    ) ;
+
+}
+
+
+
 
 
 

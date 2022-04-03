@@ -60,6 +60,7 @@ class DebugPixelEngineHelperInterface : public PixelEngineHelperInterface
 
 	//2022-4-1
     virtual bool buildDatetimeCollections(
+        string dsName,
         int64_t whole_start ,
         int whole_start_inc , //0 or 1
         int64_t whole_stop ,

@@ -93,8 +93,9 @@ const int PixelEngine::s_CompositeMethodSum=4;
 //1. add DatasetCollection API
 //2. DatasetArray is deprecated
 //3. add DatasetCollections API 2022-4-1
-//4. add dataset.subtract method 2022-4-1
-string PixelEngine::pejs_version = string("2.8.2.0 2022-03-31");
+//4. add dataset.subtract extract pe.StackDatasets method 2022-4-1
+//5. add pe.CompositeDsCollection CompositeDsCollections method 2022-4-3
+string PixelEngine::pejs_version = string("2.8.4.1 2022-04-03");
 
 
 //// mapreduce not used yet.
@@ -7162,6 +7163,7 @@ Local<Object> PixelEngine::CPP_NewDatasetCollection(
 ///
 /// js调用示例
 /// const dtcollections=pe.RemoteBuildDtCollections(
+///   dsName , //string 2022-4-3
 ///   whole_start,    //int64
 ///   whole_start_inc,//0 or 1
 ///   whole_stop,
@@ -7177,27 +7179,28 @@ void PixelEngine::GlobalFunc_RemoteBuildDtCollectionsCallBack(const v8::Function
 {
     if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_RemoteBuildDtCollectionsCallBack"<<endl;
     PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
-	if(args.Length() == 10 )
+	if(args.Length() == 11 )
 	{
 		//ok
 	}else
 	{
-		if(! PixelEngine::quietMode)cout<<"Error: RemoteBuildDtCollections args.Length!=10 "<<endl ;
+		if(! PixelEngine::quietMode)cout<<"Error: RemoteBuildDtCollections args.Length!=11 "<<endl ;
 		return;
 	}
 	Isolate* isolate = args.GetIsolate() ;
 	v8::HandleScope handle_scope(isolate);
 	Local<Context> context(isolate->GetCurrentContext()) ;
-	int64_t wstart = args[0]->ToInteger(context).ToLocalChecked()->Value() ;
-	int wstartinc = args[1]->ToInt32(context).ToLocalChecked()->Value() ;
-	int64_t wstop = args[2]->ToInteger(context).ToLocalChecked()->Value() ;
-	int wstopinc = args[3]->ToInt32(context).ToLocalChecked()->Value() ;
-	string rtype = string(  *String::Utf8Value(isolate,args[4])  ) ;
-	int64_t rstart = args[5]->ToInteger(context).ToLocalChecked()->Value() ;
-	int rstartinc = args[6]->ToInt32(context).ToLocalChecked()->Value() ;
-	int64_t rstop = args[7]->ToInteger(context).ToLocalChecked()->Value() ;
-	int rstopinc = args[8]->ToInt32(context).ToLocalChecked()->Value() ;
-	int rstopnextyear = args[9]->ToInt32(context).ToLocalChecked()->Value() ;
+	string dsname = string(  *String::Utf8Value(isolate,args[0])  ) ;
+	int64_t wstart = args[1]->ToInteger(context).ToLocalChecked()->Value() ;
+	int wstartinc = args[2]->ToInt32(context).ToLocalChecked()->Value() ;
+	int64_t wstop = args[3]->ToInteger(context).ToLocalChecked()->Value() ;
+	int wstopinc = args[4]->ToInt32(context).ToLocalChecked()->Value() ;
+	string rtype = string(  *String::Utf8Value(isolate,args[5])  ) ;
+	int64_t rstart = args[6]->ToInteger(context).ToLocalChecked()->Value() ;
+	int rstartinc = args[7]->ToInt32(context).ToLocalChecked()->Value() ;
+	int64_t rstop = args[8]->ToInteger(context).ToLocalChecked()->Value() ;
+	int rstopinc = args[9]->ToInt32(context).ToLocalChecked()->Value() ;
+	int rstopnextyear = args[10]->ToInt32(context).ToLocalChecked()->Value() ;
 
     if (thisPePtr->helperPointer == nullptr) {
         cout<<"Error: RemoteBuildDtCollections helperPointer is null."<<endl ;
@@ -7205,6 +7208,7 @@ void PixelEngine::GlobalFunc_RemoteBuildDtCollectionsCallBack(const v8::Function
     }
     vector<DatetimeCollection> dtcollarray ;
     bool isok = thisPePtr->helperPointer->buildDatetimeCollections(
+        dsname,//2022-4-3
         wstart ,
         wstartinc , //0 or 1
         wstop ,
@@ -7350,16 +7354,13 @@ void PixelEngine::GlobalFunc_CompositeDsCollectionCallBack(const v8::FunctionCal
         .ToLocalChecked()).ToLocalChecked()->ToObject(context).ToLocalChecked() ;
     Array* collectionDataArray = Array::Cast( *collectionDataArrObj ) ;
     int numdata = collectionDataArray->Length() ;
-    cout<<"debug num data in collection "<<numdata<<endl ;
     vector<void*> collectionDataPtrArray(numdata,0) ;
     for(int idata = 0 ; idata < numdata; ++ idata )
     {
-        ArrayBuffer* arrbuffer = ArrayBuffer::Cast(* collectionDataArray->Get(context,idata).ToLocalChecked()) ;
-        void * tempPtr =  arrbuffer->GetBackingStore()->Data() ;
-        int bytelen = arrbuffer->GetBackingStore()->ByteLength() ;
-        cout<<"byte len :"<<bytelen<<endl ;// here 这里为空，是 here here here
+        TypedArray* tempTypedArray = TypedArray::Cast(* collectionDataArray->Get(context,idata).ToLocalChecked()) ;
+        void * tempPtr =  tempTypedArray->Buffer()->GetBackingStore()->Data() ;
+        //int bytelen = tempTypedArray->Buffer()->GetBackingStore()->ByteLength() ;
         collectionDataPtrArray[idata] = tempPtr ;
-        cout<<"debug tempPtr[1] "<< ((unsigned char*)tempPtr)[1]<<endl ;
     }
 
     void* outDataPtr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,ds,context,"tiledata") ;
@@ -7367,9 +7368,6 @@ void PixelEngine::GlobalFunc_CompositeDsCollectionCallBack(const v8::FunctionCal
     if( method== PixelEngine::s_CompositeMethodAve ) cmethod = CM_AVE ;
     if( method== PixelEngine::s_CompositeMethodMax ) cmethod = CM_MAX ;
     if( method== PixelEngine::s_CompositeMethodSum ) cmethod = CM_SUM ;
-
-    cout<<"debug 402 elementSize:"<< nband*width*height <<endl ;
-    cout<<"debug 402 intype outtype "<< datatype<< " "<<outDataType<<endl ;
     CallTemplateMethods_ForCollectionComposite(
         collectionDataPtrArray, outDataPtr, datatype, outDataType,
         nband*width*height, validmin , validmax , filldata,cmethod
@@ -7392,6 +7390,93 @@ void PixelEngine::GlobalFunc_CompositeDsCollectionCallBack(const v8::FunctionCal
 /// );
 void PixelEngine::GlobalFunc_CompositeDsCollectionsCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_CompositeDsCollectionsCallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 5 || args.Length()==6  )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: GlobalFunc_CompositeDsCollectionsCallBack args.Length!=5 and !=6 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	if( args[0]->IsArray()==false ){
+        cout<<"Error: GlobalFunc_CompositeDsCollectionsCallBack args[0] not Array "<<endl;
+        return ;
+	}
+
+	Array* dsCollectionArray = Array::Cast( *args[0] ) ;
+	int method = args[1]->IntegerValue(context).ToChecked() ;
+	double validmin = args[2]->NumberValue(context).ToChecked() ;
+	double validmax = args[3]->NumberValue(context).ToChecked() ;
+	double filldata = args[4]->NumberValue(context).ToChecked() ;
+
+    int datatype =0 ;
+    int z = 0 ;
+    int y = 0 ;
+    int x = 0 ;
+    int width = 0 ;
+    int height = 0 ;
+    int nband = 0 ;
+    vector<void*> collectionDataPtrArray ;
+
+	int numcollection = dsCollectionArray->Length() ;
+	for(int icoll = 0;  icoll < numcollection; ++ icoll )
+	{
+        Local<Object> dsCollection = dsCollectionArray->Get(context,icoll).ToLocalChecked()->ToObject(context).ToLocalChecked() ;
+        datatype = dsCollection->Get(context, String::NewFromUtf8(isolate,"dataType")
+            .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+        z = dsCollection->Get(context, String::NewFromUtf8(isolate,"z")
+            .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+        y = dsCollection->Get(context, String::NewFromUtf8(isolate,"y")
+            .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+        x = dsCollection->Get(context, String::NewFromUtf8(isolate,"x")
+            .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+        width = dsCollection->Get(context, String::NewFromUtf8(isolate,"width")
+            .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+        height = dsCollection->Get(context, String::NewFromUtf8(isolate,"height")
+            .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+        int tnband = dsCollection->Get(context, String::NewFromUtf8(isolate,"nband")
+            .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+        if( icoll==0 ) nband = tnband ;
+        if( nband != tnband ){
+            cout<<"Error: nband not equal tnband "<<endl;
+            return ;
+        }
+        Local<Object> collectionDataArrObj = dsCollection->Get(context, String::NewFromUtf8(isolate,"dataArr")
+            .ToLocalChecked()).ToLocalChecked()->ToObject(context).ToLocalChecked() ;
+        Array* collectionDataArray = Array::Cast( *collectionDataArrObj ) ;
+        int numdata = collectionDataArray->Length() ;
+        for(int idata = 0 ; idata < numdata; ++ idata )
+        {
+            TypedArray* tempTypedArray = TypedArray::Cast(* collectionDataArray->Get(context,idata).ToLocalChecked()) ;
+            void * tempPtr =  tempTypedArray->Buffer()->GetBackingStore()->Data() ;
+            collectionDataPtrArray.push_back( tempPtr ) ;
+        }
+	}
+
+	int outDataType = datatype ;
+	if( args.Length()== 6 ){
+        outDataType = args[5]->IntegerValue(context).ToChecked() ;
+	}
+
+    Local<Object> ds = CPP_NewDataset(isolate,context,outDataType,width,height,nband,"composite",0,z,y,x) ;
+
+    void* outDataPtr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,ds,context,"tiledata") ;
+    TemplateMethods_CompositeMethod cmethod = TemplateMethods_CompositeMethod::CM_MIN;
+    if( method== PixelEngine::s_CompositeMethodAve ) cmethod = CM_AVE ;
+    if( method== PixelEngine::s_CompositeMethodMax ) cmethod = CM_MAX ;
+    if( method== PixelEngine::s_CompositeMethodSum ) cmethod = CM_SUM ;
+    CallTemplateMethods_ForCollectionComposite(
+        collectionDataPtrArray, outDataPtr, datatype, outDataType,
+        nband*width*height, validmin , validmax , filldata,cmethod
+    );
+
+    args.GetReturnValue().Set(ds) ;
 
 }
 

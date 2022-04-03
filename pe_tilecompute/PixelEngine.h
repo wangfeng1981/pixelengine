@@ -100,7 +100,7 @@ struct PixelEngineHelperInterface {
 	//2022-3-6 从外部读取roi hseg.tlv数据 isUserRoi=1为用户roi，isUserRoi=0为系统ROI，rid为关系数据库中主键
 	virtual bool getRoiHsegTlv(int isUserRoi,int rid,vector<unsigned char>& retTlvData)=0 ;
 
-	inline static string version(){ return "v3" ; }
+
 
 	//2022-3-31 从外部获取 DatasetCollection 数据
     virtual bool getTileDataCollection(
@@ -114,8 +114,9 @@ struct PixelEngineHelperInterface {
 		int& rethei,     //返回瓦片高度
 		int& retnbands,  //返回瓦片波段数量
 		string& errorText)=0;
-
+    //2022-3-31 从外部获取日期时间集合对象
     virtual bool buildDatetimeCollections(
+        string dsName, //2022-4-3
         int64_t whole_start ,
         int whole_start_inc , //0 or 1
         int64_t whole_stop ,
@@ -128,6 +129,8 @@ struct PixelEngineHelperInterface {
         int repeat_stop_nextyear, //0 or 1
         vector<DatetimeCollection>& dtcollarray
     ) = 0 ;
+
+    inline static string version(){ return "v3" ; }//2022-4-3
 };
 
 
@@ -779,6 +782,7 @@ public:
         ///
         /// js调用示例
         /// const dtcollections=pe.RemoteBuildDtCollections(
+        ///   dsName , //string 2022-4-3
         ///   whole_start,    //int64
         ///   whole_start_inc,//0 or 1
         ///   whole_stop,

@@ -135,6 +135,7 @@ bool DebugPixelEngineHelperInterface::getTileDataCollection(
 
 //2022-4-1
 bool DebugPixelEngineHelperInterface::buildDatetimeCollections(
+    string dsName,
     int64_t whole_start ,
     int whole_start_inc , //0 or 1
     int64_t whole_stop ,
@@ -148,6 +149,17 @@ bool DebugPixelEngineHelperInterface::buildDatetimeCollections(
     vector<DatetimeCollection>& dtcollarray
 )
 {
+    cout<<"whole:"<<whole_start<<endl ;
+    cout<<whole_start_inc<<endl ;
+    cout<<whole_stop<<endl ;
+    cout<<whole_stop_inc<<endl ;
+    cout<<repeat_type<<endl ;
+    cout<<repeat_start<<endl ;
+    cout<<repeat_start_inc<<endl ;
+    cout<<repeat_stop<<endl ;
+    cout<<repeat_stop_inc<<endl ;
+    cout<<repeat_stop_nextyear<<endl;
+
     DatetimeCollection dtc1 , dtc2 ;
     dtc1.key="2001" ;
     dtc1.datetimes.push_back(20010101235959L) ;

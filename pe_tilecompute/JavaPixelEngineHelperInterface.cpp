@@ -295,6 +295,79 @@ bool JavaPixelEngineHelperInterface::getRoiHsegTlv(int isUserRoi,int rid,vector<
 	return true;
 }
 
+//2022-3-31 从外部获取 DatasetCollection 数据
+bool JavaPixelEngineHelperInterface::getTileDataCollection(
+        string& dsName,   //输入数据集名称
+		vector<int64_t> datetimes, //输入日期时间数组，注意实际返回的数据不一定全部都有，具体要看retdtArr
+		int z, int y, int x, //瓦片坐标
+		vector<vector<unsigned char>>& retTileDataArr, //返回二进制数据，一个datetime对应一个vector<unsigned char>
+		vector<int64_t>& retdtArr ,//返回成功获取的 datetime数组，数量与retTileDataArr一致
+		int& retdataType,//返回数据类型 1 byte，2 u16,3 i16, 4 u32, 5 i32, 6 f32, 7 f64
+		int& retwid,     //返回瓦片宽度
+		int& rethei,     //返回瓦片高度
+		int& retnbands,  //返回瓦片波段数量
+		string& errorText)
+{
+    cout<<"in c++ JavaPixelEngineHelperInterface::getTileDataCollection"<<endl;
+	JNIEnv *env = this->env	 ;
+	if( env==0 ){
+		cout<<"Error : JavaPixelEngineHelperInterface::getTileDataCollection env is null"<<endl ;
+		return false;
+	}
+
+	jclass	javaHelperClass =  env->FindClass("com/pixelengine/HBasePixelEngineHelper");
+	jobject	javaHelperObject = env->AllocObject(javaHelperClass);
+
+	//Signature:
+	// public TileData getTileDataCollection( String dsName, long[] dtarr, int z,int y,int x)
+	jmethodID methodID = env->GetMethodID(javaHelperClass,
+		"getTileDataCollection",
+		"(Ljava/lang/String;[JIII)Lcom/pixelengine/TileData;");
+//  here here here
+//    jbyteArray jbarr = (jbyteArray) env->CallObjectMethod(javaHelperObject,
+//		methodID,
+//		isUserRoi,
+//		rid
+//		);
+//	if( jbarr == NULL ){
+//		cout<<"Error : getRoiHsegTlv return null result, isUserRoi:"<< isUserRoi << ",rid:"<<rid <<endl ;
+//		return false ;
+//	}
+//
+//	jbyteArray* jbarrPtr = reinterpret_cast<jbyteArray*>(&jbarr) ;
+//    unsigned char* dataPtr = (unsigned char*)env->GetByteArrayElements(*jbarrPtr,NULL) ;
+//    int blen = env->GetArrayLength(  *jbarrPtr ) ;
+//	retTlvData.resize(blen) ;
+//	memcpy( retTlvData.data() ,  dataPtr , blen ) ;
+//    env->ReleaseByteArrayElements(*jbarrPtr, (jbyte*)dataPtr, 0);
+//    cout<<"debug blen:"<<blen<<endl ;
+//
+//	env->DeleteLocalRef(javaHelperObject);
+//    env->DeleteLocalRef(javaHelperClass);
+
+	return true;
+
+
+}
+//2022-3-31 从外部获取日期时间集合对象
+bool JavaPixelEngineHelperInterface::buildDatetimeCollections(
+        int64_t whole_start ,
+        int whole_start_inc , //0 or 1
+        int64_t whole_stop ,
+        int whole_stop_inc ,
+        string repeat_type , // '' 'm' 'y'
+        int64_t repeat_start,
+        int repeat_start_inc,
+        int64_t repeat_stop,
+        int repeat_stop_inc,
+        int repeat_stop_nextyear, //0 or 1
+        vector<DatetimeCollection>& dtcollarray
+    )
+{
+
+
+    return true ;
+}
 
 
 
@@ -310,6 +383,24 @@ bool JavaPixelEngineHelperInterface::getRoiHsegTlv(int isUserRoi,int rid,vector<
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+
+    内部辅助函数
+
+*/
 
 bool JavaPixelEngineHelperInterface::unwrapJavaColorRamp(jobject obj,
 	PixelEngineColorRamp& cr )
