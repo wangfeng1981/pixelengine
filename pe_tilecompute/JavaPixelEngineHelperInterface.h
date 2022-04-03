@@ -2,6 +2,7 @@
 #define JAVAPIXELENGINEHELPERINTERFACE_H
 //2022-3-23
 //2022-3-26
+//2022-4-3
 
 #include <jni.h>
 #include <string>
@@ -74,6 +75,7 @@ public:
 		string& errorText);
     //2022-3-31 从外部获取日期时间集合对象
     virtual bool buildDatetimeCollections(
+        string dsName,
         int64_t whole_start ,
         int whole_start_inc , //0 or 1
         int64_t whole_stop ,
@@ -84,7 +86,7 @@ public:
         int64_t repeat_stop,
         int repeat_stop_inc,
         int repeat_stop_nextyear, //0 or 1
-        vector<DatetimeCollection>& dtcollarray
+        vector<DatetimeCollection>& retdtcollarray
     );
 
 

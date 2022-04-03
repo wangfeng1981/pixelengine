@@ -1,4 +1,5 @@
 #include "JavaPixelEngineHelperInterface.h"
+/// update 2022-4-3
 
 
 JavaPixelEngineHelperInterface::JavaPixelEngineHelperInterface(JNIEnv* env0,string javaHelperClassName):env(env0)
@@ -314,6 +315,10 @@ bool JavaPixelEngineHelperInterface::getTileDataCollection(
 		cout<<"Error : JavaPixelEngineHelperInterface::getTileDataCollection env is null"<<endl ;
 		return false;
 	}
+	if( datetimes.size()==0 ){
+        cout<<"Error : JavaPixelEngineHelperInterface::getTileDataCollection datetimes is empty"<<endl ;
+        return false ;
+	}
 
 	jclass	javaHelperClass =  env->FindClass("com/pixelengine/HBasePixelEngineHelper");
 	jobject	javaHelperObject = env->AllocObject(javaHelperClass);
@@ -323,34 +328,59 @@ bool JavaPixelEngineHelperInterface::getTileDataCollection(
 	jmethodID methodID = env->GetMethodID(javaHelperClass,
 		"getTileDataCollection",
 		"(Ljava/lang/String;[JIII)Lcom/pixelengine/TileData;");
-//  here here here
-//    jbyteArray jbarr = (jbyteArray) env->CallObjectMethod(javaHelperObject,
-//		methodID,
-//		isUserRoi,
-//		rid
-//		);
-//	if( jbarr == NULL ){
-//		cout<<"Error : getRoiHsegTlv return null result, isUserRoi:"<< isUserRoi << ",rid:"<<rid <<endl ;
-//		return false ;
-//	}
-//
-//	jbyteArray* jbarrPtr = reinterpret_cast<jbyteArray*>(&jbarr) ;
-//    unsigned char* dataPtr = (unsigned char*)env->GetByteArrayElements(*jbarrPtr,NULL) ;
-//    int blen = env->GetArrayLength(  *jbarrPtr ) ;
-//	retTlvData.resize(blen) ;
-//	memcpy( retTlvData.data() ,  dataPtr , blen ) ;
-//    env->ReleaseByteArrayElements(*jbarrPtr, (jbyte*)dataPtr, 0);
-//    cout<<"debug blen:"<<blen<<endl ;
-//
-//	env->DeleteLocalRef(javaHelperObject);
-//    env->DeleteLocalRef(javaHelperClass);
 
+
+    jlongArray inDtArr = env->NewLongArray(datetimes.size()) ;
+	for(int idt = 0 ; idt < datetimes.size() ; ++ idt ){
+		env->SetLongArrayRegion(inDtArr,idt,1, &(datetimes[idt]) ) ;
+	}
+	jobject tileDataJavaObj = (jobject) env->CallObjectMethod(
+        javaHelperObject,
+		methodID,
+		env->NewStringUTF(dsName.c_str()) ,
+        inDtArr,
+		z,y,x
+		);
+
+	if( tileDataJavaObj== nullptr ){
+		cout<<"Error : tileDataJavaObj is null at z,y,x "<<
+			z<<","<<y<<","<<x<<endl ;
+		return false ;
+	}
+
+
+	int numds = 0;
+    int tx,ty,tz;
+	bool isok = this->unwrapJavaTileData(tileDataJavaObj ,
+		retdtArr ,
+		retTileDataArr ,
+		retwid,
+		rethei,
+		retnbands,
+		numds ,
+		retdataType ,
+		tx,ty,tz
+		) ;
+	if( isok ==false ){
+		cout<<"Error : unwrap tileDataJavaObj failed."<<endl ;
+		return false ;
+	}
+
+	cout<<"Info : unwrap ok."<<endl ;
+
+	cout<<"w,h,nb,nds,dt:"<<retwid<<","<<rethei<<","<<retnbands<<","<<numds<<","<<retdataType<<endl;
+	cout<<"z,y,x:"<<tz<<","<<ty<<","<<tx<<endl ;
+	for(int ids=0;ids<numds;++ids){
+		cout<<"data["<<ids<<"][1]:"<<(int)retTileDataArr[ids][1]<<endl ;
+	}
+
+	env->DeleteLocalRef(javaHelperObject);
+    env->DeleteLocalRef(javaHelperClass);
 	return true;
-
-
 }
 //2022-3-31 从外部获取日期时间集合对象
 bool JavaPixelEngineHelperInterface::buildDatetimeCollections(
+        string dsName,
         int64_t whole_start ,
         int whole_start_inc , //0 or 1
         int64_t whole_stop ,
@@ -361,11 +391,60 @@ bool JavaPixelEngineHelperInterface::buildDatetimeCollections(
         int64_t repeat_stop,
         int repeat_stop_inc,
         int repeat_stop_nextyear, //0 or 1
-        vector<DatetimeCollection>& dtcollarray
+        vector<DatetimeCollection>& retdtcollarray
     )
 {
+    cout<<"in c++ JavaPixelEngineHelperInterface::buildDatetimeCollections"<<endl;
+	JNIEnv *env = this->env	 ;
+	if( env==0 ){
+		cout<<"Error : JavaPixelEngineHelperInterface::buildDatetimeCollections env is null"<<endl ;
+		return false;
+	}
+	jclass	javaHelperClass =  env->FindClass("com/pixelengine/HBasePixelEngineHelper");
+	jobject	javaHelperObject = env->AllocObject(javaHelperClass);
 
+	//Signature:
+	//
+	jmethodID methodID = env->GetMethodID(javaHelperClass,
+		"buildDatetimeCollections",
+		"(Ljava/lang/String;JIJILjava/lang/String;JIJII)[Lcom/pixelengine/DataModel/JDtCollection;");
+	jobjectArray dtcollectionArrJava = (jobjectArray) env->CallObjectMethod(
+        javaHelperObject,
+		methodID,
+		env->NewStringUTF(dsName.c_str()) ,
+        whole_start,
+		whole_start_inc,
+		whole_stop,
+		whole_stop_inc,
+		env->NewStringUTF(repeat_type.c_str()) ,
+		repeat_start,
+		repeat_start_inc,
+		repeat_stop,
+		repeat_stop_inc,
+		repeat_stop_nextyear
+		);
 
+	if( dtcollectionArrJava== nullptr ){
+		cout<<"Error : dtcollectionArrJava is null"<<endl ;
+		return false ;
+	}
+
+    // Get the value of each Integer object in the array
+    jsize length = env->GetArrayLength( dtcollectionArrJava);
+    for (int i = 0; i < length; i++) {
+        jobject dtcollObj1 = env->GetObjectArrayElement(dtcollectionArrJava, i);
+        if (0 == dtcollObj1)
+            return false;
+        DatetimeCollection tempDtColl ;
+        this->getJavaObjectStringField(dtcollObj1,"key",tempDtColl.key);
+        this->getJavaObjectLongArrField(dtcollObj1,"datetimes" , tempDtColl.datetimes) ;
+        if( tempDtColl.datetimes.size()>0 )
+        {
+            retdtcollarray.push_back(tempDtColl) ;
+        }else{
+            cout<<"Warning : some empty DtCollection"<<endl ;
+        }
+    }
     return true ;
 }
 
