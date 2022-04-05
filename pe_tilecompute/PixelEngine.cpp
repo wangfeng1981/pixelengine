@@ -95,7 +95,8 @@ const int PixelEngine::s_CompositeMethodSum=4;
 //3. add DatasetCollections API 2022-4-1
 //4. add dataset.subtract extract pe.StackDatasets method 2022-4-1
 //5. add pe.CompositeDsCollection CompositeDsCollections method 2022-4-3
-string PixelEngine::pejs_version = string("2.8.4.1 2022-04-03");
+//6. write dsname in CompositeDsCollection CompositeDsCollections 2022-4-5
+string PixelEngine::pejs_version = string("2.8.4.2 2022-04-05");
 
 
 //// mapreduce not used yet.
@@ -1478,11 +1479,6 @@ void PixelEngine::GlobalFunc_RenderGrayCallBack(const v8::FunctionCallbackInfo<v
 				outbackData[asize+it] = gray;
 				outbackData[asize*2+it] = gray ;
 				outbackData[asize*3+it] = 255;
-
-                if( it==0 ){
-                    cout<<"debug 1726  "<<backDataOffset[it]<<endl;
-                    cout<<"debug 1726 grey "<<gray<<endl;
-                }
 			}
 		}
     }
@@ -6763,7 +6759,6 @@ void PixelEngine::GlobalFunc_DatasetCollectionCallBack(
 	//检查 v8DtArrOrDtCollection 是不是 DatetimeCollection 对象
 	else if( v8DtArrOrDtCollection->IsObject() )
 	{
-        cout<<"debug 402-1"<<endl ;
         v8::Object* dtcollObject = v8::Object::Cast(*v8DtArrOrDtCollection) ;
         Local<Value> dtcoll_key = dtcollObject->Get(
             context,
@@ -6771,13 +6766,11 @@ void PixelEngine::GlobalFunc_DatasetCollectionCallBack(
             ).ToLocalChecked() ;
         String::Utf8Value temp_key( isolate , dtcoll_key) ;
         dtColKey = string( *temp_key ) ;
-        cout<<"debug 402-2"<<endl ;
 
         Local<Value> dtcoll_dtarr = dtcollObject->Get(
             context,
             String::NewFromUtf8(isolate,"datetimes").ToLocalChecked()
             ).ToLocalChecked() ;
-        cout<<"debug 402-3"<<endl ;
 
         Array* tempArray1 = v8::Array::Cast(*dtcoll_dtarr) ;
         if( tempArray1->Length() == 0 ){
@@ -6785,19 +6778,12 @@ void PixelEngine::GlobalFunc_DatasetCollectionCallBack(
             return;
         }
 
-        cout<<"debug 402-4 "<< tempArray1->Length() <<endl ;
 
         dtColDts.resize( tempArray1->Length() ) ;
         for(int tempi = 0 ; tempi < tempArray1->Length(); ++ tempi ){
-//            Local<String> typeofarrelement = tempArray1->Get(context,tempi)
-//                .ToLocalChecked()->TypeOf(isolate) ;
-//            cout<<"type of arr element:"<< *String::Utf8Value(isolate,typeofarrelement)<<endl ;
-
             dtColDts[tempi] = tempArray1->Get(context,tempi)
                 .ToLocalChecked()->NumberValue(context).ToChecked();
         }
-
-        cout<<"debug 402-5"<<endl ;
 
 	}else{
         if(! PixelEngine::quietMode)cout<<"Error: args[1] is not dtarr nor dtcollection object."<<endl ;
@@ -6807,11 +6793,18 @@ void PixelEngine::GlobalFunc_DatasetCollectionCallBack(
     //debug
     cout<<"debug dsname "<<dsname<<endl ;
     cout<<"debug dtColKey "<<dtColKey<<endl ;
-    cout<<"debug dtcollection: [" <<endl;
+    //cout<<"debug dtcollection: [" <<endl;
     for(int i = 0 ; i<dtColDts.size();++i ){
-        cout<<dtColDts[i]<<endl ;
+        //cout<<dtColDts[i]<<endl ;
+
+        {//记录访问过的dsname 2022-4-5
+            string dsnamedt = dsname +','+wStringUtils::long2str(dtColDts[i]) ;
+            thisPePtr->m_dsnameDtVec.push_back(dsnamedt) ;
+        }
     }
-    cout<<"]"<<endl ;
+    //cout<<"]"<<endl ;
+
+
 
     int tilex = thisPePtr->tileInfo.x ;
     int tiley = thisPePtr->tileInfo.y ;
@@ -6941,11 +6934,15 @@ void PixelEngine::GlobalFunc_DatasetCollectionsCallBack(const v8::FunctionCallba
         cout<<"debug icoll "<<icoll<<endl ;
         cout<<"debug dsname "<<dsname<<endl ;
         cout<<"debug dtColKey "<<dtColKey<<endl ;
-        cout<<"debug dtcollection: [" <<endl;
+        //cout<<"debug dtcollection: [" <<endl;
         for(int i = 0 ; i<dtColDts.size();++i ){
-            cout<<dtColDts[i]<<endl ;
+            //cout<<dtColDts[i]<<endl ;
+            {//记录访问过的dsname 2022-4-5
+                string dsnamedt = dsname +','+wStringUtils::long2str(dtColDts[i]) ;
+                thisPePtr->m_dsnameDtVec.push_back(dsnamedt) ;
+            }
         }
-        cout<<"]"<<endl ;
+        //cout<<"]"<<endl ;
 
 
 
