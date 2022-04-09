@@ -100,7 +100,7 @@ const int PixelEngine::s_CompositeMethodSum=4;
 
 //2022-4-9
 //1.增加pe.Dataset() .DatasetCollection .DatasetCollections 无效参数的判断，其他函数的判断以后再加吧，没有时间弄了
-string PixelEngine::pejs_version = string("2.8.5.0 2022-04-09");
+string PixelEngine::pejs_version = string("2.8.5.0r 2022-04-09");
 
 
 //// mapreduce not used yet.
