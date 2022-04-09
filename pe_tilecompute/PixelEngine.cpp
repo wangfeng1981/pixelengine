@@ -96,7 +96,11 @@ const int PixelEngine::s_CompositeMethodSum=4;
 //4. add dataset.subtract extract pe.StackDatasets method 2022-4-1
 //5. add pe.CompositeDsCollection CompositeDsCollections method 2022-4-3
 //6. write dsname in CompositeDsCollection CompositeDsCollections 2022-4-5
-string PixelEngine::pejs_version = string("2.8.4.2 2022-04-05");
+//string PixelEngine::pejs_version = string("2.8.4.2 2022-04-05");
+
+//2022-4-9
+//1.增加pe.Dataset() .DatasetCollection .DatasetCollections 无效参数的判断，其他函数的判断以后再加吧，没有时间弄了
+string PixelEngine::pejs_version = string("2.8.5.0 2022-04-09");
 
 
 //// mapreduce not used yet.
@@ -2342,6 +2346,14 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 
 	Local<Value> v8name = args[0];
 	Local<Value> v8datetime = args[1] ;
+	//2022-4-9
+	if( v8name->IsString() && v8datetime->IsNumber() ){
+        //params ok
+	}else{
+        if(! PixelEngine::quietMode)cout<<"Error: bad args "<<endl ;
+        return ;
+	}
+
 
 	String::Utf8Value nameutf8( isolate , v8name) ;
 	string name( *nameutf8 ) ;
@@ -6736,6 +6748,14 @@ void PixelEngine::GlobalFunc_DatasetCollectionCallBack(
 
 	Local<Value> v8dsname = args[0];
 	Local<Value> v8DtArrOrDtCollection = args[1] ;
+	if( v8dsname->IsString() == false  ){
+        if(! PixelEngine::quietMode)cout<<"Error: bad dsname "<<endl ;
+        return ;
+	}
+    if( v8DtArrOrDtCollection->IsNullOrUndefined()  ){
+        if(! PixelEngine::quietMode)cout<<"Error: null or undef args[1]"<<endl ;
+        return ;
+    }
 
 	String::Utf8Value dsnameutf8( isolate , v8dsname) ;
 	string dsname( *dsnameutf8 ) ;
@@ -6882,6 +6902,16 @@ void PixelEngine::GlobalFunc_DatasetCollectionsCallBack(const v8::FunctionCallba
 
 	Local<Value> v8dsname = args[0];
 	Local<Value> v8DtCollections = args[1] ;
+
+    if( v8dsname->IsString() == false  ){
+        if(! PixelEngine::quietMode)cout<<"Error: bad dsname "<<endl ;
+        return ;
+	}
+    if( v8DtCollections->IsNullOrUndefined()  ){
+        if(! PixelEngine::quietMode)cout<<"Error: null or undef args[1]"<<endl ;
+        return ;
+    }
+
 
 	String::Utf8Value dsnameutf8( isolate , v8dsname) ;
 	string dsname( *dsnameutf8 ) ;
