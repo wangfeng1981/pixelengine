@@ -1,0 +1,1 @@
+{"type":"exact","bands":[0],"nodatacolor":{"val":255,"r":0,"g":0,"b":0,"a":0,"lbl":"NoData"},"vranges":[],"colors":[{"r":0,"g":178,"b":64,"a":255,"val":0,"lbl":"陆地"},{"r":0,"g":9,"b":249,"a":255,"val":1,"lbl":"水体"}]}

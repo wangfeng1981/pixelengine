@@ -1,0 +1,5 @@
+{"type":"rgb","bands":[1,2,1],"nodatacolor":{"val":255,"r":0,"g":0,"b":0,"a":0,"lbl":"NoData"},
+"vranges":[
+	{"minval":0,"maxval":1000},
+	{"minval":0,"maxval":2000},
+	{"minval":0,"maxval":3000}],"colors":[]}
