@@ -100,7 +100,11 @@ const int PixelEngine::s_CompositeMethodSum=4;
 
 //2022-4-9
 //1.增加pe.Dataset() .DatasetCollection .DatasetCollections 无效参数的判断，其他函数的判断以后再加吧，没有时间弄了
-string PixelEngine::pejs_version = string("2.8.5.0r 2022-04-09");
+//string PixelEngine::pejs_version = string("2.8.5.0r 2022-04-09");
+
+//2022-6-6
+//1. 修改bug 在GlobalFunc_CompositeDsCollectionCallBack中判断dsCollection对象是否为空，如果为空不进行计算
+string PixelEngine::pejs_version = string("2.8.6.0 2022-06-06");
 
 
 //// mapreduce not used yet.
@@ -2853,14 +2857,14 @@ void PixelEngine::GlobalFunc_DatasetArrayCallBack(const v8::FunctionCallbackInfo
 		{//byte
 			Local<ArrayBuffer> arrbuf = ArrayBuffer::New(isolate,indatavec.size()) ;
 			Local<Uint8Array> u8arr = Uint8Array::New(arrbuf,0,indatavec.size()) ;
-			unsigned char* backData = (unsigned char*) u8arr->Buffer()->GetBackingStore()->Data() ;//here
+			unsigned char* backData = (unsigned char*) u8arr->Buffer()->GetBackingStore()->Data() ;
 			memcpy(backData , indatavec.data(), indatavec.size() );
 			Maybe<bool> ok6 = dataArrArray->Set(context,ids,u8arr) ;
 		}else if( dt==3 )
 		{//short
 			Local<ArrayBuffer> arrbuf = ArrayBuffer::New(isolate,indatavec.size()) ;
 			Local<Int16Array> i16arr = Int16Array::New(arrbuf,0,indatavec.size()/2) ;
-			short* backData = (short*) i16arr->Buffer()->GetBackingStore()->Data() ;//here
+			short* backData = (short*) i16arr->Buffer()->GetBackingStore()->Data() ;
 			memcpy(backData , indatavec.data(), indatavec.size() );
 			Maybe<bool> ok7 = dataArrArray->Set(context,ids,i16arr) ;
 		}else
@@ -5297,7 +5301,7 @@ void PixelEngine::GlobalFunc_RoiCallBack(const v8::FunctionCallbackInfo<v8::Valu
 	thisPePtr->roiVector.push_back(roi) ;
 	int roiIndex = thisPePtr->roiVector.size()-1;
 
-	int temptilesize = 256;//here maybe changed in future.2020-10-16
+	int temptilesize = 256;
 
 	thisPePtr->roiVector[roiIndex].buildRoiByMulPolys(retMPoly,temptilesize,
 		zlevel, thisPePtr->tileInfo.y , thisPePtr->tileInfo.x );
@@ -7349,6 +7353,11 @@ void PixelEngine::GlobalFunc_CompositeDsCollectionCallBack(const v8::FunctionCal
 	v8::HandleScope handle_scope(isolate);
 	Local<Context> context(isolate->GetCurrentContext()) ;
 
+	//这里判断 dsCollection 是否为空 2022-6-6
+	if( args[0]->IsUndefined() || args[0]->IsNull() || args[0]->IsObject()==false ){
+        cout<<"Error: dsCollection is undef, null, unobj."<<endl ;
+        return ;
+	}
 	Local<Object> dsCollection = args[0]->ToObject(context).ToLocalChecked() ;
 
 	int datatype = dsCollection->Get(context, String::NewFromUtf8(isolate,"dataType")
