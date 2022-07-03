@@ -23,7 +23,7 @@ void unit_test_js_ds_subtract_method() ;
 void unit_test_js_pe_stackdatasets_method() ;
 void unit_test_js_compositedatasetcollection() ;
 void unit_test_js_RemoteDtCollections_DsCollections();//2022-4-3
-
+void unit_test_pe_datetime();//2022-7-3
 
 int main()
 {
@@ -68,6 +68,10 @@ int main()
     unit_test_js_compositedatasetcollection() ;
 
     unit_test_js_RemoteDtCollections_DsCollections();
+
+    //2022-7-3
+    unit_test_pe_datetime();
+
 
     return 0;
 }
@@ -447,6 +451,50 @@ void unit_test_js_RemoteDtCollections_DsCollections()
         tiledata,
         logstr
     ) ;
+
+}
+
+
+
+
+//2022-7-3
+void unit_test_pe_datetime()
+{
+    cout<<"-----------------unit_test_pe_datetime ---------------"<<endl;
+    DebugPixelEngineHelperInterface debugHelper ;
+    PixelEngine::initV8() ;
+    PixelEngine pe ;
+    pe.helperPointer = &debugHelper ;
+
+    string script1 =
+                "function main(){"
+                "let dt=pe.Datetime(2011,1,2,12,30,59);"
+                "pe.log(dt);"
+                "dt=pe.Datetime('abc');"
+                "pe.log(dt);"
+                "dt=pe.Datetime(2011,'22');"
+                "pe.log(dt);"
+                "let dt1=pe.NearestDatetimeAfter('dsname', 20110901000000);"
+                "let dt2=pe.NearestDatetimeBefore('dsname', 20110901000000);"
+                "let dt3=pe.NearestDatetimeBefore('dsname', 1);"
+                "pe.log( JSON.stringify(dt1) );pe.log( JSON.stringify(dt2) );pe.log( JSON.stringify(dt3) );"
+                "return null;"
+                "}"
+
+     ;
+
+
+    PeTileData tiledata ;
+    string extrastr = "" ;
+    string logstr ;
+    pe.RunScriptForTileWithoutRenderWithExtra(0,
+        script1 ,
+        extrastr ,
+        1,2,3,
+        tiledata,
+        logstr
+    ) ;
+    cout<<"logstr:"<< endl <<pe.getPeLog()<<endl ;
 
 }
 

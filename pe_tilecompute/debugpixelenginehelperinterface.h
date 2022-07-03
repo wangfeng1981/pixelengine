@@ -74,6 +74,11 @@ class DebugPixelEngineHelperInterface : public PixelEngineHelperInterface
         vector<DatetimeCollection>& dtcollarray
     ) ;
 
+    //2022-7-3
+    virtual bool getNearestDatetime(string dsname,int64_t currdt,
+    int isBefore,//1 or 0
+    int64_t& retDt, string& retDisplay);
+
 
     protected:
 

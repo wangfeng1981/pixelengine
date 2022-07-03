@@ -89,9 +89,18 @@ public:
         vector<DatetimeCollection>& retdtcollarray
     );
 
+    //2022-7-3
+    virtual bool getNearestDatetime(
+        string dsName,
+        int64_t currdt,
+        int isBefore,//1 or 0
+        int64_t& retDt,
+        string& retDisplay);
+
 
 public:
 	bool getJavaObjectIntField(jobject obj,const char* fieldname,int& retval) ;
+	bool getJavaObjectLongField(jobject obj,const char* fieldname,long& retval) ;//2022-7-3
 	bool getJavaObjectLongArrField(jobject obj,const char* fieldname,vector<int64_t>& retvec) ;
 	bool getJavaObjectByteArrOfArrField(jobject obj,const char* fieldname,vector<vector<unsigned char> >& retvecOfVec) ;
 

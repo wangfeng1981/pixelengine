@@ -130,7 +130,11 @@ struct PixelEngineHelperInterface {
         vector<DatetimeCollection>& dtcollarray
     ) = 0 ;
 
-    inline static string version(){ return "v3" ; }//2022-4-3
+    //2022-7-3
+    //isBefore = 1 , get before nearest., others (0)  get after nearest.
+    virtual bool getNearestDatetime(string dsname,int64_t currdt, int isBefore,int64_t& retDt, string& retDisplay)=0 ;
+
+    inline static string version(){ return "v4" ; }//2022-7-3
 };
 
 
@@ -868,6 +872,23 @@ public:
             }
             return true ;
         }
+
+public:
+    //object function
+    inline string getPeLog(){return pe_logs;} //2022-7-3
+
+protected:
+    //2022-7-3
+    //从服务器获取指定产品的指定最近的之前日期，包括当前日期，如果有当前日期那么返回当前日期，否则找距离当前日期最近的前面日期
+    // 比如数据库有 20200000... ，20210000... 如果输入 20201231... 那么返回 {'dt':20200000... ,'display':'2020年'}
+    //注意返回的个对象 包括 dt:Int64 和 display:String 两个属性
+    // 如果失败返回空对象null 失败包括没有对应产品，没有最近的之前日期或者输入参数错误
+    //in js:
+    // let dt1 = pe.NearestDatetimeBefore('mod/ndvi', pe.Datetime(2022,1,1) );
+    // let dt2 = pe.NearestDatetimeBefore('mod/ndvi', 20220101000000 ) ;
+    static void GlobalFunc_NearestDatetimeBeforeCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+    //2022-7-3 与GlobalFunc_NearestDatetimeBeforeCallBack类似，但是查找的日期是指定日期之后的最近日期，注意该接口不查找当前日期
+    static void GlobalFunc_NearestDatetimeAfterCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 
 
 

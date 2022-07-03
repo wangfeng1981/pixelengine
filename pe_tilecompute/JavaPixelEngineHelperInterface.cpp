@@ -449,7 +449,48 @@ bool JavaPixelEngineHelperInterface::buildDatetimeCollections(
 }
 
 
+//2022-7-3
+bool JavaPixelEngineHelperInterface::getNearestDatetime(
+    string dsName,
+    int64_t currdt,
+    int isBefore,//1 or 0
+    int64_t& retDt,
+    string& retDisplay)
+{
+    cout<<"in c++ JavaPixelEngineHelperInterface::getNearestDatetime"<<endl;
+	JNIEnv *env = this->env	 ;
+	if( env==0 ){
+		cout<<"Error : JavaPixelEngineHelperInterface::getNearestDatetime env is null"<<endl ;
+		return false;
+	}
+	jclass	javaHelperClass =  env->FindClass("com/pixelengine/HBasePixelEngineHelper");
+	jobject	javaHelperObject = env->AllocObject(javaHelperClass);
 
+	//Signature:
+	//
+	jmethodID methodID = env->GetMethodID(javaHelperClass,
+		"getNearestDatetime",
+		"(Ljava/lang/String;JI)Lcom/pixelengine/DatetimeDisplay;");
+
+	jobject dtDisplayObj = (jobjectArray) env->CallObjectMethod(
+        javaHelperObject,
+		methodID,
+		env->NewStringUTF(dsName.c_str()) ,
+        currdt ,
+		isBefore
+		);
+
+	if( dtDisplayObj == nullptr ){
+		cout<<"Error : datetimeDisplay object from java is null"<<endl ;
+		return false ;
+	}
+
+    bool ok11 = this->getJavaObjectStringField(dtDisplayObj , "display" , retDisplay );
+    bool ok12 = this->getJavaObjectLongField(  dtDisplayObj , "dt"      , retDt      ) ;
+    if( ok11==false || ok12==false ) return false ;
+
+	return true ;
+}
 
 
 
@@ -615,6 +656,22 @@ bool JavaPixelEngineHelperInterface::getJavaObjectIntField(jobject obj,const cha
 	jint number = env->GetIntField( obj, fidNumber);
 	retval = number ;
 	return true;
+}
+
+//2022-7-3
+bool JavaPixelEngineHelperInterface::getJavaObjectLongField(jobject obj,const char* fieldname,long& retval) //2022-7-3
+{
+    JNIEnv *env = this->env	 ;
+	jclass someClass = env->GetObjectClass(obj);
+	jfieldID fidNumber = env->GetFieldID( someClass, fieldname, "J");
+	if (NULL == fidNumber) {
+			cout<<"Error : failed to get field "<<fieldname<< " from java object."<<endl;
+			return false;
+	}
+	jlong number = env->GetLongField( obj, fidNumber);
+	retval = number ;
+	return true;
+
 }
 
 bool JavaPixelEngineHelperInterface::getJavaObjectLongArrField(jobject obj,const char* fieldname,

@@ -108,7 +108,13 @@ const int PixelEngine::s_CompositeMethodSum=4;
 
 //2022-7-3
 //1. 修改hseg.tlv 对象计算extent逻辑，从最底层进行计算。修改tile-overlay判断逻辑，从制定z层进行判断。
-string PixelEngine::pejs_version = string("2.8.7.0 2022-07-03");
+//2. 增加js方法 pe.Datetime(y,m,d) 该方法会生成 yyyymmdd000000 整形数字，例如 pe.datetime(2000,1,1) -> 20000101000000
+//3. 增加js方法 pe.Datetime(y,m,d,h,mi,s) 举例 pe.datetime(2011,2,3,11,40,50)  -> 20110203114050
+//4. 将脚本运行的exception写入pe.log
+//5. add pe.NearestDatetimeAfter('dsname', 20110901000000);
+//6. add pe.NearestDatetimeBefore('dsname', 20110901000000);
+string PixelEngine::pejs_version = string("2.8.7.1 2022-07-03");
+
 
 //// mapreduce not used yet.
 bool PixelEngineMapReduce::isSame(PixelEngineMapReduce& mr)
@@ -1029,7 +1035,13 @@ void PixelEngine::log(string& str)
 	if( this->pe_logs.length() > 2048 )
 	{
 		if(! PixelEngine::quietMode)cout<<"log size exceed 1024."<<endl ;
-		this->pe_logs += string("...\n") ;
+		string last5charsStr = this->pe_logs.substr( this->pe_logs.length() - 5 ) ;
+        if( last5charsStr.find("...") == std::string::npos ){
+            this->pe_logs += string("...\n") ;//2022-7-3
+        }else{
+            //do nothing.
+        }
+
 	}else
 	{
 		this->pe_logs += str+string("\n") ;
@@ -3849,6 +3861,17 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 			}
 			return cr ;
 		};
+		PixelEngineObject.Datetime=function(y,m,d,hh,mm,ss) {
+            if(typeof y !== 'number' ) y = 0;
+            if(typeof m !== 'number' ) m = 0 ;
+            if(typeof d !=='number') d=0;
+            if(typeof hh!=='number') hh=0;
+            if(typeof mm!=='number') mm=0;
+            if(typeof ss!=='number') ss=0;
+            let val=(y*10000+m*100+d)*1000000+(hh*10000+mm*100+ss);
+            if( typeof val === 'number' &&  isNaN(val)===false ) return val
+            else return 0;
+		};
 	)" ;
 
 	v8::Local<v8::Script> scriptForEach ;
@@ -3894,6 +3917,20 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 		,String::NewFromUtf8(isolate, "roi").ToLocalChecked(),
            FunctionTemplate::New(isolate,
            	PixelEngine::GlobalFunc_RoiCallBack)->GetFunction(context).ToLocalChecked() );
+
+    //pe.NearestDatetimeBefore('dsname', 20201122000000 ) 2022-7-3
+	Maybe<bool> ok24 = pe->Set(context
+		,String::NewFromUtf8(isolate, "NearestDatetimeBefore").ToLocalChecked(),
+           FunctionTemplate::New(isolate,
+           	PixelEngine::GlobalFunc_NearestDatetimeBeforeCallBack)->GetFunction(context).ToLocalChecked() );
+
+    //pe.NearestDatetimeAfter('dsname', 20201122000000 ) 2022-7-3
+	Maybe<bool> ok25 = pe->Set(context
+		,String::NewFromUtf8(isolate, "NearestDatetimeAfter").ToLocalChecked(),
+           FunctionTemplate::New(isolate,
+           	PixelEngine::GlobalFunc_NearestDatetimeAfterCallBack)->GetFunction(context).ToLocalChecked() );
+
+
 
 	// //global function globalFunc_renderGrayCallBack
 	// global->Set(context
@@ -4080,7 +4117,8 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 			String::Utf8Value error(this->isolate, try_catch.Exception());
 			if(! PixelEngine::quietMode)cout<<"v8 exception:"<<*error<<endl;
 			// The script failed to compile; bail out.
-			//return false;
+            string exceptionStr= string("compile exception:")+(*error) ;//2022-7-3
+            this->log( exceptionStr ) ;//2022-7-3
 
 			allOk = false ;
 		}else
@@ -4093,8 +4131,8 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 				string exceptionstr = string("v8 exception:")+(*error) ;
 				if(! PixelEngine::quietMode)cout<<exceptionstr<<endl;
 				// The script failed to compile; bail out.
-				//return false;
-				this->log(exceptionstr) ;
+                string exceptionStr=string("run exception:")+(*error) ;//2022-7-3
+                this->log( exceptionStr ) ;//2022-7-3
 				allOk = false ;
 			}else
 			{
@@ -4324,7 +4362,8 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 			String::Utf8Value error(this->isolate, try_catch.Exception());
 			if(! PixelEngine::quietMode)cout << "v8 exception:" << *error << endl;
 			// The script failed to compile; bail out.
-			//return false;
+            string exceptionStr= string("compile exception:")+(*error) ;//2022-7-3
+            this->log( exceptionStr ) ;//2022-7-3
 
 			allOk = false;
 		}
@@ -4338,8 +4377,8 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 				string exceptionstr = string("v8 exception:") + (*error);
 				if(! PixelEngine::quietMode)cout << exceptionstr << endl;
 				// The script failed to compile; bail out.
-				//return false;
-				this->log(exceptionstr);
+                string exceptionStr=string("run exception:")+(*error) ;//2022-7-3
+                this->log( exceptionStr ) ;//2022-7-3
 				allOk = false;
 			}
 			else
@@ -4368,6 +4407,8 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 					if(!PixelEngine::quietMode)printf("v8 value to tiledata dura:%d ms \n", (int)(now2 - now1) );
 					if(! PixelEngine::quietMode)cout << "Info : innerV8Dataset2TileData return  " << tiledataok << endl;
 					allOk = tiledataok;
+
+					if( tiledataok==false ){ string tempErrStr=string("tiledata exception:")+errorText; this->log( tempErrStr ) ;}//2022-7-3
 				}
 			}
 		}
@@ -4410,7 +4451,9 @@ bool PixelEngine::RunScriptForTileWithRender(void* extra, string& scriptContent,
 			if(! PixelEngine::quietMode)cout << "Info : a empty inStyle, so do not use input style." << endl;
 			string renderError;
 			bool renderok = innerRenderTileDataWithoutStyle(retTileData0, retPngBinary , renderError);
-			logStr += renderError;
+
+			if( renderok==false ){ string tempErrStr=string("render exception:") + renderError;this->log(tempErrStr) ;}//2022-7-3
+
 			return renderok;
 		}
 		else {
@@ -4418,7 +4461,9 @@ bool PixelEngine::RunScriptForTileWithRender(void* extra, string& scriptContent,
 			if(! PixelEngine::quietMode)cout << "Info : use input style" << endl;
 			string renderError;
 			bool renderok = this->innerRenderTileDataByPeStyle(retTileData0, inStyle,  retPngBinary, renderError);
-			logStr += renderError;
+
+			if( renderok==false ){ string tempErrStr=string("render exception:") + renderError;this->log(tempErrStr) ;}//2022-7-3
+
 			return renderok;
 		}
 		return true;
@@ -6590,7 +6635,9 @@ bool PixelEngine::RunScriptForTileWithoutRenderWithExtra(void* extra,
 			String::Utf8Value error(this->isolate, try_catch.Exception());
 			if(! PixelEngine::quietMode)cout << "v8 exception:" << *error << endl;
 			// The script failed to compile; bail out.
-			//return false;
+
+			string exceptionStr= string("compile exception:")+(*error) ;//2022-7-3
+			this->log( exceptionStr ) ;//2022-7-3
 
 			allOk = false;
 		}
@@ -6604,8 +6651,10 @@ bool PixelEngine::RunScriptForTileWithoutRenderWithExtra(void* extra,
 				string exceptionstr = string("v8 exception:") + (*error);
 				if(! PixelEngine::quietMode)cout << exceptionstr << endl;
 				// The script failed to compile; bail out.
-				//return false;
-				this->log(exceptionstr);
+
+				string exceptionStr=string("run exception:")+(*error) ;//2022-7-3
+                this->log( exceptionStr ) ;//2022-7-3
+
 				allOk = false;
 			}
 			else
@@ -6634,6 +6683,8 @@ bool PixelEngine::RunScriptForTileWithoutRenderWithExtra(void* extra,
 					if(!PixelEngine::quietMode)printf("v8 value to tiledata dura:%d ms \n", (int)(now2 - now1) );
 					if(! PixelEngine::quietMode)cout << "Info : innerV8Dataset2TileData return  " << tiledataok << endl;
 					allOk = tiledataok;
+
+					if( tiledataok==false ){ string tempErrStr=string("tiledata exception:")+errorText; this->log( tempErrStr ) ;}//2022-7-3
 				}
 			}
 		}
@@ -6684,7 +6735,8 @@ bool PixelEngine::RunScriptForTileWithRenderWithExtra(void* extra, string& scrip
 			if(! PixelEngine::quietMode)cout << "Info : a empty inStyle, so do not use input style." << endl;
 			string renderError;
 			bool renderok = innerRenderTileDataWithoutStyle(retTileData0, retPngBinary , renderError);
-			logStr += renderError;
+			// logStr += renderError; //commented 2022-7-3
+            if( renderok==false ){ string tempErrStr=string("render exception:") + renderError;this->log(tempErrStr) ;}//2022-7-3
 			return renderok;
 		}
 		else {
@@ -6692,7 +6744,8 @@ bool PixelEngine::RunScriptForTileWithRenderWithExtra(void* extra, string& scrip
 			if(! PixelEngine::quietMode)cout << "Info : use input style" << endl;
 			string renderError;
 			bool renderok = this->innerRenderTileDataByPeStyle(retTileData0, inStyle,  retPngBinary, renderError);
-			logStr += renderError;
+			// logStr += renderError;//commented 2022-7-3
+			if( renderok==false ){ string tempErrStr=string("render exception:") + renderError;this->log(tempErrStr) ;}//2022-7-3
 			return renderok;
 		}
 		return true;
@@ -7812,6 +7865,122 @@ void PixelEngine::GlobalFunc_StackDatasetsCallBack(const v8::FunctionCallbackInf
 		,Integer::New(isolate, tilez) ) ;
 
     args.GetReturnValue().Set(ds) ;
+}
+
+
+
+//2022-7-3 let dt1 = pe.NearestDatetimeBefore('mod/ndvi', pe.Datetime(2022,1,1) );
+void PixelEngine::GlobalFunc_NearestDatetimeBeforeCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+	if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_NearestDatetimeBeforeCallBack"<<endl;
+	if(args.Length() == 2 )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length!=2 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> v8name = args[0];
+	Local<Value> v8datetime = args[1] ;
+	if( v8name->IsString() && v8datetime->IsNumber() ){
+        //params ok
+	}else{
+        if(! PixelEngine::quietMode)cout<<"Error: bad args "<<endl ;
+        return ;
+	}
+
+	String::Utf8Value nameutf8( isolate , v8name) ;
+	string dsname( *nameutf8 ) ;
+	int64_t datetime = (int64_t) (v8datetime->ToNumber(context).ToLocalChecked())->Value();
+
+	PixelEngine* peptr = PixelEngine::getPixelEnginePointer(args);
+	if (peptr) {
+		if (peptr->helperPointer) {
+            int64_t retDt = 0;
+			string display="-";
+			bool helperCallOk = peptr->helperPointer->getNearestDatetime(
+                dsname, datetime ,
+                1 ,//is before
+                retDt, display);
+
+			if (helperCallOk) {
+				Local<Object> obj1 = Object::New(isolate) ;
+				Maybe<bool> ok11 = obj1->Set(
+                    context
+                    ,String::NewFromUtf8(isolate, "dt").ToLocalChecked()
+                    ,Number::New(isolate, retDt) );
+                Maybe<bool> ok12 = obj1->Set(
+                    context
+                    ,String::NewFromUtf8(isolate, "display").ToLocalChecked()
+                    ,String::NewFromUtf8(isolate, display.c_str() ).ToLocalChecked() );
+
+				args.GetReturnValue().Set(obj1);
+			}
+		}
+	}
+
+}
+//2022-7-3 与GlobalFunc_NearestDatetimeBeforeCallBack类似，但是查找的日期是指定日期之后的最近日期，注意该接口不查找当前日期
+//let dt1 = pe.NearestDatetimeAfter('mod/ndvi', pe.Datetime(2022,1,1) );
+void PixelEngine::GlobalFunc_NearestDatetimeAfterCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_NearestDatetimeAfterCallBack"<<endl;
+	if(args.Length() == 2 )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length!=2 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> v8name = args[0];
+	Local<Value> v8datetime = args[1] ;
+	if( v8name->IsString() && v8datetime->IsNumber() ){
+        //params ok
+	}else{
+        if(! PixelEngine::quietMode)cout<<"Error: bad args "<<endl ;
+        return ;
+	}
+
+	String::Utf8Value nameutf8( isolate , v8name) ;
+	string dsname( *nameutf8 ) ;
+	int64_t datetime = (int64_t) (v8datetime->ToNumber(context).ToLocalChecked())->Value();
+
+	PixelEngine* peptr = PixelEngine::getPixelEnginePointer(args);
+	if (peptr) {
+		if (peptr->helperPointer) {
+
+			int64_t retDt = 0;
+			string display="-";
+			bool helperCallOk = peptr->helperPointer->getNearestDatetime(
+                dsname, datetime ,
+                0 , retDt, display);
+
+			if (helperCallOk) {
+				Local<Object> obj1 = Object::New(isolate) ;
+				Maybe<bool> ok11 = obj1->Set(
+                    context
+                    ,String::NewFromUtf8(isolate, "dt").ToLocalChecked()
+                    ,Number::New(isolate, retDt) );
+                Maybe<bool> ok12 = obj1->Set(
+                    context
+                    ,String::NewFromUtf8(isolate, "display").ToLocalChecked()
+                    ,String::NewFromUtf8(isolate, display.c_str() ).ToLocalChecked() );
+
+				args.GetReturnValue().Set(obj1);
+			}
+		}
+	}
+
 }
 
 

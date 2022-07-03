@@ -176,3 +176,26 @@ bool DebugPixelEngineHelperInterface::buildDatetimeCollections(
     dtcollarray.push_back(dtc2) ;
     return true ;
 }
+
+
+//2022-7-3
+bool DebugPixelEngineHelperInterface::getNearestDatetime(
+    string dsname,int64_t currdt,
+    int isBefore,//1 or 0
+    int64_t& retDt, string& retDisplay)
+{
+    if( currdt>19800000000000L ){
+        if( isBefore==1 ){
+            retDt = currdt - 10000000000L ;
+            retDisplay="前1年" ;
+        }else{
+            retDt = currdt + 10000000000L ;
+            retDisplay="后1年" ;
+        }
+        return true ;
+    }else{
+        return false ;
+    }
+}
+
+
