@@ -104,8 +104,11 @@ const int PixelEngine::s_CompositeMethodSum=4;
 
 //2022-6-6
 //1. 修改bug 在GlobalFunc_CompositeDsCollectionCallBack中判断dsCollection对象是否为空，如果为空不进行计算
-string PixelEngine::pejs_version = string("2.8.6.0 2022-06-06");
+//string PixelEngine::pejs_version = string("2.8.6.0 2022-06-06");
 
+//2022-7-3
+//1. 修改hseg.tlv 对象计算extent逻辑，从最底层进行计算。修改tile-overlay判断逻辑，从制定z层进行判断。
+string PixelEngine::pejs_version = string("2.8.7.0 2022-07-03");
 
 //// mapreduce not used yet.
 bool PixelEngineMapReduce::isSame(PixelEngineMapReduce& mr)
