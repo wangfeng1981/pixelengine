@@ -49,7 +49,10 @@ using namespace ArduinoJson;
 //string global_connector_version_str = "connector_version:1.3.0 2022-03-23" ;
 
 //2022-3-26 增加1个接口，直接计算TileComputeResult统计结果
-string global_connector_version_str = "connector_version:1.4.1r 2022-03-26" ;
+//string global_connector_version_str = "connector_version:1.4.1r 2022-03-26" ;
+
+//2022-7-3 pe.log 结果写入 TileComputeResult
+string global_connector_version_str = "connector_version:1.5.0 2022-07-03" ;
 
 //外部调用，获得connector和core版本信息
 extern "C" void HBasePeHelperCppConnector_GetVersion(){
@@ -272,7 +275,8 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 		cout<<"run script failed : "<<logStr<<endl;
 
 		helper.setJavaObjectIntField(javaResult,"status",1) ;//status=1 bad.
-		helper.setJavaObjectStringField(javaResult,"log",logStr.c_str()) ;
+		// helper.setJavaObjectStringField(javaResult,"log",logStr.c_str()) ;
+		helper.setJavaObjectStringField(javaResult,"log", pe.GetPeLogs().c_str() )  ;//2022-7-3
 
 	}else{
 		cout<<"run script ok."<<endl ;
@@ -286,6 +290,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 		helper.setJavaObjectIntField(javaResult,"z", z) ;
 		helper.setJavaObjectIntField(javaResult,"y", y) ;
 		helper.setJavaObjectIntField(javaResult,"x", x) ;
+		helper.setJavaObjectStringField(javaResult,"log", pe.GetPeLogs().c_str() )  ;//2022-7-3
 	}
 	return javaResult ;
 }
@@ -360,11 +365,13 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 		helper.setJavaObjectIntField(javaResult,"z", z) ;
 		helper.setJavaObjectIntField(javaResult,"y", y) ;
 		helper.setJavaObjectIntField(javaResult,"x", x) ;
+		helper.setJavaObjectStringField(javaResult,"log", pe.GetPeLogs().c_str() )  ;//2022-7-3
 		return javaResult;
 	}else{
 		printf("Error : failed to pe.RunScriptForTileWithRender.\n") ;
 		helper.setJavaObjectIntField(javaResult,"status",1) ;//status=1 bad.
-		helper.setJavaObjectStringField(javaResult,"log",logStr.c_str()) ;
+		// helper.setJavaObjectStringField(javaResult,"log",logStr.c_str()) ;
+		helper.setJavaObjectStringField(javaResult,"log", pe.GetPeLogs().c_str() )  ;//2022-7-3
 		return javaResult ;
 	}
 }
@@ -417,8 +424,8 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 		cout<<"run script failed : "<<logStr<<endl;
 
 		helper.setJavaObjectIntField(javaResult,"status",1) ;//status=1 bad.
-		helper.setJavaObjectStringField(javaResult,"log",logStr.c_str()) ;
-
+		//helper.setJavaObjectStringField(javaResult,"log",logStr.c_str()) ;
+		helper.setJavaObjectStringField(javaResult,"log", pe.GetPeLogs().c_str() )  ;//2022-7-3
 	}else{
 		cout<<"run script ok."<<endl ;
 		helper.setJavaObjectIntField(javaResult,"status",0) ;//status=0 ok.
@@ -431,6 +438,7 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 		helper.setJavaObjectIntField(javaResult,"z", z) ;
 		helper.setJavaObjectIntField(javaResult,"y", y) ;
 		helper.setJavaObjectIntField(javaResult,"x", x) ;
+		helper.setJavaObjectStringField(javaResult,"log", pe.GetPeLogs().c_str() )  ;//2022-7-3
 	}
 	return javaResult ;
 }
@@ -485,8 +493,9 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 		cout<<"run script failed : "<<logStr<<endl;
 
 		helper.setJavaObjectIntField(javaResult,"status",1) ;//status=1 bad.
-		helper.setJavaObjectStringField(javaResult,"log",logStr.c_str()) ;
-
+		//helper.setJavaObjectStringField(javaResult,"log",logStr.c_str()) ;
+		helper.setJavaObjectStringField(javaResult,"log", pe.GetPeLogs().c_str() ) ;//2022-7-3
+		
 	}else{
 		cout<<"run script ok."<<endl ;
 		helper.setJavaObjectIntField(javaResult,"status",0) ;//status=0 ok.
