@@ -132,9 +132,17 @@ struct PixelEngineHelperInterface {
 
     //2022-7-3
     //isBefore = 1 , get before nearest., others (0)  get after nearest.
+    //deprecated , use getNearestDatetime2
     virtual bool getNearestDatetime(string dsname,int64_t currdt, int isBefore,int64_t& retDt, string& retDisplay)=0 ;
 
-    inline static string version(){ return "v4" ; }//2022-7-3
+    //2022-7-8
+    //isBefore = 1 , get before nearest., others (0)  get after nearest.
+    virtual bool getNearestDatetime2(string dsname,int64_t currdt, int isBefore,
+        int64_t& retDt,
+        int64_t& retDt0, int64_t& retDt1,
+        string& retDisplay)=0 ;
+
+    inline static string version(){ return "v4.1" ; }//2022-7-8
 };
 
 

@@ -198,4 +198,29 @@ bool DebugPixelEngineHelperInterface::getNearestDatetime(
     }
 }
 
+//2022-7-3
+bool DebugPixelEngineHelperInterface::getNearestDatetime2(
+    string dsname,int64_t currdt,
+    int isBefore,//1 or 0
+    int64_t& retDt,
+    int64_t& retDt0,int64_t& retDt1, string& retDisplay)
+{
+    if( currdt>19800000000000L ){
+        if( isBefore==1 ){
+            retDt = currdt - 10000000000L ;
+            retDt0 = 19990101000000L ;
+            retDt1 = 19990102000000L ;
+            retDisplay="前1年" ;
+        }else{
+            retDt = currdt + 10000000000L ;
+            retDt0 = 20001231000000L ;
+            retDt1 = 20001232000000L ;
+            retDisplay="后1年" ;
+        }
+        return true ;
+    }else{
+        return false ;
+    }
+}
+
 

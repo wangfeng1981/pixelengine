@@ -80,6 +80,14 @@ class DebugPixelEngineHelperInterface : public PixelEngineHelperInterface
     int64_t& retDt, string& retDisplay);
 
 
+    //2022-7-8
+    virtual bool getNearestDatetime2(string dsname,int64_t currdt,
+        int isBefore,//1 or 0
+        int64_t& retDt,
+        int64_t& retDt0,int64_t& retDt1,
+        string& retDisplay);
+
+
     protected:
 
     private:

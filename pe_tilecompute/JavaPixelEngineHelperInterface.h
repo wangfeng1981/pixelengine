@@ -97,6 +97,14 @@ public:
         int64_t& retDt,
         string& retDisplay);
 
+    //2022-7-8
+    virtual bool getNearestDatetime2(
+        string dsName,
+        int64_t currdt,
+        int isBefore,//1 or 0
+        int64_t& retDt,int64_t& retDt0,int64_t& retDt1,
+        string& retDisplay);
+
 
 public:
 	bool getJavaObjectIntField(jobject obj,const char* fieldname,int& retval) ;

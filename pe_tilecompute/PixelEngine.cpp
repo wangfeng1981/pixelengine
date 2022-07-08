@@ -113,7 +113,12 @@ const int PixelEngine::s_CompositeMethodSum=4;
 //4. 将脚本运行的exception写入pe.log
 //5. add pe.NearestDatetimeAfter('dsname', 20110901000000);
 //6. add pe.NearestDatetimeBefore('dsname', 20110901000000);
-string PixelEngine::pejs_version = string("2.8.7.1 2022-07-03");
+//string PixelEngine::pejs_version = string("2.8.7.1 2022-07-03");
+
+
+//2022-7-8
+//1. add dt0 , dt1 for neareast datetimeobject.
+string PixelEngine::pejs_version = string("2.8.8.0 2022-07-08");
 
 
 //// mapreduce not used yet.
@@ -7902,11 +7907,12 @@ void PixelEngine::GlobalFunc_NearestDatetimeBeforeCallBack(const v8::FunctionCal
 	if (peptr) {
 		if (peptr->helperPointer) {
             int64_t retDt = 0;
+            int64_t retDt0(0),retDt1(0);
 			string display="-";
-			bool helperCallOk = peptr->helperPointer->getNearestDatetime(
+			bool helperCallOk = peptr->helperPointer->getNearestDatetime2(
                 dsname, datetime ,
                 1 ,//is before
-                retDt, display);
+                retDt,retDt0,retDt1, display);
 
 			if (helperCallOk) {
 				Local<Object> obj1 = Object::New(isolate) ;
@@ -7914,6 +7920,14 @@ void PixelEngine::GlobalFunc_NearestDatetimeBeforeCallBack(const v8::FunctionCal
                     context
                     ,String::NewFromUtf8(isolate, "dt").ToLocalChecked()
                     ,Number::New(isolate, retDt) );
+                ok11 = obj1->Set(
+                    context
+                    ,String::NewFromUtf8(isolate, "dt0").ToLocalChecked()
+                    ,Number::New(isolate, retDt0) );
+                ok11 = obj1->Set(
+                    context
+                    ,String::NewFromUtf8(isolate, "dt1").ToLocalChecked()
+                    ,Number::New(isolate, retDt1) );
                 Maybe<bool> ok12 = obj1->Set(
                     context
                     ,String::NewFromUtf8(isolate, "display").ToLocalChecked()
@@ -7959,11 +7973,11 @@ void PixelEngine::GlobalFunc_NearestDatetimeAfterCallBack(const v8::FunctionCall
 	if (peptr) {
 		if (peptr->helperPointer) {
 
-			int64_t retDt = 0;
+			int64_t retDt(0),retDt0(0),retDt1(0);
 			string display="-";
-			bool helperCallOk = peptr->helperPointer->getNearestDatetime(
+			bool helperCallOk = peptr->helperPointer->getNearestDatetime2(
                 dsname, datetime ,
-                0 , retDt, display);
+                0 , retDt,retDt0,retDt1, display);
 
 			if (helperCallOk) {
 				Local<Object> obj1 = Object::New(isolate) ;
@@ -7971,6 +7985,14 @@ void PixelEngine::GlobalFunc_NearestDatetimeAfterCallBack(const v8::FunctionCall
                     context
                     ,String::NewFromUtf8(isolate, "dt").ToLocalChecked()
                     ,Number::New(isolate, retDt) );
+                ok11 = obj1->Set(
+                    context
+                    ,String::NewFromUtf8(isolate, "dt0").ToLocalChecked()
+                    ,Number::New(isolate, retDt0) );
+                ok11 = obj1->Set(
+                    context
+                    ,String::NewFromUtf8(isolate, "dt1").ToLocalChecked()
+                    ,Number::New(isolate, retDt1) );
                 Maybe<bool> ok12 = obj1->Set(
                     context
                     ,String::NewFromUtf8(isolate, "display").ToLocalChecked()

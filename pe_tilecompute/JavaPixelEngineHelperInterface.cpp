@@ -2,6 +2,7 @@
 /// update 2022-4-3
 
 
+
 JavaPixelEngineHelperInterface::JavaPixelEngineHelperInterface(JNIEnv* env0,string javaHelperClassName):env(env0)
 	,javaPixelEngineHelperClassName(javaHelperClassName)
 {
@@ -487,6 +488,54 @@ bool JavaPixelEngineHelperInterface::getNearestDatetime(
 
     bool ok11 = this->getJavaObjectStringField(dtDisplayObj , "display" , retDisplay );
     bool ok12 = this->getJavaObjectLongField(  dtDisplayObj , "dt"      , retDt      ) ;
+    if( ok11==false || ok12==false ) return false ;
+
+	return true ;
+}
+
+
+
+
+//2022-7-8
+bool JavaPixelEngineHelperInterface::getNearestDatetime2(
+        string dsName,
+        int64_t currdt,
+        int isBefore,//1 or 0
+        int64_t& retDt,int64_t& retDt0,int64_t& retDt1,
+        string& retDisplay)
+{
+    cout<<"in c++ JavaPixelEngineHelperInterface::getNearestDatetime2"<<endl;
+	JNIEnv *env = this->env	 ;
+	if( env==0 ){
+		cout<<"Error : JavaPixelEngineHelperInterface::getNearestDatetime env is null"<<endl ;
+		return false;
+	}
+	jclass	javaHelperClass =  env->FindClass("com/pixelengine/HBasePixelEngineHelper");
+	jobject	javaHelperObject = env->AllocObject(javaHelperClass);
+
+	//Signature:
+	//
+	jmethodID methodID = env->GetMethodID(javaHelperClass,
+		"getNearestDatetime",
+		"(Ljava/lang/String;JI)Lcom/pixelengine/DatetimeDisplay;");
+
+	jobject dtDisplayObj = (jobjectArray) env->CallObjectMethod(
+        javaHelperObject,
+		methodID,
+		env->NewStringUTF(dsName.c_str()) ,
+        currdt ,
+		isBefore
+		);
+
+	if( dtDisplayObj == nullptr ){
+		cout<<"Error : datetimeDisplay object from java is null"<<endl ;
+		return false ;
+	}
+
+    bool ok11 = this->getJavaObjectStringField(dtDisplayObj , "display" , retDisplay );
+    bool ok12 = this->getJavaObjectLongField(  dtDisplayObj , "dt"      , retDt      ) ;
+    ok12 = this->getJavaObjectLongField(  dtDisplayObj , "dt0"      , retDt0      ) ;
+    ok12 = this->getJavaObjectLongField(  dtDisplayObj , "dt1"      , retDt1      ) ;
     if( ok11==false || ok12==false ) return false ;
 
 	return true ;
