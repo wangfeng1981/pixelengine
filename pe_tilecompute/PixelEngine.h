@@ -437,7 +437,6 @@ public:
         int z, int y, int x,
         vector<unsigned char>& retPngBinary, int& pngwid,int& pnghei, string& logStr);//
 
-
 	// 运行脚本获取语法树 2020-9-19
 	bool RunScriptForAST(void* extra, string& scriptContent, string& retJsonStr, string& errorText);
 	//解析Dataset-Datetime 数据集时间日期对
@@ -475,6 +474,17 @@ public:
                 string variableName,
                 string& retJsonText,
                 string& retError) ;
+
+    //2022-7-17
+	// 运行脚本中main函数，必须返回null或者字符串格式结果，注意返回"null"字符串与null是一样的
+	// resultStr 的结果包括 "", "null", "not_string" , "........"
+	bool RunScriptForTextResultWithExtra(
+        void* extra,
+        string& scriptContent,
+        string& extraJsonText,
+        string& resultStr,
+        string& logStr);
+
 
 
     //mapreduce框架 获取目标zlevel

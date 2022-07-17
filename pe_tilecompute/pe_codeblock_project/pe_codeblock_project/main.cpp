@@ -24,6 +24,7 @@ void unit_test_js_pe_stackdatasets_method() ;
 void unit_test_js_compositedatasetcollection() ;
 void unit_test_js_RemoteDtCollections_DsCollections();//2022-4-3
 void unit_test_pe_datetime();//2022-7-3
+void unit_test_run_main_text_result();//2022-7-17
 
 int main()
 {
@@ -71,6 +72,9 @@ int main()
 
     //2022-7-3
     unit_test_pe_datetime();
+
+    //2022-7-17
+    unit_test_run_main_text_result() ;
 
 
     return 0;
@@ -495,7 +499,89 @@ void unit_test_pe_datetime()
         logstr
     ) ;
     cout<<"logstr:"<< endl <<pe.getPeLog()<<endl ;
+}
 
+
+
+void unit_test_run_main_text_result()
+{
+    cout<<"-----------------unit_test_run_main_text_result ---------------"<<endl;
+    DebugPixelEngineHelperInterface debugHelper ;
+    PixelEngine::initV8() ;
+    PixelEngine pe ;
+    pe.helperPointer = &debugHelper ;
+
+    string script1 =
+                "function main(){"
+                "return null;"
+                "}";
+    string script2 =
+                "function main(){"
+                "let a = 1;"
+                "}";
+    string script3 =
+            "function main(){"
+            "let a={};a.url='http://localhost';a.params={};a.params.lyr='layer_name';"
+            "return a;"
+            "}";
+    string script4 =
+            "function main(){"
+            "let a=b*c;"
+            "return b;"
+            "}";
+    string script5=
+        "function main(){"
+        "let a={};a.url='http://localhost';a.params={};a.params.lyr='layer_name';"
+        "return JSON.stringify(a);"
+        "}";
+
+    string res1,res2,res3,res4,res5 ;
+    string extrastr = "" ;
+    string logstr ;
+    bool ok1 = pe.RunScriptForTextResultWithExtra(
+        0,
+        script1 ,
+        extrastr ,
+        res1,
+        logstr
+    ) ;
+    cout<<"run script1:"<<ok1<<":"<<res1<<endl ;
+
+    bool ok2 = pe.RunScriptForTextResultWithExtra(
+        0,
+        script2 ,
+        extrastr ,
+        res2,
+        logstr
+    ) ;
+    cout<<"run script2:"<<ok2<<":"<<res2<<endl ;
+
+    bool ok3 = pe.RunScriptForTextResultWithExtra(
+        0,
+        script3 ,
+        extrastr ,
+        res3,
+        logstr
+    ) ;
+    cout<<"run script3:"<<ok3<<":"<<res3<<endl ;
+
+    bool ok4 = pe.RunScriptForTextResultWithExtra(
+        0,
+        script4 ,
+        extrastr ,
+        res4,
+        logstr
+    ) ;
+    cout<<"run script4:"<<ok4<<":"<<res4<<endl ;
+
+    bool ok5 = pe.RunScriptForTextResultWithExtra(
+        0,
+        script5 ,
+        extrastr ,
+        res5,
+        logstr
+    ) ;
+    cout<<"run script5:"<<ok5<<":"<<res5<<endl ;
 }
 
 

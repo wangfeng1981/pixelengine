@@ -128,6 +128,19 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_Compute
   (JNIEnv *env, jobject obj, jstring clsname, jobject tcr, jbyteArray hsegtlvdata, jdouble filldata, jdouble vMinInc,jdouble vMaxInc);
 
 
+/* 2022-7-17 计算main函数的文本结果，基于pe的代码，需要v8
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RunScriptForTextResultWithExtra
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptForTextResultWithExtra
+  (JNIEnv *, jobject, jstring, jstring, jstring);
+
+
+
+
+
+
 #ifdef __cplusplus
 }
 #endif

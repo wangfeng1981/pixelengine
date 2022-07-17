@@ -118,7 +118,11 @@ const int PixelEngine::s_CompositeMethodSum=4;
 
 //2022-7-8
 //1. add dt0 , dt1 for neareast datetimeobject.
-string PixelEngine::pejs_version = string("2.8.8.0 2022-07-08");
+//string PixelEngine::pejs_version = string("2.8.8.0 2022-07-08");
+
+//2022-7-17
+//1. add runScriptForTextResult.
+string PixelEngine::pejs_version = string("2.8.9.0 2022-07-17");
 
 
 //// mapreduce not used yet.
@@ -8007,7 +8011,106 @@ void PixelEngine::GlobalFunc_NearestDatetimeAfterCallBack(const v8::FunctionCall
 
 
 
-
+//2022-7-17
+// 运行脚本中main函数，必须返回null或者字符串格式结果，注意返回"null"字符串与null是一样的
+bool PixelEngine::RunScriptForTextResultWithExtra(
+    void* extra,
+    string& scriptContent,
+    string& extraJsonText,
+    string& resultStr,
+    string& logStr)
+{
+    if(! PixelEngine::quietMode)cout << "in RunScriptForTextResultWithExtra init v8" << endl;
+	this->pe_logs.reserve(2048);//max 1k bytes.
+	this->tileInfo.x = 0;
+	this->tileInfo.y = 0;
+	this->tileInfo.z = 0;
+	this->extraPointer = extra;
+	this->currentDateTime = 0L;
+	bool allOk = true;
+	this->create_params.array_buffer_allocator =
+		v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+	//v8::Isolate* isolate = v8::Isolate::New(create_params);
+	this->isolate = v8::Isolate::New(create_params);
+	{
+		if(! PixelEngine::quietMode)cout << "in RunScriptForTextResultWithExtra run script" << endl;
+		v8::Isolate::Scope isolate_scope(this->isolate);
+		v8::HandleScope handle_scope(this->isolate);
+		// Create a new context.
+		v8::Local<v8::Context> context = v8::Context::New(this->isolate);
+		v8::Context::Scope context_scope(context);// enter scope
+		PixelEngine::initTemplate(this, this->isolate, context);
+		this->m_context.Reset(this->isolate, context);
+		TryCatch try_catch(this->isolate);
+		string source = scriptContent + "var PEMainTextResult=main();";
+        if( extraJsonText.length()!= 0 ){ //检查外部变量是否为空字符串
+           source = string("pe.extraData=JSON.parse('") + extraJsonText + "');"+source ;
+        }
+		// Compile the source code.
+		v8::Local<v8::Script> script;
+		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
+			source.c_str()).ToLocalChecked()).ToLocal(&script)) {
+			String::Utf8Value error(this->isolate, try_catch.Exception());
+			if(! PixelEngine::quietMode)cout << "v8 exception:" << *error << endl;
+			// The script failed to compile; bail out.
+			string exceptionStr= string("compile exception:")+(*error) ;//2022-7-3
+			this->log( exceptionStr ) ;//2022-7-3
+			allOk = false;
+		}
+		else
+		{
+			unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			Local<v8::Value> result;
+			if (!script->Run(context).ToLocal(&result)) {
+				String::Utf8Value error(this->isolate, try_catch.Exception());
+				string exceptionstr = string("v8 exception:") + (*error);
+				if(! PixelEngine::quietMode)cout << exceptionstr << endl;
+				string exceptionStr=string("run exception:")+(*error) ;//2022-7-3
+                this->log( exceptionStr ) ;//2022-7-3
+				allOk = false;
+			}
+			else
+			{
+				MaybeLocal<Value> peMainTextResult = context->Global()->Get(context
+					, String::NewFromUtf8(isolate, "PEMainTextResult").ToLocalChecked());
+				if (PixelEngine::IsMaybeLocalOK(peMainTextResult) == false) //IsNullOrUndefined() )
+				{
+					string error1("Error: the result from main() is null or undefined.");
+					if(! PixelEngine::quietMode)cout << error1 << endl;
+					this->log(error1);
+					allOk = false;
+				}
+				else
+				{
+					if(! PixelEngine::quietMode)cout << "in RunScriptForTextResultWithExtra step4" << endl;
+					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					if (!PixelEngine::quietMode)printf("script run dura:%d ms \n", (int)(now1 - now) );//
+					string errorText;
+					Local<Value> localMainTextResult = peMainTextResult.ToLocalChecked();
+					if( localMainTextResult->IsUndefined() || localMainTextResult->IsNull() ){
+                        resultStr="null" ;
+					}else if( localMainTextResult->IsString() )
+					{
+                        String::Utf8Value str3( isolate , localMainTextResult);
+                        resultStr = std::string( *str3);
+                        logStr = this->getPeLog() ;
+                        unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                        if(!PixelEngine::quietMode)printf("RunScriptForTextResultWithExtra dura:%d ms \n", (int)(now2 - now1) );
+                        allOk = true;
+					}else{
+                        resultStr="not_string" ;
+                        allOk = false ;
+					}
+				}
+			}
+		}
+	}
+	this->m_context.Reset();
+	this->GlobalFunc_ForEachPixelCallBack.Reset();
+	this->GlobalFunc_GetPixelCallBack.Reset();
+	this->isolate->Dispose();
+	return allOk;
+}
 
 
 
