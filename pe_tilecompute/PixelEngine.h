@@ -405,6 +405,7 @@ public:
 	/// below methods would be called by outsider
 
 	/// 第一版瓦片计算接口，为了保持so的兼容性保留该接口，后面不再使用 2021-1-21
+	//deprecated 2022-7-24 , use RunScriptForTileWithoutRenderWithExtra
 	bool RunScriptForTile(void* extra,string& jsSource,long dt,int z,int y,int x, vector<unsigned char>& retbinary) ;
 
 	/// 计算一次的瓦片接口，返回json，用于数据拉伸计算直方图等，很少使用 2021-1-21
@@ -418,9 +419,11 @@ public:
 	bool RunToGetStyleFromScript(string& scriptContent, PeStyle& retstyle, string& retLogText);
 	//2020-9-13
 	// 运行脚本不渲染
+	//deprecated 2022-7-24 , use RunScriptForTileWithoutRenderWithExtra
 	bool RunScriptForTileWithoutRender(void* extra, string& scriptContent, int64_t currentDatetime,
 		int z, int y, int x, PeTileData& tileData , string& logStr);
 	// 运行脚本并渲染
+	//deprecated 2022-7-24 , use RunScriptForTileWithoutRenderWithExtra
 	bool RunScriptForTileWithRender(void* extra, string& scriptContent, PeStyle& inStyle, int64_t currentDatetime,
 		int z, int y, int x, vector<unsigned char>& retPngBinary, int& pngwid,int& pnghei, string& logStr);//
 
@@ -449,6 +452,7 @@ public:
     //获取脚本中全部数据集名称 2022-2-12
     //这个函数没有使用v8,不依赖其他初始化代码，直接使用即可，使用esprima.cpp实现AST解析
     //数据集名称包括 pe.Dataset(...) pe.DatasetArray(...) pe.DataFile(...)
+    //2022-7-26 add pe.DatasetCollection and pe.DatasetCollections
     bool GetDatasetNameArray(void* extra,
 		string& scriptContent,
         vector<string>& retDsNameArr,

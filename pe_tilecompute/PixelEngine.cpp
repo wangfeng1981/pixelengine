@@ -122,7 +122,13 @@ const int PixelEngine::s_CompositeMethodSum=4;
 
 //2022-7-17
 //1. add runScriptForTextResult.
-string PixelEngine::pejs_version = string("2.8.9.0 2022-07-17");
+//string PixelEngine::pejs_version = string("2.8.9.0 2022-07-17");
+//2. bugfixed for logStr
+//string PixelEngine::pejs_version = string("2.8.9.1 2022-07-24");
+
+//2022-7-26
+//1. GetDatasetNameArray add pe.DatasetCollection and pe.DatasetCollections
+string PixelEngine::pejs_version = string("2.8.10.0 2022-07-26");
 
 
 //// mapreduce not used yet.
@@ -4331,6 +4337,7 @@ string PixelEngine::CheckScriptOk(string& scriptSource)
 
 //2020-9-14
 //计算不渲染
+//deprecated 2022-7-24 , use RunScriptForTileWithoutRenderWithExtra
 bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptContent, int64_t currentdt,
 	int z, int y, int x, PeTileData& tileData, string& logStr) {
 
@@ -4435,6 +4442,7 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 	return allOk;
 }
 //计算并渲染
+//deprecated 2022-7-24 , use RunScriptForTileWithRenderWithExtra
 bool PixelEngine::RunScriptForTileWithRender(void* extra, string& scriptContent,PeStyle& inStyle, int64_t currentDatetime,
 	int z, int y, int x, vector<unsigned char>& retPngBinary, int& pngwid,int& pnghei, string& logStr) {
 
@@ -4640,7 +4648,6 @@ bool PixelEngine::RunScriptForDatasetDatetimePairs(void* extra,
             ast.findObjectPropertyCallStatement(ast.rootNode.as<JsonObject>(), "PixelEngine", "DatasetArray", dsdtVec);
             ast.findObjectPropertyCallStatement(ast.rootNode.as<JsonObject>(), "PixelEngine", "Datafile", dsdtVec);
             ast.findObjectPropertyCallStatement(ast.rootNode.as<JsonObject>(), "pe", "Datafile", dsdtVec);
-
             //去掉dtds重复项
             for (vector<wDatasetDatetime>::iterator iter = dsdtVec.begin(); iter != dsdtVec.end(); ++iter) {
                 bool hasone = false;
@@ -6691,8 +6698,8 @@ bool PixelEngine::RunScriptForTileWithoutRenderWithExtra(void* extra,
 					unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 					if(!PixelEngine::quietMode)printf("v8 value to tiledata dura:%d ms \n", (int)(now2 - now1) );
 					if(! PixelEngine::quietMode)cout << "Info : innerV8Dataset2TileData return  " << tiledataok << endl;
+					logStr = this->getPeLog();//2022-7-24
 					allOk = tiledataok;
-
 					if( tiledataok==false ){ string tempErrStr=string("tiledata exception:")+errorText; this->log( tempErrStr ) ;}//2022-7-3
 				}
 			}

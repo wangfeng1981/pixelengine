@@ -2,80 +2,42 @@
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
 	<ActiveTarget name="Debug" />
-	<File name="../../wstringutils.cpp" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="296" topLine="0" />
-		</Cursor>
-	</File>
 	<File name="../../wcomputelonlatarea.h" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="6" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="610" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="../../JavaPixelEngineHelperInterface.h" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="4" zoom_2="0">
+	<File name="../../debugpixelenginehelperinterface.cpp" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="4" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="3141" topLine="64" />
+			<Cursor1 position="252" topLine="11" />
 		</Cursor>
 	</File>
-	<File name="../../PeStyle.cpp" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="../../wstringutils.cpp" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="0" topLine="0" />
+			<Cursor1 position="296" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="../../PixelEngine.cpp" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="4" zoom_2="0">
+	<File name="../../JavaPixelEngineHelperInterface.h" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="4" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="280410" topLine="8007" />
+			<Cursor1 position="3141" topLine="16" />
 		</Cursor>
 	</File>
-	<File name="../../JavaPixelEngineHelperInterface.cpp" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="5" zoom_2="0">
+	<File name="main.cpp" open="1" top="1" tabpos="3" split="0" active="1" splitpos="0" zoom_1="3" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="14811" topLine="488" />
-		</Cursor>
-	</File>
-	<File name="../../../../sharedcodes/zonalstat/wlevelhseg.h" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="385" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="../../wstringutils.h" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="601" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="main.cpp" open="1" top="1" tabpos="3" split="0" active="1" splitpos="0" zoom_1="6" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="16721" topLine="493" />
+			<Cursor1 position="18979" topLine="596" />
 		</Cursor>
 		<Folding>
-			<Collapse line="84" />
-			<Collapse line="124" />
-			<Collapse line="133" />
-			<Collapse line="151" />
+			<Collapse line="92" />
 		</Folding>
+	</File>
+	<File name="../../JavaPixelEngineHelperInterface.cpp" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="5" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="14371" topLine="476" />
+		</Cursor>
 	</File>
 	<File name="../../template_methods.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="3609" topLine="94" />
-		</Cursor>
-	</File>
-	<File name="../../debugpixelenginehelperinterface.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="4" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="6092" topLine="161" />
-		</Cursor>
-	</File>
-	<File name="../../datetimecollection.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="357" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="../../../../sharedcodes/zonalstat/whsegtlvobject.cpp" open="0" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="3" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="6292" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="../../../../sharedcodes/zonalstat/whsegtlvobject.h" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="829" topLine="0" />
+			<Cursor1 position="1289" topLine="40" />
 		</Cursor>
 	</File>
 	<File name="../../wcomputelonlatarea.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -83,29 +45,87 @@
 			<Cursor1 position="1946" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="../../PeStyle.h" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="../../../../sharedcodes/zonalstat/wlevelhseg.h" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="3163" topLine="124" />
+			<Cursor1 position="385" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="../../debugpixelenginehelperinterface.h" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="8" zoom_2="0">
+	<File name="../../PixelEngine.h" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="4" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="2898" topLine="44" />
+			<Cursor1 position="17709" topLine="359" />
 		</Cursor>
-	</File>
-	<File name="../../PeProductInfo.cpp" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="929" topLine="12" />
-		</Cursor>
+		<Folding>
+			<Collapse line="63" />
+		</Folding>
 	</File>
 	<File name="../../datetimecollection.h" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="362" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="../../PixelEngine.h" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="4" zoom_2="0">
+	<File name="../../datetimecollection.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="18623" topLine="468" />
+			<Cursor1 position="357" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="../../debugpixelenginehelperinterface.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="1" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="332" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="../../wstringutils.h" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="601" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="../../PixelEngine.cpp" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="4" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="6563" topLine="114" />
+		</Cursor>
+		<Folding>
+			<Collapse line="3959" />
+			<Collapse line="4096" />
+			<Collapse line="4196" />
+			<Collapse line="4296" />
+			<Collapse line="4341" />
+			<Collapse line="4446" />
+			<Collapse line="4496" />
+			<Collapse line="4625" />
+			<Collapse line="4713" />
+			<Collapse line="4781" />
+			<Collapse line="4819" />
+			<Collapse line="4827" />
+			<Collapse line="4828" />
+		</Folding>
+	</File>
+	<File name="../../PeStyle.cpp" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="../../PeStyle.h" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="3163" topLine="124" />
+		</Cursor>
+	</File>
+	<File name="../../template_methods.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="10921" topLine="245" />
+		</Cursor>
+	</File>
+	<File name="../../../../sharedcodes/zonalstat/whsegtlvobject.h" open="0" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="829" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="../../../../sharedcodes/zonalstat/whsegtlvobject.cpp" open="0" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="3" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="6292" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="../../PeProductInfo.cpp" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="929" topLine="12" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

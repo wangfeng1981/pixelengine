@@ -12,6 +12,8 @@ using namespace std;
 
 void unit_test_JavaPixelEngineHelperInterface_getRoiHsegTlv() ;
 
+void unit_test_foreachpixel() ;//forEachPixel 2022-7-24
+
 void unit_test_isTileOverlay() ;
 void unit_test_tlv_statistic() ;
 void unit_test_datasetcollection() ;//2022-3-31
@@ -25,6 +27,7 @@ void unit_test_js_compositedatasetcollection() ;
 void unit_test_js_RemoteDtCollections_DsCollections();//2022-4-3
 void unit_test_pe_datetime();//2022-7-3
 void unit_test_run_main_text_result();//2022-7-17
+void unit_test_get_datasetname();//2022-7-26
 
 int main()
 {
@@ -75,6 +78,11 @@ int main()
 
     //2022-7-17
     unit_test_run_main_text_result() ;
+
+    //2022-7-24
+    unit_test_foreachpixel() ;
+
+    unit_test_get_datasetname();//2022-7-26
 
 
     return 0;
@@ -584,9 +592,67 @@ void unit_test_run_main_text_result()
     cout<<"run script5:"<<ok5<<":"<<res5<<endl ;
 }
 
+void unit_test_foreachpixel()
+{
+cout<<"-----------------unit_test_foreachpixel ---------------"<<endl;
+    DebugPixelEngineHelperInterface debugHelper ;
+    PixelEngine::initV8() ;
+    PixelEngine pe ;
+    pe.helperPointer = &debugHelper ;
+
+    string script1 =
+                "function main(){"
+                "let ds0=pe.NewDataset(1,256,256,1);"
+                "let ds=pe.Dataset('test/3bands',20220101000000,[0,1,2]);"
+                "pe.log(ds.tiledata[0]); pe.log(ds.tiledata[1]);"
+                "pe.log(ds.tiledata[65535]); pe.log(ds.tiledata[65536+1]);"
+                "pe.log(ds.tiledata[65536+2]); pe.log(ds.tiledata[65536*2+1]);"
+                "pe.log(ds.tiledata[65536*2+2]); pe.log(ds.tiledata[65536*2+3]);"
+                "pe.log(pe.pejs_version);"
+                "ds0.tiledata[1]=99;"
+                "pe.log(ds0.tiledata[0]);"
+                "pe.log(ds0.tiledata[1]);"
+                "return ds;"
+                "}";
+
+    PeTileData res1 ;
+    string extrastr = "" ;
+    string logstr ;
+    bool ok1 = pe.RunScriptForTileWithoutRenderWithExtra(
+        0,
+        script1 ,
+        extrastr,
+        0,0,0,
+        res1,
+        logstr
+    ) ;
+    cout<<"run script1:"<<ok1<<endl ;
+    cout<<"log:"<<logstr<<endl ;
+
+}
+
+void unit_test_get_datasetname()
+{
+    cout<<"-----------------unit_test_get_datasetname ---------------"<<endl;
+    PixelEngine pe ;
 
 
-
+    string script1 =
+                "function main(){"
+                "let ds0=pe.NewDataset(1,256,256,1);"
+                "let ds=pe.Dataset('test/name1',20220101000000,[0,1,2]);"
+                "let ds1=pe.DatasetCollection('test/name2',[20220701000000]);"
+                "let ds2=pe.DatasetCollections('test/name3',[20220701000000]);"
+                "return ds;"
+                "}";
+    vector<string> names ;
+    string error;
+    bool ok1 = pe.GetDatasetNameArray(0,script1,names,error) ;
+    cout<<"ok1:"<<ok1<<endl ;
+    for(int i = 0 ; i<names.size();++i){
+        cout<<"Get DsName "<<i<<":"<<names[i]<<endl ;
+    }
+}
 
 
 

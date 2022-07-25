@@ -33,10 +33,15 @@ int main(int argc, char *argv[]) {
 
 
 //2022-2-12 wf
-//v1.0 
+//v1.0
 //(1) 目前只检索数据集名称 包括：pe.Dataset('name',...) pe.DatasetArray('name',...) pe.Datafile('name',...)
 //(2) 上面数据集名称必须是字符串常量，不能是变量。
 //(3) 该工具类只检查整个脚本在语法层面的合法性和数据集名称，不对脚本算法的有效性检查
+
+//2022-7-26
+//v1.1
+//(1) add pe.DatasetCollection , pe.DatasetCollections for datasetname.
+
 
 #ifndef ESPRIMA_CPP_TOOL_H
 #define ESPRIMA_CPP_TOOL_H
@@ -59,7 +64,7 @@ struct PeDatasetCallerCondition {
   bool isCallExpression ;
   bool hasMemberExpression ;
   bool hasMemberExpressionIdentifierPe ;
-  int  typeOfMemberExpressionIdentifierDatasetName ;//0-none,1-Dataset,2-DatasetArray,3-DataFile
+  int  typeOfMemberExpressionIdentifierDatasetName ;//0-none,1-Dataset,2-DatasetArray,3-DataFile,4-datasetcollection,5-datasetcollections
   bool hasArgumentsStringLiteral ;
   std::string dsName;
   inline PeDatasetCallerCondition():isCallExpression(false),hasMemberExpression(false),hasMemberExpressionIdentifierPe(false),typeOfMemberExpressionIdentifierDatasetName(0),hasArgumentsStringLiteral(false){}
@@ -199,10 +204,10 @@ void PeDatasetVisitor::visit(ConditionalExpression *node) {nodeStack.push_back(P
 void PeDatasetVisitor::visit(NewExpression *node) {nodeStack.push_back(PeDatasetCallerCondition());visitChildren(node);nodeStack.pop_back(); }
 
 void PeDatasetVisitor::visit(Identifier *node) {
-  //name: PixelEngine, pe, Dataset, DatasetArray, DataFile
+  //name: PixelEngine, pe, Dataset, DatasetArray, DataFile DatasetCollection DatasetCollections
   nodeStack.push_back(PeDatasetCallerCondition());
   if( nodeStack.size() >=3 ){
-      if( nodeStack[nodeStack.size()-3].isCallExpression==true 
+      if( nodeStack[nodeStack.size()-3].isCallExpression==true
           && nodeStack[nodeStack.size()-3].hasMemberExpression==true )
       {
         if( node->name.compare("pe")==0 || node->name.compare("PixelEngine")==0 ){
@@ -213,6 +218,10 @@ void PeDatasetVisitor::visit(Identifier *node) {
           nodeStack[nodeStack.size()-3].typeOfMemberExpressionIdentifierDatasetName=2;
         }else if( node->name.compare("DataFile")==0 ){
           nodeStack[nodeStack.size()-3].typeOfMemberExpressionIdentifierDatasetName=3;
+        }else if( node->name.compare("DatasetCollection")==0 ){
+          nodeStack[nodeStack.size()-3].typeOfMemberExpressionIdentifierDatasetName=4;
+        }else if( node->name.compare("DatasetCollections")==0 ){
+          nodeStack[nodeStack.size()-3].typeOfMemberExpressionIdentifierDatasetName=5;
         }
       }
   }
@@ -222,7 +231,7 @@ void PeDatasetVisitor::visit(Identifier *node) {
 
 void PeDatasetVisitor::visit(CallExpression *node) {
   //
-  PeDatasetCallerCondition c; 
+  PeDatasetCallerCondition c;
   c.isCallExpression = true ;
   nodeStack.push_back(c);
   visitChildren(node);
@@ -253,7 +262,7 @@ void PeDatasetVisitor::visit(StringLiteral *node) {
     }
   }
   visitChildren(node);
-  nodeStack.pop_back(); 
+  nodeStack.pop_back();
 }
 
 void PeDatasetVisitor::visit(NullLiteral *node) {nodeStack.push_back(PeDatasetCallerCondition());visitChildren(node);nodeStack.pop_back(); }
