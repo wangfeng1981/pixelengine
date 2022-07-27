@@ -128,7 +128,9 @@ const int PixelEngine::s_CompositeMethodSum=4;
 
 //2022-7-26
 //1. GetDatasetNameArray add pe.DatasetCollection and pe.DatasetCollections
-string PixelEngine::pejs_version = string("2.8.10.0 2022-07-26");
+//string PixelEngine::pejs_version = string("2.8.10.0 2022-07-26");
+//2. Datafile update
+string PixelEngine::pejs_version = string("2.8.10.1 2022-07-27");
 
 
 //// mapreduce not used yet.
@@ -2542,6 +2544,8 @@ void PixelEngine::GlobalFunc_DatasetCallBack(const v8::FunctionCallbackInfo<v8::
 /// create a Dataset from java.
 /// create a dataset from filekey or filepath
 /// pe.Datafile("/some/dir/file");
+/// 2022-7-27 Datafile can load tbproduct user's uuid named product,
+///           this method can be available for both ud and pe product, but only first unordered dataitem returned.
 void PixelEngine::GlobalFunc_DatafileCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
 	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_DatafileCallBack"<<endl;
@@ -2550,7 +2554,7 @@ void PixelEngine::GlobalFunc_DatafileCallBack(const v8::FunctionCallbackInfo<v8:
 		//ok
 	}else
 	{
-		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 3 or !=6 "<<endl ;
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 1 "<<endl ;
 		return;
 	}
 	Isolate* isolate = args.GetIsolate() ;
@@ -2585,6 +2589,11 @@ void PixelEngine::GlobalFunc_DatafileCallBack(const v8::FunctionCallbackInfo<v8:
     vector<int> wantBands ;//empty vector
     string datetimeStr = "" ;
 
+    {//记录访问过的dsname 2022-7-27
+        string dsnamedt = filekey +",0" ;
+        thisPePtr->m_dsnameDtVec.push_back(dsnamedt) ;
+    }
+
 	if (PixelEngine::GetExternalTileDataCallBack != nullptr) {
 		bool externalOk = PixelEngine::GetExternalTileDataCallBack(
 			thisPePtrEx->Value(),// pointer to PixelEngine Object.
@@ -2607,7 +2616,7 @@ void PixelEngine::GlobalFunc_DatafileCallBack(const v8::FunctionCallbackInfo<v8:
 		string errorText;
         int64_t datetime = 0L;
 		bool dataok = thisPePtr->helperPointer->getTileData(
-			datetime,
+			datetime,// it is zero, then java only load first dataitem without ordered.
 			filekey,
 			wantBands,
 			tilez, tiley, tilex,
@@ -6886,21 +6895,12 @@ void PixelEngine::GlobalFunc_DatasetCollectionCallBack(
 		return;
 	}
 
-    //debug
-    cout<<"debug dsname "<<dsname<<endl ;
-    cout<<"debug dtColKey "<<dtColKey<<endl ;
-    //cout<<"debug dtcollection: [" <<endl;
     for(int i = 0 ; i<dtColDts.size();++i ){
-        //cout<<dtColDts[i]<<endl ;
-
         {//记录访问过的dsname 2022-4-5
             string dsnamedt = dsname +','+wStringUtils::long2str(dtColDts[i]) ;
             thisPePtr->m_dsnameDtVec.push_back(dsnamedt) ;
         }
     }
-    //cout<<"]"<<endl ;
-
-
 
     int tilex = thisPePtr->tileInfo.x ;
     int tiley = thisPePtr->tileInfo.y ;
@@ -7035,22 +7035,13 @@ void PixelEngine::GlobalFunc_DatasetCollectionsCallBack(const v8::FunctionCallba
                 .ToLocalChecked()->NumberValue(context).ToChecked();
         }
 
-        //debug
-        cout<<"debug *** "<<endl ;
-        cout<<"debug icoll "<<icoll<<endl ;
-        cout<<"debug dsname "<<dsname<<endl ;
-        cout<<"debug dtColKey "<<dtColKey<<endl ;
-        //cout<<"debug dtcollection: [" <<endl;
+
         for(int i = 0 ; i<dtColDts.size();++i ){
-            //cout<<dtColDts[i]<<endl ;
             {//记录访问过的dsname 2022-4-5
                 string dsnamedt = dsname +','+wStringUtils::long2str(dtColDts[i]) ;
                 thisPePtr->m_dsnameDtVec.push_back(dsnamedt) ;
             }
         }
-        //cout<<"]"<<endl ;
-
-
 
         vector< vector<unsigned char> > retTileDataArr ;
         vector<int64_t> retDtArr ;
