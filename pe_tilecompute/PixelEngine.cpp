@@ -130,7 +130,11 @@ const int PixelEngine::s_CompositeMethodSum=4;
 //1. GetDatasetNameArray add pe.DatasetCollection and pe.DatasetCollections
 //string PixelEngine::pejs_version = string("2.8.10.0 2022-07-26");
 //2. Datafile update
-string PixelEngine::pejs_version = string("2.8.10.1 2022-07-27");
+//string PixelEngine::pejs_version = string("2.8.10.1 2022-07-27");
+
+//2022-9-4
+//1. let newDsColl = datasetCollection.forEachData( func );
+string PixelEngine::pejs_version = string("2.8.11.0 2022-09-04");
 
 
 //// mapreduce not used yet.
@@ -3896,6 +3900,45 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
             if( typeof val === 'number' &&  isNaN(val)===false ) return val
             else return 0;
 		};
+        const globalFunc_DataArray2DataType=function(a){
+            if(Object.prototype.toString.call(a)==='[object Uint8Array]') return 1;
+            if(Object.prototype.toString.call(a)==='[object Uint16Array]') return 2;
+            if(Object.prototype.toString.call(a)==='[object Int16Array]') return 3;
+            if(Object.prototype.toString.call(a)==='[object Uint32Array]') return 4;
+            if(Object.prototype.toString.call(a)==='[object Int32Array]') return 5;
+            if(Object.prototype.toString.call(a)==='[object Float32Array]') return 6;
+            if(Object.prototype.toString.call(a)==='[object Float64Array]') return 7;
+            return 0 ;
+        };
+		var globalFunc_DsColl_forEachDataCallBack = function(func){
+			let outdscoll = {} ;
+			outdscoll.width  = this.width  ;
+			outdscoll.height = this.height ;
+			outdscoll.key = this.key ;
+			outdscoll.dsname='';
+			outdscoll.x=this.x;
+			outdscoll.y=this.y;
+			outdscoll.z=this.z;
+			outdscoll.dtArr=this.dtArr ;
+			outdscoll.dataArr=[];
+			outdscoll.forEachData=globalFunc_DsColl_forEachDataCallBack;
+			outdscoll.nband=0;
+			outdscoll.dataType=0;
+			let n=this.dtArr.length;
+			for(let i=0;i<n;++i){
+                let data1=func(this.dataArr[i]);
+                if(typeof data1 !== 'undefined' && data1 !==null ){
+                    if(i==0){
+                        outdscoll.nband=data1.length/this.width/this.height;
+                        outdscoll.dataType=globalFunc_DataArray2DataType(data1);
+                    }
+                    outdscoll.dataArr.push(data1) ;
+                }else{
+                    return null;
+                }
+			}
+			return outdscoll ;
+		} ;
 	)" ;
 
 	v8::Local<v8::Script> scriptForEach ;
@@ -3923,6 +3966,10 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
     Local<Value> getPixelFuncInJs = global->Get(context
     	,String::NewFromUtf8(isolate, "globalFunc_getPixelCallBack").ToLocalChecked() ).ToLocalChecked() ;
     thePE->GlobalFunc_GetPixelCallBack.Reset(isolate , getPixelFuncInJs) ;
+
+    Local<Value> forEachDataFuncInJs = global->Get(context
+    	,String::NewFromUtf8(isolate, "globalFunc_DsColl_forEachDataCallBack").ToLocalChecked() ).ToLocalChecked() ;
+    thePE->GlobalFunc_GetPixelCallBack.Reset(isolate , forEachDataFuncInJs) ;
 
 
     //set globalFunc_newDatasetCallBack, this will be called in javascript ForEachPixel.
@@ -7173,6 +7220,16 @@ Local<Object> PixelEngine::CPP_NewDatasetCollection(
 	Maybe<bool> ok13 = retobj->Set(context
 		,String::NewFromUtf8(isolate, "dtArr").ToLocalChecked()
 		,dtArrArray ) ;
+
+    //forEachData
+    Local<Value> forEachDataFuncInJs = global->Get(context
+    	,String::NewFromUtf8(isolate, "globalFunc_DsColl_forEachDataCallBack").ToLocalChecked() ).ToLocalChecked() ;
+    Maybe<bool> ok133 = retobj->Set(context
+		,String::NewFromUtf8(isolate, "forEachData").ToLocalChecked(),
+            forEachDataFuncInJs );
+
+
+
 
     const int databytelen = datatype2bytelen( datatype ) ;
     //数据数组 dataArr

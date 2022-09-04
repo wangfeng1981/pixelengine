@@ -28,6 +28,7 @@ void unit_test_js_RemoteDtCollections_DsCollections();//2022-4-3
 void unit_test_pe_datetime();//2022-7-3
 void unit_test_run_main_text_result();//2022-7-17
 void unit_test_get_datasetname();//2022-7-26
+void unit_test_dscoll_forEachData();//2022-9-4
 
 int main()
 {
@@ -83,6 +84,9 @@ int main()
     unit_test_foreachpixel() ;
 
     unit_test_get_datasetname();//2022-7-26
+
+
+    unit_test_dscoll_forEachData();//2022-9-4
 
 
     return 0;
@@ -654,6 +658,42 @@ void unit_test_get_datasetname()
     }
 }
 
+
+
+//2022-9-4
+void unit_test_dscoll_forEachData() {
+    DebugPixelEngineHelperInterface debugHelper ;
+    PixelEngine::initV8() ;
+    PixelEngine pe ;
+    pe.helperPointer = &debugHelper ;
+
+    string script1 =
+                "function main(){"
+                "let dscoll1 = pe.DatasetCollection('test/name2',[1,2,3,4,5,6,7,8,9,10]);"
+                "let dscoll2 = dscoll1.forEachData(function(data1){let data2=new Int32Array(65536);for(let i=0;i<65536;++i)data2[i]=data1[i]+1;return data2;});"
+                "let ds1=pe.CompositeDsCollection(dscoll1,pe.CompositeMethodMin,0,210,255);"
+                "let ds2=pe.CompositeDsCollection(dscoll2,pe.CompositeMethodMin,0,210,255);"
+                "pe.log(ds1.tiledata[0]);"
+                "pe.log(ds2.tiledata[0]);"
+                "return ds2;"
+                "}";
+
+    PeTileData res1 ;
+    string extrastr = "" ;
+    string logstr ;
+    bool ok1 = pe.RunScriptForTileWithoutRenderWithExtra(
+        0,
+        script1 ,
+        extrastr,
+        0,0,0,
+        res1,
+        logstr
+    ) ;
+    cout<<"run script1:"<<ok1<<endl ;
+    cout<<"log:"<<logstr<<endl ;
+
+
+}
 
 
 
