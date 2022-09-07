@@ -29,6 +29,7 @@ void unit_test_pe_datetime();//2022-7-3
 void unit_test_run_main_text_result();//2022-7-17
 void unit_test_get_datasetname();//2022-7-26
 void unit_test_dscoll_forEachData();//2022-9-4
+void unit_test_script_caller() ;//2022-9-6
 
 int main()
 {
@@ -56,12 +57,13 @@ int main()
     //unit_test_isTileOverlay();
 
 
-    cout<<"-----------------unit test for DatasetCollection ---------------"<<endl;
+    cout<<"1"<<endl ;
     unit_test_datasetcollection() ;
 
-    cout<<"-----------------unit test for DatasetCollections() ---------------"<<endl;
+    cout<<"2"<<endl ;
     unit_test_datasetcollection_array() ;
 
+    cout<<"3"<<endl ;
     unit_test_js_LocalBuildDtCollectionByStopDt() ;
 
     unit_test_js_ds_extract_method() ;
@@ -87,6 +89,8 @@ int main()
 
 
     unit_test_dscoll_forEachData();//2022-9-4
+
+    unit_test_script_caller() ;//2022-9-6
 
 
     return 0;
@@ -162,6 +166,8 @@ void unit_test_isTileOverlay()
 
 void unit_test_datasetcollection()
 {
+    cout<<"-----------------unit test for DatasetCollection, unit_test_datasetcollection ---------------"<<endl;
+
     DebugPixelEngineHelperInterface debugHelper ;
     PixelEngine::initV8() ;
     PixelEngine pe ;
@@ -187,12 +193,15 @@ void unit_test_datasetcollection()
         tiledata,
         logstr
     ) ;
+    cout<<"logstr:"<<logstr<<endl ;
+    cout<<"done."<<endl ;
 }
 
 
 
 void unit_test_datasetcollection_array()
 {
+    cout<<"-----------------unit test for DatasetCollections() unit_test_datasetcollection_array ---------------"<<endl;
     DebugPixelEngineHelperInterface debugHelper ;
     PixelEngine::initV8() ;
     PixelEngine pe ;
@@ -662,19 +671,91 @@ void unit_test_get_datasetname()
 
 //2022-9-4
 void unit_test_dscoll_forEachData() {
+    cout<<"-----------------unit_test_dscoll_forEachData ---------------"<<endl;
     DebugPixelEngineHelperInterface debugHelper ;
     PixelEngine::initV8() ;
     PixelEngine pe ;
     pe.helperPointer = &debugHelper ;
 
+    //1. let newDatasetCollection = datasetCollection.forEachData( func );
+    //2. datasetCollection.mask( masktiledata , filldata );
+    //3. let newDataset = datasetCollection.compose(method,vminInc,vmaxInc,filldata,outType);
+    //4. dataset.map(oldval,newval);
+    //5. dataset.map2(vminInc,vmaxInc,newval);
+    //6. let maskds = dataset.buildmask( maskval );
+    //7. let maskds = dataset.buildmask2(vminInc,vmaxInc);
+    //8. 增加外部调用接口 RunScriptFunctionForTileResult( fullscriptWithExtraDataAndSDUI );
+    //9. let dscoll=pe.NewDatasetCollection(datatype,w,h,nb,numdt);
+
     string script1 =
                 "function main(){"
                 "let dscoll1 = pe.DatasetCollection('test/name2',[1,2,3,4,5,6,7,8,9,10]);"
-                "let dscoll2 = dscoll1.forEachData(function(data1){let data2=new Int32Array(65536);for(let i=0;i<65536;++i)data2[i]=data1[i]+1;return data2;});"
-                "let ds1=pe.CompositeDsCollection(dscoll1,pe.CompositeMethodMin,0,210,255);"
-                "let ds2=pe.CompositeDsCollection(dscoll2,pe.CompositeMethodMin,0,210,255);"
+                "pe.log('test 1................');"
+                "pe.log(dscoll1.dataArr[0][0]);"
+                "pe.log(dscoll1.dataArr[0][256*256]);"
+                "pe.log(dscoll1.dataArr[0][256*256*2]);"
+                "pe.log(dscoll1.dataArr[1][0]);"
+                "pe.log(dscoll1.dataArr[1][256*256]);"
+                "pe.log(dscoll1.dataArr[1][256*256*2]);"
+                "let dscoll2 = dscoll1.forEachData(function(data1){let data2=new Int32Array(65536);for(let i=0;i<65536;++i)data2[i]=data1[i]+10;return data2;});"
+                "pe.log(dscoll2.dataArr[0][0]);"
+                "pe.log(dscoll2.dataArr[1][0]);"
+                "pe.log(dscoll2.dataArr[2][0]);"
+                "pe.log('test 2................');"
+                "let maskdata=new Uint8Array(65536);maskdata[0]=1;maskdata[1]=0;maskdata[2]=1;maskdata[3]=0;"
+                "dscoll1.mask(maskdata,255);"
+                "pe.log(dscoll1.dataArr[0][0]);"
+                "pe.log(dscoll1.dataArr[0][1]);"
+                "pe.log(dscoll1.dataArr[0][2]);"
+                "pe.log(dscoll1.dataArr[0][3]);"
+                "pe.log(dscoll1.dataArr[1][0]);"
+                "pe.log(dscoll1.dataArr[1][1]);"
+                "pe.log(dscoll1.dataArr[1][2]);"
+                "pe.log(dscoll1.dataArr[1][3]);"
+                "pe.log('test 3................');"
+                "let ds1=pe.CompositeDsCollection(dscoll1,pe.CompositeMethodMax,0,210,255);"
+                "let ds2=dscoll1.compose(pe.CompositeMethodSum,0,210,255,3);"
+                "let ds3=dscoll2.compose(pe.CompositeMethodAve,0,210,255);"
                 "pe.log(ds1.tiledata[0]);"
                 "pe.log(ds2.tiledata[0]);"
+                "pe.log(ds3.tiledata[0]);"
+                "pe.log('test 4................');"
+                "ds2.tiledata[0]=55;ds2.tiledata[1]=33;ds2.tiledata[2]=11;"
+                "ds2.map(55,44);"
+                "ds2.map(33,44);"
+                "pe.log(ds2.tiledata[0]);"
+                "pe.log(ds2.tiledata[1]);"
+                "pe.log(ds2.tiledata[2]);"
+                "pe.log('ds2.dataType:'+ds2.dataType);"
+                "pe.log('test 5................');"
+                "ds2.tiledata[0]=10;ds2.tiledata[1]=11;ds2.tiledata[2]=12;"
+                "ds2.map2(10,11,99);"
+                "pe.log(ds2.tiledata[0]);"
+                "pe.log(ds2.tiledata[1]);"
+                "pe.log(ds2.tiledata[2]);"
+                "pe.log('test 6................');"
+                "let mask1=ds2.buildmask(99);"
+                "pe.log(mask1.tiledata[0]);"
+                "pe.log(mask1.tiledata[1]);"
+                "pe.log(mask1.tiledata[2]);"
+                "pe.log('mask1.dataType:'+mask1.dataType);"
+                "pe.log('test 7................');"
+                "ds2.tiledata[0]=10;ds2.tiledata[1]=11;ds2.tiledata[2]=12;"
+                "let mask2=ds2.buildmask2(10,11);"
+                "pe.log(mask2.tiledata[0]);"
+                "pe.log(mask2.tiledata[1]);"
+                "pe.log(mask2.tiledata[2]);"
+                "pe.log('mask2.dataType:'+mask2.dataType);"
+                "pe.log('test 9................');"
+                "let dscoll3=pe.NewDatasetCollection(3,256,256,1,3);"
+                "dscoll3.dataArr[0][0]=1;dscoll3.dataArr[0][1]=2;dscoll3.dataArr[0][2]=3;"
+                "dscoll3.dataArr[1][0]=4;dscoll3.dataArr[1][1]=5;dscoll3.dataArr[1][2]=6;"
+                "dscoll3.dataArr[2][0]=7;dscoll3.dataArr[2][1]=8;dscoll3.dataArr[2][2]=9;"
+                "dscoll3.mask( mask2.tiledata, 0);"
+                "let ds4=dscoll3.compose(4,1,254,0,3);"
+                "pe.log(ds4.tiledata[0]);"
+                "pe.log(ds4.tiledata[1]);"
+                "pe.log(ds4.tiledata[2]);"
                 "return ds2;"
                 "}";
 
@@ -690,9 +771,39 @@ void unit_test_dscoll_forEachData() {
         logstr
     ) ;
     cout<<"run script1:"<<ok1<<endl ;
-    cout<<"log:"<<logstr<<endl ;
+    cout<<"::::log::::"<<endl<<logstr<<endl ;
+}
 
 
+//2022-9-6
+void unit_test_script_caller() {
+    cout<<"-----------------unit_test_script_caller ---------------"<<endl;
+    DebugPixelEngineHelperInterface debugHelper ;
+    PixelEngine::initV8() ;
+    PixelEngine pe ;
+    pe.helperPointer = &debugHelper ;
+
+    string script1 =
+                "pe.extraData={datetime:20010909000000,dtArr:[1,2,3,4]};"
+                "function main(){"
+                "let ds=pe.Dataset('test/name',pe.extraData.datetime);"
+                "return ds;"
+                "}"
+                "function callerOne(){"
+                "let dscoll=pe.DatasetCollection('test/name2',pe.extraData.dtArr);"
+                "if(typeof dscoll ==='undefined') return null;"
+                "let ds=dscoll.compose(4,1,255,0);"
+                "pe.log('dtype:'+ds.dataType);"
+                "return ds;"
+                "}"
+                ;
+    PeTileData res1 ;
+    bool ok1 = pe.RunScriptFunctionForTileResult(script1,"callerOne",0,0,0,res1) ;
+    cout<<"run caller:"<<ok1<<endl ;
+    cout<<"::::log::::"<<endl<<pe.getPeLog()<<endl ;
+    cout<<(int)res1.tiledata[0]<<endl ;
+    cout<<(int)res1.tiledata[65536]<<endl ;
+    cout<<(int)res1.tiledata[65536*2]<<endl ;
 }
 
 

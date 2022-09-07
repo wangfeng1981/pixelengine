@@ -291,6 +291,7 @@ struct PixelEngine
 	static void GlobalFunc_GetTileDataCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;//from exteranl
 
 	static void GlobalFunc_LocalDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+	/// let dataset=pe.NewDataset(datatype,width,height,nband);
 	static void GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 	//2020-9-13
 	static void GlobalFunc_GetStyleCallBack(const v8::FunctionCallbackInfo<v8::Value>& args);
@@ -397,6 +398,7 @@ public:
 
 	Global<Value> GlobalFunc_ForEachPixelCallBack ;//not static, need Reset
 	Global<Value> GlobalFunc_GetPixelCallBack ;//not static , need reset
+	Global<Value> GlobalFunc_ForEachDataCallBack ;//not static , need reset, let newdscoll=dscoll.forEachData(func); 2022-9-6
 	PixelEngine() ;//one
 	~PixelEngine() ;//three
 
@@ -912,8 +914,65 @@ protected:
     //2022-7-3 与GlobalFunc_NearestDatetimeBeforeCallBack类似，但是查找的日期是指定日期之后的最近日期，注意该接口不查找当前日期
     static void GlobalFunc_NearestDatetimeAfterCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 
+    //2022-9-6
+    /// 数据集掩摸函数
+    /// datasetCollection.mask( masktiledata, filldata );
+    //对 DatasetCollection 每一个dataArr中的数据数组进行掩摸，所谓掩摸就是masktiledata为1的值保留，反之使用填充值替换。
+    //掩摸的结果保存在当前这个datasetCollection对象中。
+    static void GlobalFunc_DsCollectionMaskCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+    //2022-9-6
+    /// 数据集合成函数
+    /// let dataset=datasetCollection.compose(method,vmininc,vmaxinc,filldata,outType);
+    //对dataArr中的数据进行合成，合成结果返回一个dataset对象，默认返回类型与datasetCollection一致，除非指定类型。
+    //合成方法 最大，最小，平均，求和
+    /// ,method //pe.CompositeMethodMin 1
+    ///         //pe.CompositeMethodMax 2
+    ///         //pe.CompositeMethodAve 3
+    ///         //pe.CompositeMethodSum 4
+    //逻辑是先判断输入数据是否是filldata，如果不是再判断是否在[vminInc,vmaxInc]之内，如果是参与合成。
+    // 对于平均合成，内部使用double进行计算，然后最后的结果仍然是当前类型或者指定类型。
+    static void GlobalFunc_DsCollectionComposeCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+    //2022-9-6
+    /// 数据映射
+    /// dataset.map(oldval,newval);
+    /// 数据映射1 就是把特定值转换为指定值，只在替换当前对象数据，不返回新对象，对于非指定值不做操作。不变换数据类型。
+    ///
+    ///dataset.map2(vminInc,vmaxInc,newval);
+    /// 数据映射2 就是把特定范围值转换为指定值，只在替换当前对象数据，不返回新对象，对于范围外不做操作。不变换数据类型。
+    static void GlobalFunc_DsMapCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+    static void GlobalFunc_DsMap2CallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+    //2022-9-6
+    /// 数据生成1,0掩摸值
+    /// let maskds = dataset.buildmask( maskval );
+    /// 构造掩摸数据 返回一个新建的Byte类型Dataset，原数据等于maskval返回1，否则返回0。
+    ///
+    /// let maskds = dataset.buildmask2(vminInc,vmaxInc);
+    /// 构造掩摸数据 返回一个新建的Byte类型Dataset，且在特定范围[vmin,vmax]以内返回1，否则返回0。
+    static void GlobalFunc_DsBuildMaskCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+    static void GlobalFunc_DsBuildMask2CallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 
+    //2022-9-6
+    /// javascript callback, create a new empty DatasetCollection
+    /// create an empty DatasetCollection.
+    /// this function will call pure c++ function to create empty datasetCollection
+    /// let dscoll = pe.NewDatasetCollection(datatype,width,height,nband,numdt);
+    static void GlobalFunc_NewDatasetCollectionCallBack(const v8::FunctionCallbackInfo<v8::Value>& args);
 
+public:
+    //2022-9-6
+	//运行脚本scriptContent中指定函数caller() ，注意不带参数，所有参数通过pe.extraData传入。
+	//运行过程中有异常返回false，反之返回true，结果保存在tileData中，logStr为日志.
+	// 关于组装scriptContent的说明 >>>组装代码<<<
+	// >>>pe.extraData={...};<<<  最上面插入pe.extraData
+	// var sdui={...};
+	// >>>sdui={...}<<<  sdui定以后插入sdui更新值
+	// ...other script codes...
+	// >>>var __PE__the_caller_result=caller();<<<  最下插入caller函数调用
+	bool RunScriptFunctionForTileResult(
+        string& scriptContent,
+        string caller,
+        int z, int y, int x,
+        PeTileData& tileData);
 
 } ;
 

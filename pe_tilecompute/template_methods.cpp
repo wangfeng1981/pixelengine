@@ -273,3 +273,132 @@ int elementSize,double validmin,double validmax,double filldata, TemplateMethods
         }
     }
 }
+
+void CallTemplateMethods_BuildMask( void* indataptr,int indatatype,unsigned char* outptr,int elementSize,double maskval)
+{
+    if( indatatype==1 )
+    {
+        TemplateMethods_BuildMask( (unsigned char*)indataptr, outptr, elementSize, maskval );
+    }else if( indatatype==2 )
+    {
+        TemplateMethods_BuildMask( (unsigned short*)indataptr, outptr, elementSize, maskval );
+    }else if( indatatype==3 )
+    {
+        TemplateMethods_BuildMask( (short*)indataptr, outptr, elementSize, maskval );
+    }else if( indatatype==4 )
+    {
+        TemplateMethods_BuildMask( (unsigned int*)indataptr, outptr, elementSize, maskval );
+    }else if( indatatype==5 )
+    {
+        TemplateMethods_BuildMask( (int*)indataptr, outptr, elementSize, maskval );
+    }else if( indatatype==6 )
+    {
+        TemplateMethods_BuildMask( (float*)indataptr, outptr, elementSize, maskval );
+    }else if( indatatype==7 )
+    {
+        TemplateMethods_BuildMask( (double*)indataptr, outptr, elementSize, maskval );
+    }
+}
+void CallTemplateMethods_BuildMask2( void* indataptr,int indatatype,unsigned char* outptr,int elementSize,double vminInc,double vmaxInc)
+{
+    if( indatatype==1 )
+    {
+        TemplateMethods_BuildMask2( (unsigned char*)indataptr,outptr,elementSize,vminInc,vmaxInc );
+    }else if( indatatype==2 )
+    {
+        TemplateMethods_BuildMask2( (unsigned short*)indataptr,outptr,elementSize,vminInc,vmaxInc );
+    }else if( indatatype==3 )
+    {
+        TemplateMethods_BuildMask2( (short*)indataptr,outptr,elementSize,vminInc,vmaxInc );
+    }else if( indatatype==4 )
+    {
+        TemplateMethods_BuildMask2( (unsigned int*)indataptr,outptr,elementSize,vminInc,vmaxInc );
+    }else if( indatatype==5 )
+    {
+        TemplateMethods_BuildMask2( (int*)indataptr,outptr,elementSize,vminInc,vmaxInc );
+    }else if( indatatype==6 )
+    {
+        TemplateMethods_BuildMask2( (float*)indataptr,outptr,elementSize,vminInc,vmaxInc );
+    }else if( indatatype==7 )
+    {
+        TemplateMethods_BuildMask2( (double*)indataptr,outptr,elementSize,vminInc,vmaxInc );
+    }
+}
+
+
+void CallTemplateMethods_DsMap( void* dataPtr,int dataType,int nband,int elementSize,double oldval,double newval)
+{
+    if( dataType==1 )
+    {
+        TemplateMethods_DsMap( (unsigned char*)dataPtr,nband, elementSize, oldval, newval );
+    }else if( dataType==2 )
+    {
+        TemplateMethods_DsMap( (unsigned short*)dataPtr,nband, elementSize, oldval, newval );
+    }else if( dataType==3 )
+    {
+        TemplateMethods_DsMap( (short*)dataPtr,nband, elementSize, oldval, newval );
+    }else if( dataType==4 )
+    {
+        TemplateMethods_DsMap( (unsigned int*)dataPtr,nband, elementSize, oldval, newval );
+    }else if( dataType==5 )
+    {
+        TemplateMethods_DsMap( (int*)dataPtr,nband, elementSize, oldval, newval );
+    }else if( dataType==6 )
+    {
+        TemplateMethods_DsMap( (float*)dataPtr,nband, elementSize, oldval, newval );
+    }else if( dataType==7 )
+    {
+        TemplateMethods_DsMap( (double*)dataPtr,nband, elementSize, oldval, newval );
+    }
+}
+void CallTemplateMethods_DsMap2( void* dataPtr,int dataType,int nband,int elementSize,double vminInc,double vmaxInc,double newval)
+{
+    if( dataType==1 )
+    {
+        TemplateMethods_DsMap2( (unsigned char*)dataPtr,nband, elementSize, vminInc,vmaxInc , newval );
+    }else if( dataType==2 )
+    {
+        TemplateMethods_DsMap2( (unsigned short*)dataPtr,nband, elementSize, vminInc,vmaxInc, newval );
+    }else if( dataType==3 )
+    {
+        TemplateMethods_DsMap2( (short*)dataPtr,nband, elementSize, vminInc,vmaxInc, newval );
+    }else if( dataType==4 )
+    {
+        TemplateMethods_DsMap2( (unsigned int*)dataPtr,nband, elementSize, vminInc,vmaxInc, newval );
+    }else if( dataType==5 )
+    {
+        TemplateMethods_DsMap2( (int*)dataPtr,nband, elementSize, vminInc,vmaxInc, newval );
+    }else if( dataType==6 )
+    {
+        TemplateMethods_DsMap2( (float*)dataPtr,nband, elementSize, vminInc,vmaxInc, newval );
+    }else if( dataType==7 )
+    {
+        TemplateMethods_DsMap2( (double*)dataPtr,nband, elementSize, vminInc,vmaxInc, newval );
+    }
+}
+
+void CallTemplateMethods_TileDataMask( void* dataPtr,int dataType,int nband,int elementSize, unsigned char* maskdata,double filldata)
+{
+    if( dataType==1 )
+    {
+        TemplateMethods_TileDataMask( (unsigned char*)dataPtr,nband, elementSize, maskdata , filldata );
+    }else if( dataType==2 )
+    {
+        TemplateMethods_TileDataMask( (unsigned short*)dataPtr,nband, elementSize, maskdata , filldata );
+    }else if( dataType==3 )
+    {
+        TemplateMethods_TileDataMask( (short*)dataPtr,nband, elementSize, maskdata , filldata );
+    }else if( dataType==4 )
+    {
+        TemplateMethods_TileDataMask( (unsigned int*)dataPtr,nband, elementSize, maskdata , filldata );
+    }else if( dataType==5 )
+    {
+        TemplateMethods_TileDataMask( (int*)dataPtr,nband, elementSize,maskdata , filldata );
+    }else if( dataType==6 )
+    {
+        TemplateMethods_TileDataMask( (float*)dataPtr,nband, elementSize, maskdata , filldata );
+    }else if( dataType==7 )
+    {
+        TemplateMethods_TileDataMask( (double*)dataPtr,nband, elementSize, maskdata , filldata );
+    }
+}

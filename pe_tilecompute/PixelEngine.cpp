@@ -133,8 +133,16 @@ const int PixelEngine::s_CompositeMethodSum=4;
 //string PixelEngine::pejs_version = string("2.8.10.1 2022-07-27");
 
 //2022-9-4
-//1. let newDsColl = datasetCollection.forEachData( func );
-string PixelEngine::pejs_version = string("2.8.11.0 2022-09-04");
+//1. let newDatasetCollection = datasetCollection.forEachData( func );
+//2. datasetCollection.mask( masktiledata , filldata );
+//3. let newDataset = datasetCollection.compose(method,vminInc,vmaxInc,filldata,outType);
+//4. dataset.map(oldval,newval);
+//5. dataset.map2(vminInc,vmaxInc,newval);
+//6. let maskds = dataset.buildmask( maskval );
+//7. let maskds = dataset.buildmask2(vminInc,vmaxInc);
+//8. 增加外部调用接口 RunScriptFunctionForTileResult( fullscriptWithExtraDataAndSDUI );
+//9. let dscoll=pe.NewDatasetCollection(datatype,w,h,nb,numdt);
+string PixelEngine::pejs_version = string("2.8.11.2 2022-09-04");
 
 
 //// mapreduce not used yet.
@@ -1275,9 +1283,27 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
            FunctionTemplate::New(isolate,
            	PixelEngine::GlobalFunc_ConvertToDataType)->GetFunction(context).ToLocalChecked() );
 
-
-
-
+    ///2022-9-6
+    /// let maskds = datasetA.buildmask( maskval );
+	Maybe<bool> ok0906_1 = ds->Set(context
+		,String::NewFromUtf8(isolate, "buildmask").ToLocalChecked(),
+           FunctionTemplate::New(isolate,
+           	PixelEngine::GlobalFunc_DsBuildMaskCallBack)->GetFunction(context).ToLocalChecked() );
+    /// let maskds = datasetA.buildmask2( v0inc,v1inc );
+	Maybe<bool> ok0906_2 = ds->Set(context
+		,String::NewFromUtf8(isolate, "buildmask2").ToLocalChecked(),
+           FunctionTemplate::New(isolate,
+           	PixelEngine::GlobalFunc_DsBuildMask2CallBack)->GetFunction(context).ToLocalChecked() );
+    /// datasetSelf.map(oldval,newval);
+    Maybe<bool> ok0906_3 = ds->Set(context
+    ,String::NewFromUtf8(isolate, "map").ToLocalChecked(),
+       FunctionTemplate::New(isolate,
+        PixelEngine::GlobalFunc_DsMapCallBack)->GetFunction(context).ToLocalChecked() );
+    /// datasetSelf.map2(v0inc,v1inc,newval);
+    Maybe<bool> ok0906_4 = ds->Set(context
+    ,String::NewFromUtf8(isolate, "map2").ToLocalChecked(),
+       FunctionTemplate::New(isolate,
+        PixelEngine::GlobalFunc_DsMap2CallBack)->GetFunction(context).ToLocalChecked() );
 
 
     {
@@ -2331,6 +2357,7 @@ void PixelEngine::GlobalFunc_RenderPsuedColorCallBack(const v8::FunctionCallback
 
 /// javascript callback, create a new empty Dataset
 /// create an empty Dataset.
+/// let dataset=pe.NewDataset(datatype,width,height,nband);
 void PixelEngine::GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
 	if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_NewDatasetCallBack"<<endl;
@@ -2343,19 +2370,19 @@ void PixelEngine::GlobalFunc_NewDatasetCallBack(const v8::FunctionCallbackInfo<v
 	v8::HandleScope handle_scope(isolate);
 	Local<Context> context(isolate->GetCurrentContext()) ;
 
-	Local<Value> dt0 = args[0];
+	Local<Value> dt0 = args[0];//datatype
 	Local<Value> w0 = args[1] ;
 	Local<Value> h0 = args[2] ;
 	Local<Value> nb0 = args[3] ;
 
-	int dt = dt0->ToInteger(context).ToLocalChecked()->Value() ;
+	int datatype = dt0->ToInteger(context).ToLocalChecked()->Value() ;
 	int wid = w0->ToInteger(context).ToLocalChecked()->Value() ;
 	int hei = h0->ToInteger(context).ToLocalChecked()->Value() ;
 	int nband = nb0->ToInteger(context).ToLocalChecked()->Value() ;
 
 	Local<Object> ds = PixelEngine::CPP_NewDataset( isolate
 		,context
-		,dt
+		,datatype
 		,wid
 		,hei
 		,nband );
@@ -3633,6 +3660,11 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_StackDatasetsCallBack)
            ->GetFunction(context).ToLocalChecked() );
 
+    //2022-9-6
+    Maybe<bool> ok0906_1 = pe->Set(context
+		,String::NewFromUtf8(isolate, "NewDatasetCollection").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_NewDatasetCollectionCallBack)->GetFunction(context).ToLocalChecked() );
+
 
 
 
@@ -3910,30 +3942,36 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
             if(Object.prototype.toString.call(a)==='[object Float64Array]') return 7;
             return 0 ;
         };
+        const globalFunc_IsTypedArray=function(a){
+            if(Object.prototype.toString.call(a)==='[object Uint8Array]')  return true;
+            if(Object.prototype.toString.call(a)==='[object Uint16Array]') return true;
+            if(Object.prototype.toString.call(a)==='[object Int16Array]')  return true;
+            if(Object.prototype.toString.call(a)==='[object Uint32Array]') return true;
+            if(Object.prototype.toString.call(a)==='[object Int32Array]')  return true;
+            if(Object.prototype.toString.call(a)==='[object Float32Array]') return true;
+            if(Object.prototype.toString.call(a)==='[object Float64Array]') return true;
+            return false ;
+        };
 		var globalFunc_DsColl_forEachDataCallBack = function(func){
-			let outdscoll = {} ;
-			outdscoll.width  = this.width  ;
-			outdscoll.height = this.height ;
-			outdscoll.key = this.key ;
-			outdscoll.dsname='';
-			outdscoll.x=this.x;
-			outdscoll.y=this.y;
-			outdscoll.z=this.z;
-			outdscoll.dtArr=this.dtArr ;
-			outdscoll.dataArr=[];
-			outdscoll.forEachData=globalFunc_DsColl_forEachDataCallBack;
-			outdscoll.nband=0;
-			outdscoll.dataType=0;
-			let n=this.dtArr.length;
-			for(let i=0;i<n;++i){
+			let outdscoll = null ;
+			let numdt=this.dtArr.length;
+			for(let i=0;i<numdt;++i){
                 let data1=func(this.dataArr[i]);
-                if(typeof data1 !== 'undefined' && data1 !==null ){
+                if(typeof data1 !== 'undefined' && data1 !==null && globalFunc_IsTypedArray(data1) ){
                     if(i==0){
-                        outdscoll.nband=data1.length/this.width/this.height;
-                        outdscoll.dataType=globalFunc_DataArray2DataType(data1);
+                        const outNBand = parseInt(data1.length/this.width/this.height);
+                        const outDType = globalFunc_DataArray2DataType(data1) ;
+                        if(outNBand>0 && outDType>0){
+                            outdscoll=pe.NewDatasetCollection(outDType,this.width,this.height,outNBand,numdt);
+                            outdscoll.dtArr=this.dtArr;
+                        }else{
+                            pe.log('Error: outNBand is '+outNBand+', outDType is '+outDType );
+                            return null ;
+                        }
                     }
-                    outdscoll.dataArr.push(data1) ;
+                    outdscoll.dataArr[i] = data1 ;
                 }else{
+                    pe.log('Error: bad result from dscoll.forEachData.');
                     return null;
                 }
 			}
@@ -3969,7 +4007,7 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 
     Local<Value> forEachDataFuncInJs = global->Get(context
     	,String::NewFromUtf8(isolate, "globalFunc_DsColl_forEachDataCallBack").ToLocalChecked() ).ToLocalChecked() ;
-    thePE->GlobalFunc_GetPixelCallBack.Reset(isolate , forEachDataFuncInJs) ;
+    thePE->GlobalFunc_ForEachDataCallBack.Reset(isolate , forEachDataFuncInJs) ;
 
 
     //set globalFunc_newDatasetCallBack, this will be called in javascript ForEachPixel.
@@ -4143,6 +4181,7 @@ bool PixelEngine::RunToGetStyleFromScript(string& scriptContent, PeStyle& retsty
 	this->m_context.Reset();
 	this->GlobalFunc_ForEachPixelCallBack.Reset();
 	this->GlobalFunc_GetPixelCallBack.Reset();
+	this->GlobalFunc_ForEachDataCallBack.Reset() ;
 	// Dispose the isolate and tear down V8.
 	this->isolate->Dispose();
 
@@ -4237,7 +4276,7 @@ bool PixelEngine::RunScriptForTile(void* extra, string& jsSource,long currentdt,
 	this->m_context.Reset() ;
 	this->GlobalFunc_ForEachPixelCallBack.Reset() ;
 	this->GlobalFunc_GetPixelCallBack.Reset() ;
-
+    this->GlobalFunc_ForEachDataCallBack.Reset();
 	// Dispose the isolate and tear down V8.
 	this->isolate->Dispose();
 	// v8::V8::Dispose();
@@ -4339,7 +4378,7 @@ bool PixelEngine::RunScriptForComputeOnce(void* extra, string& jsSource,long cur
 	this->m_context.Reset() ;
 	this->GlobalFunc_ForEachPixelCallBack.Reset() ;
 	this->GlobalFunc_GetPixelCallBack.Reset() ;
-
+    this->GlobalFunc_ForEachDataCallBack.Reset();
 	// Dispose the isolate and tear down V8.
 	this->isolate->Dispose();
 	// v8::V8::Dispose();
@@ -4466,7 +4505,7 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 				}
 				else
 				{
-					if(! PixelEngine::quietMode)cout << "in RunScriptForTileWithoutRender step4" << endl;
+					if(! PixelEngine::quietMode)cout << "run good." << endl;
 
 					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 					if (!PixelEngine::quietMode)printf("script run dura:%d ms \n", (int)(now1 - now) );//
@@ -4490,7 +4529,7 @@ bool PixelEngine::RunScriptForTileWithoutRender(void* extra, string& scriptConte
 	this->m_context.Reset();
 	this->GlobalFunc_ForEachPixelCallBack.Reset();
 	this->GlobalFunc_GetPixelCallBack.Reset();
-
+    this->GlobalFunc_ForEachDataCallBack.Reset();
 	// Dispose the isolate and tear down V8.
 	this->isolate->Dispose();
 
@@ -4668,6 +4707,7 @@ bool PixelEngine::RunScriptForAST(void* extra, string& scriptContent, string& re
 	this->m_context.Reset();
 	this->GlobalFunc_ForEachPixelCallBack.Reset();
 	this->GlobalFunc_GetPixelCallBack.Reset();
+	this->GlobalFunc_ForEachDataCallBack.Reset();
 	// Dispose the isolate and tear down V8.
 	this->isolate->Dispose();
 	return allOk;
@@ -6650,6 +6690,7 @@ bool PixelEngine::RunScriptAndGetVariableJsonText(void* extra,
 	this->m_context.Reset() ;
 	this->GlobalFunc_ForEachPixelCallBack.Reset() ;
 	this->GlobalFunc_GetPixelCallBack.Reset() ;
+	this->GlobalFunc_ForEachDataCallBack.Reset();
 	this->isolate->Dispose();
 	return allOk ;
 }
@@ -6742,7 +6783,7 @@ bool PixelEngine::RunScriptForTileWithoutRenderWithExtra(void* extra,
 				}
 				else
 				{
-					if(! PixelEngine::quietMode)cout << "in RunScriptForTileWithoutRender step4" << endl;
+					if(! PixelEngine::quietMode)cout << "run good." << endl;
 
 					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 					if (!PixelEngine::quietMode)printf("script run dura:%d ms \n", (int)(now1 - now) );//
@@ -6766,7 +6807,7 @@ bool PixelEngine::RunScriptForTileWithoutRenderWithExtra(void* extra,
 	this->m_context.Reset();
 	this->GlobalFunc_ForEachPixelCallBack.Reset();
 	this->GlobalFunc_GetPixelCallBack.Reset();
-
+    this->GlobalFunc_ForEachDataCallBack.Reset();
 	// Dispose the isolate and tear down V8.
 	this->isolate->Dispose();
 
@@ -7228,7 +7269,19 @@ Local<Object> PixelEngine::CPP_NewDatasetCollection(
 		,String::NewFromUtf8(isolate, "forEachData").ToLocalChecked(),
             forEachDataFuncInJs );
 
-
+    // DatasetCollection 成员函数
+    // 2022-9-6
+    /// dscollSel.mask(masktiledata,filldata);
+    Maybe<bool> ok0906_1 = retobj->Set(context
+    ,String::NewFromUtf8(isolate, "mask").ToLocalChecked(),
+       FunctionTemplate::New(isolate,
+        PixelEngine::GlobalFunc_DsCollectionMaskCallBack)->GetFunction(context).ToLocalChecked() );
+    /// dscollSel.compose(method,v0inc,v1inc,filldata[,outType]);
+    /// method=1/2/3/4 min/max/ave/sum
+    Maybe<bool> ok0906_2 = retobj->Set(context
+    ,String::NewFromUtf8(isolate, "compose").ToLocalChecked(),
+       FunctionTemplate::New(isolate,
+        PixelEngine::GlobalFunc_DsCollectionComposeCallBack)->GetFunction(context).ToLocalChecked() );
 
 
     const int databytelen = datatype2bytelen( datatype ) ;
@@ -7847,8 +7900,8 @@ void PixelEngine::GlobalFunc_StackDatasetsCallBack(const v8::FunctionCallbackInf
 	Array* dsArray = Array::Cast(*args[0]) ;
 	int numds = dsArray->Length() ;
 	int datatype = 0 ;
-	int width = 0 ;
-	int height = 0 ;
+	int width =    0 ;
+	int height =   0 ;
 	int totbands = 0 ;
     vector<int> nbandArr;
 
@@ -8137,7 +8190,7 @@ bool PixelEngine::RunScriptForTextResultWithExtra(
 				}
 				else
 				{
-					if(! PixelEngine::quietMode)cout << "in RunScriptForTextResultWithExtra step4" << endl;
+					if(! PixelEngine::quietMode)cout << "run good." << endl;
 					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 					if (!PixelEngine::quietMode)printf("script run dura:%d ms \n", (int)(now1 - now) );//
 					string errorText;
@@ -8163,9 +8216,651 @@ bool PixelEngine::RunScriptForTextResultWithExtra(
 	this->m_context.Reset();
 	this->GlobalFunc_ForEachPixelCallBack.Reset();
 	this->GlobalFunc_GetPixelCallBack.Reset();
+	this->GlobalFunc_ForEachDataCallBack.Reset();
 	this->isolate->Dispose();
 	return allOk;
 }
 
 
+//2022-9-6
+/// 数据集掩摸函数
+/// datasetCollection.mask( masktiledata, filldata );
+//对 DatasetCollection 每一个dataArr中的数据数组进行掩摸，所谓掩摸就是masktiledata为1的值保留，反之使用填充值替换。
+//掩摸的结果保存在当前这个datasetCollection对象中。
+//masktiledata should be uint8array
+void PixelEngine::GlobalFunc_DsCollectionMaskCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_DsCollectionMaskCallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 2 )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length!=2 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
 
+	Local<Value> masktiledata = args[0] ;
+    Local<Value> filldata = args[1] ;
+	if( masktiledata->IsUint8Array() && filldata->IsNumber() ){
+        //params ok
+	}else{
+        if(! PixelEngine::quietMode)cout<<"Error: bad args, not uint8Array or not a number "<<endl ;
+        return ;
+	}
+
+	Uint8Array* maskU8Array = Uint8Array::Cast( *masktiledata ) ;
+	int maskElementSize = (int)maskU8Array->Length() ;
+	if( maskU8Array->Buffer().IsEmpty() ){
+        string temperr = string("Error:maskU8Array.Buffer is empty.");
+        cout<<temperr<<endl ;
+        thisPePtr->log(temperr);
+        return ;
+	}
+	unsigned char* maskDataPtr = (unsigned char*) maskU8Array->Buffer()->GetContents().Data() ;
+
+
+	int64_t dfilldata = (int64_t) (filldata->ToNumber(context).ToLocalChecked())->Value();
+	//this pointer of dataset
+	Local<Object> dsObjThis = args.This() ;
+
+	int datatypeA = dsObjThis->Get(context, String::NewFromUtf8(isolate,"dataType")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int widthA =    dsObjThis->Get(context, String::NewFromUtf8(isolate,"width")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int heightA =   dsObjThis->Get(context, String::NewFromUtf8(isolate,"height")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int nbandA =    dsObjThis->Get(context, String::NewFromUtf8(isolate,"nband")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    MaybeLocal<Value> dataArrV8Value = dsObjThis->Get(context, String::NewFromUtf8(isolate,"dataArr").ToLocalChecked() );
+    if( dataArrV8Value.IsEmpty() == false ){
+        if( dataArrV8Value.ToLocalChecked()->IsArray() )
+        {
+            Array* dataArrArray = Array::Cast( * (dataArrV8Value.ToLocalChecked()) ) ;
+            if( dataArrArray->Length() > 0 )
+            {
+                int numdt = dataArrArray->Length();
+                for(int idt = 0 ; idt < numdt ; ++ idt  )
+                {
+                    MaybeLocal<Value> oneTileDataV8Value = dataArrArray->Get(context,idt) ;
+                    if( oneTileDataV8Value.IsEmpty()==false )
+                    {
+                        if( oneTileDataV8Value.ToLocalChecked()->IsTypedArray() )
+                        {
+                            TypedArray* tempTypedArrPtr = TypedArray::Cast(* (oneTileDataV8Value.ToLocalChecked())  ) ;
+                            Local<ArrayBuffer> tempArrbuff = tempTypedArrPtr->Buffer() ;
+                            if( tempArrbuff.IsEmpty()==false )
+                            {
+                                int tiledatalen = tempTypedArrPtr->Length() ;
+                                if( tiledatalen == widthA*heightA*nbandA )
+                                {
+                                    if( widthA*heightA == maskElementSize )
+                                    {
+                                        void* tempBackDataPtr = tempArrbuff->GetContents().Data() ;
+                                        CallTemplateMethods_TileDataMask(
+                                            tempBackDataPtr,
+                                            datatypeA,
+                                            nbandA,
+                                            maskElementSize,
+                                            maskDataPtr,
+                                            dfilldata
+                                        ) ;
+                                    }else{
+                                        string temperr = string("Error:data.width*height!=maskSize.");
+                                        cout<<temperr<<endl ;
+                                        thisPePtr->log(temperr);
+                                        return ;
+                                    }
+                                }else{
+                                    string temperr = string("Error:w*h*nb!=tiledatalen.");
+                                    cout<<temperr<<endl ;
+                                    thisPePtr->log(temperr);
+                                    return ;
+                                }
+                            }else{
+                                string temperr = string("Error:tempArrbuff is empty.");
+                                cout<<temperr<<endl ;
+                                thisPePtr->log(temperr);
+                                return ;
+                            }
+                        }
+                        else{
+                            string temperr = string("Error:tiledata not TypedArray.");
+                            cout<<temperr<<endl ;
+                            thisPePtr->log(temperr);
+                            return ;
+                        }
+                    }
+                    else{
+                        string temperr = string("Error:one tiledata is empty.");
+                        cout<<temperr<<endl ;
+                        thisPePtr->log(temperr);
+                        return ;
+                    }
+                }
+            }
+            else{
+                string temperr = string("Error:dataArr.len is 0.");
+                cout<<temperr<<endl ;
+                thisPePtr->log(temperr);
+                return ;
+            }
+        }
+        else{
+            string temperr = string("Error:dataArr not Array.");
+            cout<<temperr<<endl ;
+            thisPePtr->log(temperr);
+            return ;
+        }
+    }
+    else{
+        string temperr = string("Error:dataArr is empty.");
+        cout<<temperr<<endl ;
+        thisPePtr->log(temperr);
+        return ;
+    }
+}
+
+
+//2022-9-6
+/// 数据集合成函数
+/// let dataset=datasetCollection.compose(method,vmininc,vmaxinc,filldata [,outType] );
+//对dataArr中的数据进行合成，合成结果返回一个dataset对象，默认返回类型与datasetCollection一致，除非指定类型。
+//合成方法 最大，最小，平均，求和
+/// ,method //pe.CompositeMethodMin 1
+///         //pe.CompositeMethodMax 2
+///         //pe.CompositeMethodAve 3
+///         //pe.CompositeMethodSum 4
+//逻辑是先判断输入数据是否是filldata，如果不是再判断是否在[vminInc,vmaxInc]之内，如果是参与合成。
+// 对于平均合成，内部使用double进行计算，然后最后的结果仍然是当前类型或者指定类型。
+void PixelEngine::GlobalFunc_DsCollectionComposeCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_DsCollectionComposeCallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 4 || args.Length()==5  )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: args not 4 or 5 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+	Local<Object> dsObjThis = args.This() ;
+
+	int method = args[0]->IntegerValue(context).ToChecked() ;
+	double validmin = args[1]->NumberValue(context).ToChecked() ;
+	double validmax = args[2]->NumberValue(context).ToChecked() ;
+	double filldata = args[3]->NumberValue(context).ToChecked() ;
+
+	int datatype = dsObjThis->Get(
+                                context,
+                                String::NewFromUtf8(isolate,"dataType").ToLocalChecked()
+                                ).ToLocalChecked()->IntegerValue(context).ToChecked();
+	int outDataType = datatype ;
+	if( args.Length()==5 ){
+        outDataType = args[4]->IntegerValue(context).ToChecked() ;
+	}
+
+    int width  = dsObjThis->Get(context,String::NewFromUtf8(isolate,"width").ToLocalChecked()
+                                ).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int height = dsObjThis->Get(context,String::NewFromUtf8(isolate,"height").ToLocalChecked()
+                                ).ToLocalChecked()->IntegerValue(context).ToChecked(); ;
+    int nband  = dsObjThis->Get(context,String::NewFromUtf8(isolate,"nband").ToLocalChecked()
+                                ).ToLocalChecked()->IntegerValue(context).ToChecked(); ;
+    Local<Object> outDs = PixelEngine::CPP_NewDataset(isolate,context,outDataType,width,height,nband) ;
+
+    void* outDataPtr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,outDs,context,"tiledata") ;
+    vector<void*> dscollDataPtrVec ;
+
+    MaybeLocal<Value> dataArrValue = dsObjThis->Get(context, String::NewFromUtf8(isolate,"dataArr").ToLocalChecked());
+    if( dataArrValue.IsEmpty()==false )
+    {
+        if( dataArrValue.ToLocalChecked()->IsArray() )
+        {
+            Array* dataArrArray = Array::Cast( * dataArrValue.ToLocalChecked() ) ;
+            int numdt = dataArrArray->Length() ;
+            for(int idt=0;idt<numdt;++idt){
+                MaybeLocal<Value> oneTileDataV8Value = dataArrArray->Get(context,idt) ;
+                if( oneTileDataV8Value.IsEmpty()==false )
+                {
+                    if( oneTileDataV8Value.ToLocalChecked()->IsTypedArray() )
+                    {
+                        TypedArray* tempTypedArrPtr = TypedArray::Cast(* (oneTileDataV8Value.ToLocalChecked())  ) ;
+                        Local<ArrayBuffer> tempArrbuff = tempTypedArrPtr->Buffer() ;
+                        if( tempArrbuff.IsEmpty()==false )
+                        {
+                            int tiledatalen = tempTypedArrPtr->Length() ;
+                            if( tiledatalen == width*height*nband )
+                            {
+                                void* tempBackDataPtr = tempArrbuff->GetContents().Data() ;
+                                dscollDataPtrVec.push_back(tempBackDataPtr);
+                            }else{
+                                string er="Error:w*h*nb!=tiledatalen.";cout<<er<<endl;thisPePtr->log(er);
+                                return ;
+                            }
+                        }else{
+                            string terr="Error:tempArrbuff is empty.";cout<<terr<<endl ;thisPePtr->log(terr);
+                            return ;
+                        }
+                    }
+                    else{
+                        string temperr="Error:tiledata not TypedArray.";cout<<temperr<<endl;thisPePtr->log(temperr);
+                        return ;
+                    }
+                }
+                else{
+                    string temperr="Error:one tiledata is empty.";cout<<temperr<<endl;thisPePtr->log(temperr);
+                    return ;
+                }
+            }
+
+            //do composing...
+            TemplateMethods_CompositeMethod cmethod = TemplateMethods_CompositeMethod::CM_MIN;
+            if( method== PixelEngine::s_CompositeMethodAve ) cmethod = CM_AVE ;
+            if( method== PixelEngine::s_CompositeMethodMax ) cmethod = CM_MAX ;
+            if( method== PixelEngine::s_CompositeMethodSum ) cmethod = CM_SUM ;
+            CallTemplateMethods_ForCollectionComposite(
+                dscollDataPtrVec, outDataPtr, datatype, outDataType,
+                nband*width*height, validmin , validmax , filldata,cmethod
+            );
+
+        }
+        else{
+            string temperr="Error:dataArr not Array.";thisPePtr->log(temperr);cout<<temperr<<endl ;
+            return ;
+        }
+    }else{
+        string temperr="Error:bad dataArr.";thisPePtr->log(temperr);cout<<temperr<<endl ;
+        return ;
+    }
+
+    args.GetReturnValue().Set(outDs) ;
+}
+
+
+//2022-9-6
+/// 数据映射
+/// dataset.map(oldval,newval);
+/// 数据映射1 就是把特定值转换为指定值，只在替换当前对象数据，不返回新对象，对于非指定值不做操作。不变换数据类型。
+void PixelEngine::GlobalFunc_DsMapCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_DsMapCallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 2 )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length!=2 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> oldval = args[0] ;
+    Local<Value> newval = args[1] ;
+	if( oldval->IsNumber() && newval->IsNumber() ){
+        //params ok
+	}else{
+        if(! PixelEngine::quietMode)cout<<"Error: bad args, not a number "<<endl ;
+        return ;
+	}
+
+	int64_t doldval = (int64_t) (oldval->ToNumber(context).ToLocalChecked())->Value();
+	int64_t dnewval = (int64_t) (newval->ToNumber(context).ToLocalChecked())->Value();
+	//this pointer of dataset
+	Local<Object> dsObjThis = args.This() ;
+
+	int datatypeA = dsObjThis->Get(context, String::NewFromUtf8(isolate,"dataType")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int widthA =    dsObjThis->Get(context, String::NewFromUtf8(isolate,"width")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int heightA =   dsObjThis->Get(context, String::NewFromUtf8(isolate,"height")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int nbandA =    dsObjThis->Get(context, String::NewFromUtf8(isolate,"nband")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+
+    int elementSize = widthA*heightA ;
+    void* dataAptr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,dsObjThis,context,"tiledata") ;
+
+    CallTemplateMethods_DsMap(dataAptr,datatypeA,nbandA,elementSize,doldval,dnewval);
+}
+///
+///dataset.map2(vminInc,vmaxInc,newval);
+/// 数据映射2 就是把特定范围值转换为指定值，只在替换当前对象数据，不返回新对象，对于范围外不做操作。不变换数据类型。
+void PixelEngine::GlobalFunc_DsMap2CallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_DsMap2CallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 3 )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length!=3 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> vminInc = args[0] ;
+	Local<Value> vmaxInc = args[1] ;
+    Local<Value> newval = args[2] ;
+	if( vminInc->IsNumber() && vmaxInc->IsNumber() && newval->IsNumber() ){
+        //params ok
+	}else{
+        if(! PixelEngine::quietMode)cout<<"Error: bad args, not a number "<<endl ;
+        return ;
+	}
+
+	int64_t v0 = (int64_t) (vminInc->ToNumber(context).ToLocalChecked())->Value();
+	int64_t v1 = (int64_t) (vmaxInc->ToNumber(context).ToLocalChecked())->Value();
+	int64_t dnewval = (int64_t) (newval->ToNumber(context).ToLocalChecked())->Value();
+	//this pointer of dataset
+	Local<Object> dsObjThis = args.This() ;
+
+	int datatypeA = dsObjThis->Get(context, String::NewFromUtf8(isolate,"dataType")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int widthA =    dsObjThis->Get(context, String::NewFromUtf8(isolate,"width")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int heightA =   dsObjThis->Get(context, String::NewFromUtf8(isolate,"height")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int nbandA =    dsObjThis->Get(context, String::NewFromUtf8(isolate,"nband")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+
+    int elementSize = widthA*heightA ;
+    void* dataAptr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,dsObjThis,context,"tiledata") ;
+
+    CallTemplateMethods_DsMap2(dataAptr,datatypeA,nbandA,elementSize,v0,v1,dnewval);
+}
+
+//2022-9-6
+/// 数据生成1,0掩摸值 只考虑第0波段
+/// let maskds = dataset.buildmask( maskval );
+/// 构造掩摸数据 返回一个新建的Byte类型Dataset，原数据等于maskval返回1，否则返回0。
+void PixelEngine::GlobalFunc_DsBuildMaskCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_DsBuildMaskCallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 1 )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length!=1 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> mval = args[0];
+	if( mval->IsNumber() ){
+        //params ok
+	}else{
+        if(! PixelEngine::quietMode)cout<<"Error: bad args, not a number "<<endl ;
+        return ;
+	}
+
+	int64_t maskval = (int64_t) (mval->ToNumber(context).ToLocalChecked())->Value();
+	//this pointer of dataset
+	Local<Object> dsObjThis = args.This() ;
+
+	int datatypeA = dsObjThis->Get(context, String::NewFromUtf8(isolate,"dataType")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int widthA =    dsObjThis->Get(context, String::NewFromUtf8(isolate,"width")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int heightA =   dsObjThis->Get(context, String::NewFromUtf8(isolate,"height")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int nbandA =    dsObjThis->Get(context, String::NewFromUtf8(isolate,"nband")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+
+	Local<Object> ds = PixelEngine::CPP_NewDataset( isolate
+		,context
+		,1       //Byte
+		,widthA
+		,heightA
+		,1 );
+
+    int elementSize = widthA*heightA ;
+    void* dataAptr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,dsObjThis,context,"tiledata") ;
+    void* dataDs =   PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,ds       ,context,"tiledata") ;
+
+    memset( dataDs , 0 , elementSize) ;
+    CallTemplateMethods_BuildMask(dataAptr,datatypeA,(unsigned char*)dataDs,elementSize,maskval);
+	int tilez = thisPePtr->tileInfo.z  ;
+	int tiley = thisPePtr->tileInfo.y  ;
+	int tilex = thisPePtr->tileInfo.x  ;
+    Maybe<bool> ok3 = ds->Set(context
+		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
+		,Integer::New(isolate, tilex) ) ;
+	Maybe<bool> ok4 = ds->Set(context
+		,String::NewFromUtf8(isolate, "y").ToLocalChecked()
+		,Integer::New(isolate, tiley) ) ;
+	Maybe<bool> ok5 = ds->Set(context
+		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
+		,Integer::New(isolate, tilez) ) ;
+    args.GetReturnValue().Set(ds) ;
+}
+///
+/// let maskds = dataset.buildmask2(vminInc,vmaxInc);
+/// 构造掩摸数据 返回一个新建的Byte类型Dataset，且在特定范围[vmin,vmax]以内返回1，否则返回0。
+void PixelEngine::GlobalFunc_DsBuildMask2CallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_DsBuildMask2CallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 2 )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length!=2 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> val0 = args[0];
+	Local<Value> val1 = args[1];
+	if( val0->IsNumber() && val1->IsNumber() ){
+        //params ok
+	}else{
+        if(! PixelEngine::quietMode)cout<<"Error: bad args, not a number "<<endl ;
+        return ;
+	}
+
+	int64_t dval0 = (int64_t) (val0->ToNumber(context).ToLocalChecked())->Value();
+	int64_t dval1 = (int64_t) (val1->ToNumber(context).ToLocalChecked())->Value();
+	//this pointer of dataset
+	Local<Object> dsObjThis = args.This() ;
+	int datatypeA = dsObjThis->Get(context, String::NewFromUtf8(isolate,"dataType")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int widthA =    dsObjThis->Get(context, String::NewFromUtf8(isolate,"width")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int heightA =   dsObjThis->Get(context, String::NewFromUtf8(isolate,"height")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int nbandA =    dsObjThis->Get(context, String::NewFromUtf8(isolate,"nband")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+
+	Local<Object> ds = PixelEngine::CPP_NewDataset( isolate
+		,context
+		,1       //Byte
+		,widthA
+		,heightA
+		,1 );
+
+    int elementSize = widthA*heightA ;
+    void* dataAptr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,dsObjThis,context,"tiledata") ;
+    void* dataDs =   PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,ds       ,context,"tiledata") ;
+    memset( dataDs , 0 , elementSize) ;
+    CallTemplateMethods_BuildMask2(dataAptr,datatypeA,(unsigned char*)dataDs,elementSize,dval0,dval1);
+	int tilez = thisPePtr->tileInfo.z  ;
+	int tiley = thisPePtr->tileInfo.y  ;
+	int tilex = thisPePtr->tileInfo.x  ;
+    Maybe<bool> ok3 = ds->Set(context
+		,String::NewFromUtf8(isolate, "x").ToLocalChecked()
+		,Integer::New(isolate, tilex) ) ;
+	Maybe<bool> ok4 = ds->Set(context
+		,String::NewFromUtf8(isolate, "y").ToLocalChecked()
+		,Integer::New(isolate, tiley) ) ;
+	Maybe<bool> ok5 = ds->Set(context
+		,String::NewFromUtf8(isolate, "z").ToLocalChecked()
+		,Integer::New(isolate, tilez) ) ;
+    args.GetReturnValue().Set(ds) ;
+}
+
+//2022-9-6
+/// let dscoll = pe.NewDatasetCollection(datatype,width,height,nband,numdt);
+void PixelEngine::GlobalFunc_NewDatasetCollectionCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_NewDatasetCollectionCallBack"<<endl;
+	if (args.Length() != 5 ){
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 5 "<<endl ;
+		return;
+	}
+
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+
+	Local<Value> datatype0 = args[0];//datatype
+	Local<Value> w0 = args[1] ;
+	Local<Value> h0 = args[2] ;
+	Local<Value> nb0 = args[3] ;//number of bands
+	Local<Value> ndt0 = args[4] ;//number of datatimes
+
+	int datatype = datatype0->ToInteger(context).ToLocalChecked()->Value() ;
+	int wid = w0->ToInteger(context).ToLocalChecked()->Value() ;
+	int hei = h0->ToInteger(context).ToLocalChecked()->Value() ;
+	int nband = nb0->ToInteger(context).ToLocalChecked()->Value() ;
+	int numdt = ndt0->ToInteger(context).ToLocalChecked()->Value() ;
+
+	int oneDataByteLen=PixelEngine::datatype2bytelen(datatype);
+	vector<unsigned char> zerotiledata(wid*hei*nband*oneDataByteLen,0);
+
+	vector<int64_t> tempDtArr(numdt,0) ;
+	vector< vector<unsigned char> > tiledataArr(numdt) ;
+	for(int idt=0;idt<numdt;++idt) tiledataArr[idt]=zerotiledata;
+
+	Local<Object> dscoll = PixelEngine::CPP_NewDatasetCollection(
+        isolate,
+        context,
+        "NoName",
+        "NoKey",
+        tempDtArr,
+        tiledataArr,
+        datatype,
+        wid,
+        hei,
+        nband,
+        0, //z
+        0, //y
+        0  //x
+	) ;
+	args.GetReturnValue().Set(dscoll) ;
+}
+
+bool PixelEngine::RunScriptFunctionForTileResult(
+    string& scriptContent,
+    string caller,
+    int z, int y, int x,
+    PeTileData& tileData
+    )
+{
+    if(! PixelEngine::quietMode)cout << "in RunScriptFunctionForTileResult init v8" << endl;
+	this->pe_logs.reserve(2048);//max 2k bytes.
+	this->tileInfo.x = x;
+	this->tileInfo.y = y;
+	this->tileInfo.z = z;
+	this->extraPointer = nullptr;//i don't remember what it is for.
+	this->currentDateTime = 0L;//not used yet.
+
+	bool allOk = true;
+	// Create a new Isolate and make it the current one.
+	//v8::Isolate::CreateParams create_params;
+	this->create_params.array_buffer_allocator =
+		v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+	//v8::Isolate* isolate = v8::Isolate::New(create_params);
+	this->isolate = v8::Isolate::New(create_params);
+	{
+		if(! PixelEngine::quietMode)cout << "in RunScriptFunctionForTileResult run caller" << endl;
+		v8::Isolate::Scope isolate_scope(this->isolate);
+		v8::HandleScope handle_scope(this->isolate);
+		// Create a new context.
+		v8::Local<v8::Context> context = v8::Context::New(this->isolate);
+		v8::Context::Scope context_scope(context);// enter scope
+		PixelEngine::initTemplate(this, this->isolate, context);
+		this->m_context.Reset(this->isolate, context);
+		TryCatch try_catch(this->isolate);
+		string source = scriptContent + "var __PE__the_caller_result="+caller+"();";
+		// Compile the source code.
+		v8::Local<v8::Script> script;
+		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
+			source.c_str()).ToLocalChecked()).ToLocal(&script)) {
+			String::Utf8Value error(this->isolate, try_catch.Exception());
+			if(! PixelEngine::quietMode)cout << "v8 exception:" << *error << endl;
+			string exceptionStr= string("compile exception:")+(*error) ;
+			this->log( exceptionStr ) ;
+			allOk = false;
+		}
+		else
+		{
+			unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			// Run the script to get the result.
+			Local<v8::Value> result;
+			if (!script->Run(context).ToLocal(&result)) {
+				String::Utf8Value error(this->isolate, try_catch.Exception());
+				string exceptionstr = string("v8 exception:") + (*error);
+				if(! PixelEngine::quietMode)cout << exceptionstr << endl;
+				// The script failed to compile; bail out.
+				string exceptionStr=string("run exception:")+(*error) ;//2022-7-3
+                this->log( exceptionStr ) ;//2022-7-3
+				allOk = false;
+			}
+			else
+			{
+				MaybeLocal<Value> callerResult = context->Global()->Get(context
+					, String::NewFromUtf8(isolate, "__PE__the_caller_result").ToLocalChecked());
+				if (PixelEngine::IsMaybeLocalOK(callerResult) == false) //IsNullOrUndefined() )
+				{
+					string error1=string("Error: the result of '") + caller + "' is null or undefined.";
+					if(! PixelEngine::quietMode)cout << error1 << endl;
+					this->log(error1);
+					allOk = false;
+				}
+				else
+				{
+					if(! PixelEngine::quietMode)cout << "run good." << endl;
+					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					if (!PixelEngine::quietMode)printf("run dura:%d ms \n", (int)(now1 - now) );//
+					// v8 dataset object 2 tileData
+					string errorText;
+					Local<Value> localResult = callerResult.ToLocalChecked();
+					bool tiledataok = this->innerV8Dataset2TileData(isolate, context, localResult, tileData, errorText);
+					unsigned long now2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					if(!PixelEngine::quietMode)printf("v8 value to tiledata dura:%d ms \n", (int)(now2 - now1) );
+					if(! PixelEngine::quietMode)cout << "Info : innerV8Dataset2TileData return  " << tiledataok << endl;
+					allOk = tiledataok;
+					if( tiledataok==false ){ string tempErrStr=string("tiledata exception:")+errorText; this->log( tempErrStr ) ;}//2022-7-3
+				}
+			}
+		}
+	}
+	this->m_context.Reset();
+	this->GlobalFunc_ForEachPixelCallBack.Reset();
+	this->GlobalFunc_GetPixelCallBack.Reset();
+    this->GlobalFunc_ForEachDataCallBack.Reset();
+	// Dispose the isolate and tear down V8.
+	this->isolate->Dispose();
+	return allOk;
+}

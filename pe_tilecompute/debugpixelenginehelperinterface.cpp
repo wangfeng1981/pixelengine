@@ -124,7 +124,7 @@ bool DebugPixelEngineHelperInterface::getTileDataCollection(
             unsigned char* bandDataPtr = dataPtr + ib*256*256 ;
             for(int it = 0 ; it < 256*256 ; ++ it)
             {
-                bandDataPtr[it] = dataval ;
+                bandDataPtr[it] = 1 + idt + ib ;
             }
         }
     }
