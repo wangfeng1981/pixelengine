@@ -55,7 +55,10 @@ using namespace ArduinoJson;
 //string global_connector_version_str = "connector_version:1.5.1 2022-07-03" ;
 
 //2022-7-17 增加 RunScriptForTextResultWithExtra
-string global_connector_version_str = "connector_version:1.6.0 2022-07-17" ;
+//string global_connector_version_str = "connector_version:1.6.0 2022-07-17" ;
+
+//2022-9-7 增加 RunScriptFunctionForTileResult
+string global_connector_version_str = "connector_version:1.7.0 2022-09-07" ;
 
 //外部调用，获得connector和core版本信息
 extern "C" void HBasePeHelperCppConnector_GetVersion(){
@@ -428,6 +431,64 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 
 		helper.setJavaObjectIntField(javaResult,"status",1) ;//status=1 bad.
 		//helper.setJavaObjectStringField(javaResult,"log",logStr.c_str()) ;
+		helper.setJavaObjectStringField(javaResult,"log", pe.GetPeLogs().c_str() )  ;//2022-7-3
+	}else{
+		cout<<"run script ok."<<endl ;
+		helper.setJavaObjectIntField(javaResult,"status",0) ;//status=0 ok.
+		helper.setJavaObjectIntField(javaResult,"outType", 0) ;//0-dataset, 1-png
+		helper.setJavaObjectIntField(javaResult,"dataType", retTileData.dataType ) ;
+		helper.setJavaObjectIntField(javaResult,"width",  retTileData.width ) ;
+		helper.setJavaObjectIntField(javaResult,"height", retTileData.height ) ;
+		helper.setJavaObjectIntField(javaResult,"nbands", retTileData.nbands ) ;
+		helper.setJavaObjectByteArrField(javaResult,"binaryData", retTileData.tiledata ) ;
+		helper.setJavaObjectIntField(javaResult,"z", z) ;
+		helper.setJavaObjectIntField(javaResult,"y", y) ;
+		helper.setJavaObjectIntField(javaResult,"x", x) ;
+		helper.setJavaObjectStringField(javaResult,"log", pe.GetPeLogs().c_str() )  ;//2022-7-3
+	}
+	return javaResult ;
+}
+
+
+/* 2022-9-7
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RunScriptFunctionForTileResult
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III)Lcom/pixelengine/TileComputeResult;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptFunctionForTileResult
+(
+	JNIEnv * env, 
+	jobject object,
+	jstring javaPEHelperClassName,
+	jstring scriptContent,
+	jstring caller,
+	jint z, jint y, jint x
+)
+{
+	printf("in Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptFunctionForTileResult()\n") ;
+	jclass	javaTileComputeResultClass = (env)->FindClass("com/pixelengine/TileComputeResult");
+	if( javaTileComputeResultClass == NULL )
+	{
+		printf("Error : not find class of com/pixelengine/TileComputeResult.");
+		return NULL ;
+	}
+	jobject	javaResult = env->AllocObject(javaTileComputeResultClass);
+	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ;
+	PixelEngine::initV8() ;
+	PixelEngine pe ;
+	pe.helperPointer = &helper ;
+	string cscript = JavaPixelEngineHelperInterface::jstring2cstring(env,scriptContent) ;
+	string ccaller = JavaPixelEngineHelperInterface::jstring2cstring(env,caller) ;
+	PeTileData retTileData;
+	bool runok = pe.RunScriptFunctionForTileResult(
+		cscript ,
+    ccaller,
+		z , y , x ,
+		retTileData ) ;
+	if( runok == false ){
+		cout<<"run script failed : "<<pe.GetPeLogs()<<endl;
+		helper.setJavaObjectIntField(javaResult,"status",1) ;//status=1 bad.
 		helper.setJavaObjectStringField(javaResult,"log", pe.GetPeLogs().c_str() )  ;//2022-7-3
 	}else{
 		cout<<"run script ok."<<endl ;
