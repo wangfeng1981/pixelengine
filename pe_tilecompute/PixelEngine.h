@@ -958,6 +958,13 @@ protected:
     /// let dscoll = pe.NewDatasetCollection(datatype,width,height,nband,numdt);
     static void GlobalFunc_NewDatasetCollectionCallBack(const v8::FunctionCallbackInfo<v8::Value>& args);
 
+    //2022-9-8
+    /// 数据掩摸函数
+    /// dataset.mask( masktiledata, filldata );
+    //对 dataset 进行掩摸，所谓掩摸就是masktiledata为1的值保留，反之使用填充值替换。
+    //掩摸的结果保存在当前这个dataset对象中。
+    static void GlobalFunc_DsMaskCallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+
 public:
     //2022-9-6
 	//运行脚本scriptContent中指定函数caller() ，注意不带参数，所有参数通过pe.extraData传入。

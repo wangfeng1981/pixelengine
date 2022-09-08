@@ -686,6 +686,7 @@ void unit_test_dscoll_forEachData() {
     //7. let maskds = dataset.buildmask2(vminInc,vmaxInc);
     //8. 增加外部调用接口 RunScriptFunctionForTileResult( fullscriptWithExtraDataAndSDUI );
     //9. let dscoll=pe.NewDatasetCollection(datatype,w,h,nb,numdt);
+    //10. dataset.mask(masktiledata,filldata);
 
     string script1 =
                 "function main(){"
@@ -753,6 +754,13 @@ void unit_test_dscoll_forEachData() {
                 "dscoll3.dataArr[2][0]=7;dscoll3.dataArr[2][1]=8;dscoll3.dataArr[2][2]=9;"
                 "dscoll3.mask( mask2.tiledata, 0);"
                 "let ds4=dscoll3.compose(4,1,254,0,3);"
+                "pe.log(ds4.tiledata[0]);"
+                "pe.log(ds4.tiledata[1]);"
+                "pe.log(ds4.tiledata[2]);"
+                "pe.log('test10 ...............');"
+                "let mask10=new Uint8Array(65536);"
+                "mask10[0]=0;mask10[1]=0;mask10[2]=1;"
+                "ds4.mask(mask10,99);"
                 "pe.log(ds4.tiledata[0]);"
                 "pe.log(ds4.tiledata[1]);"
                 "pe.log(ds4.tiledata[2]);"

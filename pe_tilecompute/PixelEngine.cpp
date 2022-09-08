@@ -142,7 +142,8 @@ const int PixelEngine::s_CompositeMethodSum=4;
 //7. let maskds = dataset.buildmask2(vminInc,vmaxInc);
 //8. 增加外部调用接口 RunScriptFunctionForTileResult( fullscriptWithExtraDataAndSDUI );
 //9. let dscoll=pe.NewDatasetCollection(datatype,w,h,nb,numdt);
-string PixelEngine::pejs_version = string("2.8.11.2 2022-09-04");
+//10. dataset.mask(tiledata,filldata); 2022-9-8
+string PixelEngine::pejs_version = string("2.8.11.3 2022-09-08");
 
 
 //// mapreduce not used yet.
@@ -1304,6 +1305,12 @@ Local<Object> PixelEngine::CPP_NewDataset(Isolate* isolate,Local<Context>& conte
     ,String::NewFromUtf8(isolate, "map2").ToLocalChecked(),
        FunctionTemplate::New(isolate,
         PixelEngine::GlobalFunc_DsMap2CallBack)->GetFunction(context).ToLocalChecked() );
+
+    ///dataset.mask(masktiledata,filldata); 2022-9-8
+    Maybe<bool> ok0908_1 = ds->Set(context
+    ,String::NewFromUtf8(isolate, "mask").ToLocalChecked(),
+       FunctionTemplate::New(isolate,
+        PixelEngine::GlobalFunc_DsMaskCallBack)->GetFunction(context).ToLocalChecked() );
 
 
     {
@@ -8359,6 +8366,74 @@ void PixelEngine::GlobalFunc_DsCollectionMaskCallBack(const v8::FunctionCallback
     }
     else{
         string temperr = string("Error:dataArr is empty.");
+        cout<<temperr<<endl ;
+        thisPePtr->log(temperr);
+        return ;
+    }
+}
+
+//2022-9-8
+/// 数据掩摸函数
+/// dataset.mask( masktiledata, filldata );
+//对 dataset 进行掩摸，所谓掩摸就是masktiledata为1的值保留，反之使用填充值替换。
+//掩摸的结果保存在当前这个dataset对象中。
+void PixelEngine::GlobalFunc_DsMaskCallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside c++ GlobalFunc_DsMaskCallBack"<<endl;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+	if(args.Length() == 2 )
+	{
+		//ok
+	}else
+	{
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length!=2 "<<endl ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+	Local<Value> masktiledata = args[0] ;
+    Local<Value> filldata = args[1] ;
+	if( masktiledata->IsUint8Array() && filldata->IsNumber() ){
+        //params ok
+	}else{
+        if(! PixelEngine::quietMode)cout<<"Error: bad args, not uint8Array or not a number "<<endl ;
+        return ;
+	}
+
+	Uint8Array* maskU8Array = Uint8Array::Cast( *masktiledata ) ;
+	int maskElementSize = (int)maskU8Array->Length() ;
+	if( maskU8Array->Buffer().IsEmpty() ){
+        string temperr = string("Error:maskU8Array.Buffer is empty.");
+        cout<<temperr<<endl ;
+        thisPePtr->log(temperr);
+        return ;
+	}
+	unsigned char* maskDataPtr = (unsigned char*) maskU8Array->Buffer()->GetContents().Data() ;
+	int64_t dfilldata = (int64_t) (filldata->ToNumber(context).ToLocalChecked())->Value();
+	//this pointer of dataset
+	Local<Object> dsObjThis = args.This() ;
+	int datatypeA = dsObjThis->Get(context, String::NewFromUtf8(isolate,"dataType")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int widthA =    dsObjThis->Get(context, String::NewFromUtf8(isolate,"width")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int heightA =   dsObjThis->Get(context, String::NewFromUtf8(isolate,"height")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    int nbandA =    dsObjThis->Get(context, String::NewFromUtf8(isolate,"nband")
+        .ToLocalChecked()).ToLocalChecked()->IntegerValue(context).ToChecked();
+    void* tiledataPtr = PixelEngine::V8ObjectGetTypedArrayBackPtr(isolate,dsObjThis,context,"tiledata") ;
+    if( widthA*heightA == maskElementSize )
+    {
+        CallTemplateMethods_TileDataMask(
+            tiledataPtr,
+            datatypeA,
+            nbandA,
+            maskElementSize,
+            maskDataPtr,
+            dfilldata
+        ) ;
+    }else{
+        string temperr = string("Error:data.width*height!=maskSize.");
         cout<<temperr<<endl ;
         thisPePtr->log(temperr);
         return ;
