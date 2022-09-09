@@ -58,7 +58,10 @@ using namespace ArduinoJson;
 //string global_connector_version_str = "connector_version:1.6.0 2022-07-17" ;
 
 //2022-9-7 增加 RunScriptFunctionForTileResult
-string global_connector_version_str = "connector_version:1.7.0 2022-09-07" ;
+//string global_connector_version_str = "connector_version:1.7.0 2022-09-07" ;
+
+//2022-9-9 增加 RunScriptFunctionForTextResultOrNothing
+string global_connector_version_str = "connector_version:1.8.0 2022-09-09" ;
 
 //外部调用，获得connector和core版本信息
 extern "C" void HBasePeHelperCppConnector_GetVersion(){
@@ -507,6 +510,43 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 	return javaResult ;
 }
 
+
+//2022-9-9
+JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptFunctionForTextResultOrNothing
+(
+	JNIEnv * env, 
+	jobject object,
+	jstring javaPEHelperClassName,
+	jstring scriptContent,
+	jstring caller,
+	jint z, jint y, jint x
+)
+{
+	printf("in Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptFunctionForTextResultOrNothing()\n") ;
+	
+	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
+	JavaPixelEngineHelperInterface helper(env, helperclassname) ;
+	PixelEngine::initV8() ;
+	PixelEngine pe ;
+	pe.helperPointer = &helper ;
+	string cscript = JavaPixelEngineHelperInterface::jstring2cstring(env,scriptContent) ;
+	string ccaller = JavaPixelEngineHelperInterface::jstring2cstring(env,caller) ;
+	string res0 ;
+	bool runok = pe.RunScriptFunctionForTextResultOrNothing(
+		cscript ,
+    ccaller,
+		z , y , x ,
+		res0 ) ;
+	string res1 ;
+	if( runok == false ){
+		cout<<"run script failed : "<<pe.GetPeLogs()<<endl;
+		res1 = string(";;;log;;;") + pe.GetPeLogs();
+	}else{
+		cout<<"run script ok."<<endl ;
+		res1 = res0 + string(";;;log;;;") + pe.GetPeLogs();
+	}
+	return JavaPixelEngineHelperInterface::cstring2jstring(env,res1.c_str()) ;
+}
 
 
 /* 2022-3-22 增加返回dsname,dt roi2 和 log信息到 TileComputeResultWithRunAfterInfo 里面

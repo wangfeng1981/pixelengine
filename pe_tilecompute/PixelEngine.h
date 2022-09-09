@@ -20,8 +20,12 @@
 #include <iostream>
 #include <ctime>
 #include <chrono>
-#include "lodepng.h"
 #include  <algorithm>
+#include <fstream>
+#include <sstream>
+
+#include "lodepng.h"
+
 #include "PeStyle.h"
 #include "PeTileData.h"
 #include "wstringutil.h"
@@ -31,7 +35,6 @@
 #include "wAST.h"
 #include "pemultipolygon.h"//2020-10-15
 #include "peroi.h"
-#include <memory>
 #include "ajson5.h"
 #include "esprimacpptool.h"//2022-2-12
 #include "whsegtlvobject.h"//2022-3-6
@@ -980,6 +983,21 @@ public:
         string caller,
         int z, int y, int x,
         PeTileData& tileData);
+
+    //调用脚本制定函数，可以返回字符串结果，也可以没有任何返回，如果没有任何返回resultText为空字符串.
+    bool RunScriptFunctionForTextResultOrNothing(
+        string& scriptContent,
+        string caller,
+        int z, int y, int x,  //x y z 可以给定，如果没有用给0即可。
+        string& resultText);
+
+protected:
+    //1. const isok=pe.write_file(filename, textcontent);
+    static void GlobalFunc_PE_Write_File_CallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+    //2. const textOrNull=pe.read_file(filename);
+    static void GlobalFunc_PE_Read_File_CallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+    //3. const retcodeOrN9999 = pe.call_bash("some_command param1 param2...");
+    static void GlobalFunc_PE_Call_Bash_CallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 
 } ;
 

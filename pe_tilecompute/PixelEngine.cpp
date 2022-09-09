@@ -143,8 +143,13 @@ const int PixelEngine::s_CompositeMethodSum=4;
 //8. 增加外部调用接口 RunScriptFunctionForTileResult( fullscriptWithExtraDataAndSDUI );
 //9. let dscoll=pe.NewDatasetCollection(datatype,w,h,nb,numdt);
 //10. dataset.mask(tiledata,filldata); 2022-9-8
-string PixelEngine::pejs_version = string("2.8.11.3 2022-09-08");
+//string PixelEngine::pejs_version = string("2.8.11.3 2022-09-08");
 
+//1. const isok=pe.write_file(filename, textcontent);
+//2. const textOrNull=pe.read_file(filename);
+//3. const retcodeOrN9999 = pe.call_bash("some_command param1 param2...");
+//4. RunScriptFunctionForTextResultOrNothing
+string PixelEngine::pejs_version = string("2.9.0.0 2022-09-09");
 
 //// mapreduce not used yet.
 bool PixelEngineMapReduce::isSame(PixelEngineMapReduce& mr)
@@ -3672,6 +3677,17 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
 		,String::NewFromUtf8(isolate, "NewDatasetCollection").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_NewDatasetCollectionCallBack)->GetFunction(context).ToLocalChecked() );
 
+
+    //2022-9-9
+    Maybe<bool> ok0909_1 = pe->Set(context
+		,String::NewFromUtf8(isolate, "write_file").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_PE_Write_File_CallBack)->GetFunction(context).ToLocalChecked() );
+    Maybe<bool> ok0909_2 = pe->Set(context
+		,String::NewFromUtf8(isolate, "read_file").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_PE_Read_File_CallBack)->GetFunction(context).ToLocalChecked() );
+    Maybe<bool> ok0909_3 = pe->Set(context
+		,String::NewFromUtf8(isolate, "call_bash").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_PE_Call_Bash_CallBack)->GetFunction(context).ToLocalChecked() );
 
 
 
@@ -8938,4 +8954,210 @@ bool PixelEngine::RunScriptFunctionForTileResult(
 	// Dispose the isolate and tear down V8.
 	this->isolate->Dispose();
 	return allOk;
+}
+
+
+//1. const isok=pe.write_file(filename, textcontent);
+void PixelEngine::GlobalFunc_PE_Write_File_CallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_PE_Write_File_CallBack"<<endl;
+	if (args.Length() != 2 ){
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 2 "<<endl ;
+		args.GetReturnValue().Set(false) ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+
+	Local<Value> filename0 = args[0];
+	Local<Value> textContent0 = args[1] ;
+
+    if( filename0->IsString()==false ){
+        string err="Error:filename not string.";
+        cout<<err<<endl;
+        thisPePtr->log(err);
+        args.GetReturnValue().Set(false) ;
+		return;
+    }
+
+    if( textContent0->IsString()==false ){
+        string err="Error:textContent not string.";
+        cout<<err<<endl;
+        thisPePtr->log(err);
+        args.GetReturnValue().Set(false) ;
+		return;
+    }
+
+    string filename1 = convertV8LocalValue2CppString(isolate,filename0) ;
+    string textContent1 = convertV8LocalValue2CppString(isolate,textContent0);
+    FILE* pf = fopen(filename1.c_str() , "w") ;
+    if( pf==0 ){
+        string err="Error:fopen failed.";
+        cout<<err<<endl;
+        thisPePtr->log(err);
+        args.GetReturnValue().Set(false) ;
+		return;
+    }
+    fputs( textContent1.c_str() , pf) ;
+    fclose(pf);pf=0;
+	args.GetReturnValue().Set(true) ;
+}
+//2. const textOrNull=pe.read_file(filename);
+void PixelEngine::GlobalFunc_PE_Read_File_CallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_PE_Read_File_CallBack"<<endl;
+    Isolate* isolate = args.GetIsolate() ;
+	if (args.Length() != 1 ){
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 1 "<<endl ;
+		args.GetReturnValue().SetNull() ;
+		return;
+	}
+
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+
+	Local<Value> filename0 = args[0];
+    if( filename0->IsString()==false ){
+        string err="Error:filename not string.";
+        cout<<err<<endl;
+        thisPePtr->log(err);
+        args.GetReturnValue().SetNull() ;
+		return;
+    }
+    string filename1 = convertV8LocalValue2CppString(isolate,filename0) ;
+
+    std::ifstream stream1(filename1.c_str());
+    if( stream1.good()==false ){
+        string err="Error:read stream failed.";
+        cout<<err<<endl;
+        thisPePtr->log(err);
+        args.GetReturnValue().SetNull() ;
+		return;
+    }
+    std::stringstream buffer;
+    buffer << stream1.rdbuf();
+    std::string contents(buffer.str());
+    stream1.close();
+
+    Local<String> lStr = String::NewFromUtf8(isolate,contents.c_str()).ToLocalChecked();
+	args.GetReturnValue().Set(lStr) ;
+}
+//3. const retcodeOrN9999 = pe.call_bash("some_command param1 param2...");
+void PixelEngine::GlobalFunc_PE_Call_Bash_CallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_PE_Call_Bash_CallBack"<<endl;
+    Isolate* isolate = args.GetIsolate() ;
+	if (args.Length() != 1 ){
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 1 "<<endl ;
+		args.GetReturnValue().Set(-9999) ;
+		return;
+	}
+
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+
+	Local<Value> cmd0 = args[0];
+    if( cmd0->IsString()==false ){
+        string err="Error:param not string.";
+        cout<<err<<endl;
+        thisPePtr->log(err);
+        args.GetReturnValue().Set(-9999) ;
+		return;
+    }
+    string cmd1 = convertV8LocalValue2CppString(isolate,cmd0) ;
+    int retcode = system(cmd1.c_str()) ;
+	args.GetReturnValue().Set(retcode) ;
+}
+
+bool PixelEngine::RunScriptFunctionForTextResultOrNothing(
+    string& scriptContent,
+    string caller,
+    int z, int y, int x,  //x y z 可以给定，如果没有用给0即可。
+    string& resultText)
+{
+    if(! PixelEngine::quietMode)cout << "in RunScriptFunctionForTextResultOrNothing init v8" << endl;
+	this->pe_logs.reserve(2048);//max 2k bytes.
+	this->tileInfo.x = x;
+	this->tileInfo.y = y;
+	this->tileInfo.z = z;
+	this->extraPointer = nullptr;//i don't remember what it is for.
+	this->currentDateTime = 0L;//not used yet.
+
+	bool allOk = true;
+	// Create a new Isolate and make it the current one.
+	//v8::Isolate::CreateParams create_params;
+	this->create_params.array_buffer_allocator =
+		v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+	//v8::Isolate* isolate = v8::Isolate::New(create_params);
+	this->isolate = v8::Isolate::New(create_params);
+	{
+		if(! PixelEngine::quietMode)cout << "in RunScriptFunctionForTextResultOrNothing run caller" << endl;
+		v8::Isolate::Scope isolate_scope(this->isolate);
+		v8::HandleScope handle_scope(this->isolate);
+		// Create a new context.
+		v8::Local<v8::Context> context = v8::Context::New(this->isolate);
+		v8::Context::Scope context_scope(context);// enter scope
+		PixelEngine::initTemplate(this, this->isolate, context);
+		this->m_context.Reset(this->isolate, context);
+		TryCatch try_catch(this->isolate);
+		string source = scriptContent + "var __PE__the_caller_text_result="+caller+"();";
+		// Compile the source code.
+		v8::Local<v8::Script> script;
+		if (!Script::Compile(context, String::NewFromUtf8(this->isolate,
+			source.c_str()).ToLocalChecked()).ToLocal(&script)) {
+			String::Utf8Value error(this->isolate, try_catch.Exception());
+			if(! PixelEngine::quietMode)cout << "v8 exception:" << *error << endl;
+			string exceptionStr= string("compile exception:")+(*error) ;
+			this->log( exceptionStr ) ;
+			allOk = false;
+		}
+		else
+		{
+			unsigned long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			// Run the script to get the result.
+			Local<v8::Value> result;
+			if (!script->Run(context).ToLocal(&result)) {
+				String::Utf8Value error(this->isolate, try_catch.Exception());
+				string exceptionstr = string("v8 exception:") + (*error);
+				if(! PixelEngine::quietMode)cout << exceptionstr << endl;
+				// The script failed to compile; bail out.
+				string exceptionStr=string("run exception:")+(*error) ;//2022-7-3
+                this->log( exceptionStr ) ;//2022-7-3
+				allOk = false;
+			}
+			else
+			{
+				MaybeLocal<Value> callerResult = context->Global()->Get(context
+					, String::NewFromUtf8(isolate, "__PE__the_caller_text_result").ToLocalChecked());
+				if (PixelEngine::IsMaybeLocalOK(callerResult) == false) //IsNullOrUndefined() )
+				{
+                    if(! PixelEngine::quietMode)cout << "run, not return or null." << endl;
+					allOk = true;
+				}
+				else
+				{
+					if(! PixelEngine::quietMode)cout << "run good." << endl;
+					unsigned long now1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					if (!PixelEngine::quietMode)printf("run dura:%d ms \n", (int)(now1 - now) );//
+					// v8 dataset object 2 tileData
+					Local<Value> localResult = callerResult.ToLocalChecked();
+					string result1 = convertV8LocalValue2CppString(isolate,localResult);
+					resultText = result1;
+					allOk = true;
+				}
+			}
+		}
+	}
+	this->m_context.Reset();
+	this->GlobalFunc_ForEachPixelCallBack.Reset();
+	this->GlobalFunc_GetPixelCallBack.Reset();
+    this->GlobalFunc_ForEachDataCallBack.Reset();
+	// Dispose the isolate and tear down V8.
+	this->isolate->Dispose();
+	return allOk;
+
 }

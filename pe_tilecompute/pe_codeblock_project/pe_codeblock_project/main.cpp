@@ -30,6 +30,7 @@ void unit_test_run_main_text_result();//2022-7-17
 void unit_test_get_datasetname();//2022-7-26
 void unit_test_dscoll_forEachData();//2022-9-4
 void unit_test_script_caller() ;//2022-9-6
+void unit_test_filereadwrite_bash() ;//2022-9-9
 
 int main()
 {
@@ -92,6 +93,7 @@ int main()
 
     unit_test_script_caller() ;//2022-9-6
 
+    unit_test_filereadwrite_bash();//2022-9-9
 
     return 0;
 }
@@ -814,7 +816,55 @@ void unit_test_script_caller() {
     cout<<(int)res1.tiledata[65536*2]<<endl ;
 }
 
+//2022-9-9
+void unit_test_filereadwrite_bash()
+{
+cout<<"-----------------unit_test_filereadwrite_bash ---------------"<<endl;
+    DebugPixelEngineHelperInterface debugHelper ;
+    PixelEngine::initV8() ;
+    PixelEngine pe ;
+    pe.helperPointer = &debugHelper ;
 
+    string script1 =
+                "function main(){"
+                "let ok1=pe.write_file('~/test1.json',null);"
+                "let ok2=pe.write_file('~/test2.json',JSON.stringify({name:'hehe',age:11,sex:'male'}) ) ;"
+                "let read1=pe.read_file('~/test1.json');"
+                "let read2=pe.read_file('~/test2.json');"
+                "let code1=pe.call_bash('do nothing.');"
+                "let code2=pe.call_bash('ls ~');"
+                "pe.log('ok1 '+ok1);"
+                "pe.log('ok2 '+ok2);"
+                "pe.log('read1 '+read1);"
+                "pe.log('read2 '+read2);"
+                "pe.log('bash1 '+code1);"
+                "pe.log('bash2 '+code2);"
+                "}"
+                "function func2(){"
+                "let ok1=pe.write_file('/home/hadoop/test1.json',null);"
+                "let ok2=pe.write_file('/home/hadoop/test2.json',JSON.stringify({name:'hehe',age:11,sex:'male'}) ) ;"
+                "let read1=pe.read_file('/home/hadoop/test1.json');"
+                "let read2=pe.read_file('/home/hadoop/test2.json');"
+                "let code1=pe.call_bash('do nothing.');"
+                "let code2=pe.call_bash('ls ~');"
+                "pe.log('ok1 '+ok1);"
+                "pe.log('ok2 '+ok2);"
+                "pe.log('read1 '+read1);"
+                "pe.log('read2 '+read2);"
+                "pe.log('bash1 '+code1);"
+                "pe.log('bash2 '+code2);"
+                "return read2;"
+                "}"
+                ;
+    string res1,res2;
+    bool ok1 = pe.RunScriptFunctionForTextResultOrNothing(script1,"main",0,0,0,res1);
+    bool ok2 = pe.RunScriptFunctionForTextResultOrNothing(script1,"func2",0,0,0,res2);
+    cout<<"run caller:"<<ok1<<endl ;
+    cout<<"::::log::::"<<endl<<pe.getPeLog()<<endl ;
+    cout<<"ok1 "<<ok1<<" res1 "<<res1<<endl ;
+    cout<<"ok2 "<<ok2<<" res2 "<<res2<<endl ;
+
+}
 
 
 

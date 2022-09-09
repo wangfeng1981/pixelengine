@@ -60,6 +60,14 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
 JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptFunctionForTileResult
   (JNIEnv *, jobject, jstring, jstring, jstring, jint, jint, jint);
 
+/* 2022-9-9
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RunScriptFunctionForTextResultOrNothing
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScriptFunctionForTextResultOrNothing
+  (JNIEnv *, jobject, jstring, jstring, jstring, jint, jint, jint);
+
 
 
 
