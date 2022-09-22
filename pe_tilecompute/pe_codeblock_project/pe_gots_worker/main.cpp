@@ -12,7 +12,7 @@ using namespace std;
 int main(int argc,char* argv[])
 {
     cout << "A program for GOTS v8 worker." << endl;
-    cout << "V1.0.0.0 created." << endl;
+    cout << "V1.0.0.1 created." << endl;
     cout << "usage: pe_gots_worker some.js"<<endl ;
 
     if( argc!=2 ){
@@ -34,6 +34,7 @@ int main(int argc,char* argv[])
     DebugPixelEngineHelperInterface debugHelper ;
     PixelEngine::initV8() ;
     PixelEngine pe ;
+    cout<<"pe version:"<<pe.GetVersion()<<endl ;
     pe.helperPointer = &debugHelper ;
     cout<<"run main() ..."<<endl ;
     string res1 ;

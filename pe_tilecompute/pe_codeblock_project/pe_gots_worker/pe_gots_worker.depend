@@ -1,6 +1,12 @@
 # depslib dependency file v1.0
-1662728439 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/pe_codeblock_project/pe_gots_worker/main.cpp
+1662730398 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/pe_codeblock_project/pe_gots_worker/main.cpp
 	<iostream>
+	<fstream>
+	<sstream>
+	"../../PixelEngine.h"
+	"../../../../sharedcodes/zonalstat/whsegtlvobject.h"
+	"../../wcomputelonlatarea.h"
+	"debugpixelenginehelperinterface.h"
 
 1601009658 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/compress.cpp
 	"compress.h"

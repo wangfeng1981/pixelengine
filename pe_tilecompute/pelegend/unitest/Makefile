@@ -1,2 +1,0 @@
-pelegend:../pelegend.cpp
-	g++ unittest.cpp ../pelegend.cpp ../../../../sharedcodes/wdirtools.cpp -I. -I../ -I../../../../sharedcodes -I/usr/include/cairo -o pelegend -L/usr/lib/x86_64-linux-gnu -lcairo -O2 

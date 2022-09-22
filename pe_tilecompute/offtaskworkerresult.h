@@ -13,6 +13,7 @@ class OfftaskWorkerResult
         OfftaskWorkerResult();
         int ofid ;
         int state;
+        int status;//0-not start; 1-running; 2-done; 3-failed.
         string resultRelFilepath ;// relative file path under pedir
         string toJson() ;
 };
