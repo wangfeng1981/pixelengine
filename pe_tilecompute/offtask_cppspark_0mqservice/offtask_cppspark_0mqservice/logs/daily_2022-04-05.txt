@@ -1,0 +1,444 @@
+[2022-04-05 17:09:27.612] [l] [info] --------program start---------
+[2022-04-05 17:09:27.612] [l] [info] v1.0.0 created 2022-4-5
+[2022-04-05 18:06:38.588] [l] [info] --------program start---------
+[2022-04-05 18:06:38.588] [l] [info] v1.0.0 created 2022-4-5
+[2022-04-05 18:07:39.906] [l] [info] process thread heart beat!
+[2022-04-05 18:08:40.992] [l] [info] process thread heart beat!
+[2022-04-05 18:08:57.563] [l] [info] recv nbytes 81
+[2022-04-05 18:08:57.563] [l] [info] order parsing
+[2022-04-05 18:08:57.563] [l] [info] order parsing done for:16 , 4
+[2022-04-05 18:08:57.563] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 18:08:58.014] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 18:08:58.014] [l] [info] begin process 16,4,offtask/20220405/tc2hb-180857-8611.json
+[2022-04-05 18:08:58.014] [l] [info] will call:spark-submit --master spark://vb1:7077/home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json jshbase  /var/www/html/pe/offtask/20220405/tc2hb-180857-8611.json /var/www/html/pe/offtask/20220405/tc2hb-180857-8611-result.json
+[2022-04-05 18:08:58.015] [l] [info] spark_rc:32512
+[2022-04-05 18:09:42.082] [l] [info] process thread heart beat!
+[2022-04-05 18:10:28.061] [l] [info] recv nbytes 78
+[2022-04-05 18:10:28.061] [l] [info] order parsing
+[2022-04-05 18:10:28.061] [l] [info] order parsing done for:17 , 0
+[2022-04-05 18:10:28.061] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 18:10:28.163] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 18:10:28.163] [l] [info] begin process 17,0,offtask/20220405/zs-181028-4012.json
+[2022-04-05 18:10:28.163] [l] [info] will call:spark-submit --master spark://vb1:7077/home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json stat  /var/www/html/pe/offtask/20220405/zs-181028-4012.json /var/www/html/pe/offtask/20220405/zs-181028-4012-result.json
+[2022-04-05 18:10:28.164] [l] [info] spark_rc:32512
+[2022-04-05 18:10:29.744] [l] [info] recv nbytes 78
+[2022-04-05 18:10:29.744] [l] [info] order parsing
+[2022-04-05 18:10:29.744] [l] [info] order parsing done for:18 , 1
+[2022-04-05 18:10:29.744] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 18:10:30.166] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 18:10:30.166] [l] [info] begin process 18,1,offtask/20220405/se-181029-7860.json
+[2022-04-05 18:10:30.166] [l] [info] will call:spark-submit --master spark://vb1:7077/home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json serial  /var/www/html/pe/offtask/20220405/se-181029-7860.json /var/www/html/pe/offtask/20220405/se-181029-7860-result.json
+[2022-04-05 18:10:30.168] [l] [info] spark_rc:32512
+[2022-04-05 18:10:43.188] [l] [info] process thread heart beat!
+[2022-04-05 18:11:44.276] [l] [info] process thread heart beat!
+[2022-04-05 18:12:45.385] [l] [info] process thread heart beat!
+[2022-04-05 18:13:46.438] [l] [info] process thread heart beat!
+[2022-04-05 18:14:47.515] [l] [info] process thread heart beat!
+[2022-04-05 18:15:20.227] [l] [info] --------program start---------
+[2022-04-05 18:15:20.227] [l] [info] v1.0.0 created 2022-4-5
+[2022-04-05 18:15:25.328] [l] [info] recv nbytes 78
+[2022-04-05 18:15:25.328] [l] [info] order parsing
+[2022-04-05 18:15:25.328] [l] [info] order parsing done for:19 , 1
+[2022-04-05 18:15:25.328] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 18:15:26.290] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 18:15:26.290] [l] [info] begin process 19,1,offtask/20220405/se-181525-9582.json
+[2022-04-05 18:15:26.290] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077/home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json serial  /var/www/html/pe/offtask/20220405/se-181525-9582.json /var/www/html/pe/offtask/20220405/se-181525-9582-result.json
+[2022-04-05 18:15:33.553] [l] [info] spark_rc:256
+[2022-04-05 18:16:28.879] [l] [info] process thread heart beat!
+[2022-04-05 18:16:43.760] [l] [info] --------program start---------
+[2022-04-05 18:16:43.760] [l] [info] v1.0.0 created 2022-4-5
+[2022-04-05 18:16:48.291] [l] [info] recv nbytes 78
+[2022-04-05 18:16:48.291] [l] [info] order parsing
+[2022-04-05 18:16:48.291] [l] [info] order parsing done for:20 , 1
+[2022-04-05 18:16:48.291] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 18:16:48.771] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 18:16:48.771] [l] [info] begin process 20,1,offtask/20220405/se-181648-6541.json
+[2022-04-05 18:16:48.771] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json serial  /var/www/html/pe/offtask/20220405/se-181648-6541.json /var/www/html/pe/offtask/20220405/se-181648-6541-result.json
+[2022-04-05 18:17:05.687] [l] [info] spark_rc:7680
+[2022-04-05 18:17:07.778] [l] [info] recv nbytes 78
+[2022-04-05 18:17:07.778] [l] [info] order parsing
+[2022-04-05 18:17:07.778] [l] [info] order parsing done for:21 , 0
+[2022-04-05 18:17:07.778] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 18:17:08.690] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 18:17:08.690] [l] [info] begin process 21,0,offtask/20220405/zs-181707-7360.json
+[2022-04-05 18:17:08.690] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json stat  /var/www/html/pe/offtask/20220405/zs-181707-7360.json /var/www/html/pe/offtask/20220405/zs-181707-7360-result.json
+[2022-04-05 18:17:09.852] [l] [info] recv nbytes 81
+[2022-04-05 18:17:09.852] [l] [info] order parsing
+[2022-04-05 18:17:09.852] [l] [info] order parsing done for:22 , 4
+[2022-04-05 18:17:09.852] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 18:18:07.636] [l] [info] spark_rc:512
+[2022-04-05 18:18:07.636] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 18:18:07.636] [l] [info] begin process 22,4,offtask/20220405/tc2hb-181709-3455.json
+[2022-04-05 18:18:07.636] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json jshbase  /var/www/html/pe/offtask/20220405/tc2hb-181709-3455.json /var/www/html/pe/offtask/20220405/tc2hb-181709-3455-result.json
+[2022-04-05 18:18:51.621] [l] [info] spark_rc:5376
+[2022-04-05 18:19:44.781] [l] [info] process thread heart beat!
+[2022-04-05 18:20:45.910] [l] [info] process thread heart beat!
+[2022-04-05 18:21:47.011] [l] [info] process thread heart beat!
+[2022-04-05 18:22:48.113] [l] [info] process thread heart beat!
+[2022-04-05 18:23:49.202] [l] [info] process thread heart beat!
+[2022-04-05 18:24:50.302] [l] [info] process thread heart beat!
+[2022-04-05 18:25:51.419] [l] [info] process thread heart beat!
+[2022-04-05 18:26:52.507] [l] [info] process thread heart beat!
+[2022-04-05 18:27:54.093] [l] [info] process thread heart beat!
+[2022-04-05 18:28:55.199] [l] [info] process thread heart beat!
+[2022-04-05 18:29:56.597] [l] [info] process thread heart beat!
+[2022-04-05 18:30:57.682] [l] [info] process thread heart beat!
+[2022-04-05 18:31:58.786] [l] [info] process thread heart beat!
+[2022-04-05 18:32:59.895] [l] [info] process thread heart beat!
+[2022-04-05 18:34:01.047] [l] [info] process thread heart beat!
+[2022-04-05 18:35:02.126] [l] [info] process thread heart beat!
+[2022-04-05 18:36:03.238] [l] [info] process thread heart beat!
+[2022-04-05 18:37:04.356] [l] [info] process thread heart beat!
+[2022-04-05 18:38:05.459] [l] [info] process thread heart beat!
+[2022-04-05 18:39:06.587] [l] [info] process thread heart beat!
+[2022-04-05 18:40:07.739] [l] [info] process thread heart beat!
+[2022-04-05 18:41:08.888] [l] [info] process thread heart beat!
+[2022-04-05 18:42:09.989] [l] [info] process thread heart beat!
+[2022-04-05 18:43:11.109] [l] [info] process thread heart beat!
+[2022-04-05 18:44:12.316] [l] [info] process thread heart beat!
+[2022-04-05 18:45:13.431] [l] [info] process thread heart beat!
+[2022-04-05 18:46:14.532] [l] [info] process thread heart beat!
+[2022-04-05 18:47:15.671] [l] [info] process thread heart beat!
+[2022-04-05 18:48:16.778] [l] [info] process thread heart beat!
+[2022-04-05 18:49:17.959] [l] [info] process thread heart beat!
+[2022-04-05 18:50:19.076] [l] [info] process thread heart beat!
+[2022-04-05 18:51:20.161] [l] [info] process thread heart beat!
+[2022-04-05 18:52:21.251] [l] [info] process thread heart beat!
+[2022-04-05 18:53:22.367] [l] [info] process thread heart beat!
+[2022-04-05 18:54:23.922] [l] [info] process thread heart beat!
+[2022-04-05 18:55:25.010] [l] [info] process thread heart beat!
+[2022-04-05 18:56:26.183] [l] [info] process thread heart beat!
+[2022-04-05 18:57:27.288] [l] [info] process thread heart beat!
+[2022-04-05 18:58:28.364] [l] [info] process thread heart beat!
+[2022-04-05 18:59:29.465] [l] [info] process thread heart beat!
+[2022-04-05 19:00:30.575] [l] [info] process thread heart beat!
+[2022-04-05 19:01:31.676] [l] [info] process thread heart beat!
+[2022-04-05 19:02:32.784] [l] [info] process thread heart beat!
+[2022-04-05 19:03:33.890] [l] [info] process thread heart beat!
+[2022-04-05 19:04:35.354] [l] [info] process thread heart beat!
+[2022-04-05 19:05:36.457] [l] [info] process thread heart beat!
+[2022-04-05 19:06:37.550] [l] [info] process thread heart beat!
+[2022-04-05 19:07:38.638] [l] [info] process thread heart beat!
+[2022-04-05 19:08:39.719] [l] [info] process thread heart beat!
+[2022-04-05 19:09:40.839] [l] [info] process thread heart beat!
+[2022-04-05 19:10:41.970] [l] [info] process thread heart beat!
+[2022-04-05 19:11:43.055] [l] [info] process thread heart beat!
+[2022-04-05 19:12:44.155] [l] [info] process thread heart beat!
+[2022-04-05 19:13:45.242] [l] [info] process thread heart beat!
+[2022-04-05 19:14:46.352] [l] [info] process thread heart beat!
+[2022-04-05 19:15:47.467] [l] [info] process thread heart beat!
+[2022-04-05 19:16:48.546] [l] [info] process thread heart beat!
+[2022-04-05 19:17:49.655] [l] [info] process thread heart beat!
+[2022-04-05 19:18:50.764] [l] [info] process thread heart beat!
+[2022-04-05 19:19:51.875] [l] [info] process thread heart beat!
+[2022-04-05 19:20:53.114] [l] [info] process thread heart beat!
+[2022-04-05 19:21:54.240] [l] [info] process thread heart beat!
+[2022-04-05 19:22:55.361] [l] [info] process thread heart beat!
+[2022-04-05 19:23:56.482] [l] [info] process thread heart beat!
+[2022-04-05 19:24:57.580] [l] [info] process thread heart beat!
+[2022-04-05 19:25:58.715] [l] [info] process thread heart beat!
+[2022-04-05 19:26:59.823] [l] [info] process thread heart beat!
+[2022-04-05 19:28:00.923] [l] [info] process thread heart beat!
+[2022-04-05 19:29:02.036] [l] [info] process thread heart beat!
+[2022-04-05 19:30:03.195] [l] [info] process thread heart beat!
+[2022-04-05 19:31:04.277] [l] [info] process thread heart beat!
+[2022-04-05 19:32:05.354] [l] [info] process thread heart beat!
+[2022-04-05 19:33:06.442] [l] [info] process thread heart beat!
+[2022-04-05 19:34:07.538] [l] [info] process thread heart beat!
+[2022-04-05 19:35:08.628] [l] [info] process thread heart beat!
+[2022-04-05 19:36:09.759] [l] [info] process thread heart beat!
+[2022-04-05 19:36:15.339] [l] [info] recv nbytes 81
+[2022-04-05 19:36:15.339] [l] [info] order parsing
+[2022-04-05 19:36:15.355] [l] [info] order parsing done for:23 , 4
+[2022-04-05 19:36:15.355] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 19:36:15.780] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 19:36:15.780] [l] [info] begin process 23,4,offtask/20220405/tc2hb-193615-1607.json
+[2022-04-05 19:36:15.780] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json jshbase  /var/www/html/pe/offtask/20220405/tc2hb-193615-1607.json /var/www/html/pe/offtask/20220405/tc2hb-193615-1607-result.json
+[2022-04-05 19:36:33.753] [l] [info] spark_rc:5376
+[2022-04-05 19:37:29.071] [l] [info] process thread heart beat!
+[2022-04-05 19:38:30.136] [l] [info] process thread heart beat!
+[2022-04-05 19:39:31.234] [l] [info] process thread heart beat!
+[2022-04-05 19:40:32.320] [l] [info] process thread heart beat!
+[2022-04-05 19:47:59.694] [l] [info] --------program start---------
+[2022-04-05 19:47:59.694] [l] [info] v1.0.0 created 2022-4-5
+[2022-04-05 19:53:16.757] [l] [info] --------program start---------
+[2022-04-05 19:53:16.757] [l] [info] v1.0.0 created 2022-4-5
+[2022-04-05 19:54:17.810] [l] [info] process thread heart beat!
+[2022-04-05 19:55:18.921] [l] [info] process thread heart beat!
+[2022-04-05 19:56:20.020] [l] [info] process thread heart beat!
+[2022-04-05 19:57:21.123] [l] [info] process thread heart beat!
+[2022-04-05 19:58:22.698] [l] [info] process thread heart beat!
+[2022-04-05 19:58:25.250] [l] [info] recv nbytes 81
+[2022-04-05 19:58:25.250] [l] [info] order parsing
+[2022-04-05 19:58:25.250] [l] [info] order parsing done for:24 , 4
+[2022-04-05 19:58:25.250] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 19:58:25.699] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 19:58:25.699] [l] [info] begin process 24,4,offtask/20220405/tc2hb-195825-3066.json
+[2022-04-05 19:58:25.699] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json jshbase  /var/www/html/pe/offtask/20220405/tc2hb-195825-3066.json /var/www/html/pe/offtask/20220405/tc2hb-195825-3066-result.json
+[2022-04-05 19:58:47.244] [l] [info] spark_rc:0
+[2022-04-05 19:58:55.323] [l] [info] recv nbytes 78
+[2022-04-05 19:58:55.323] [l] [info] order parsing
+[2022-04-05 19:58:55.323] [l] [info] order parsing done for:25 , 0
+[2022-04-05 19:58:55.323] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 19:58:56.256] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 19:58:56.256] [l] [info] begin process 25,0,offtask/20220405/zs-195854-1321.json
+[2022-04-05 19:58:56.256] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json stat  /var/www/html/pe/offtask/20220405/zs-195854-1321.json /var/www/html/pe/offtask/20220405/zs-195854-1321-result.json
+[2022-04-05 19:58:56.546] [l] [info] recv nbytes 78
+[2022-04-05 19:58:56.546] [l] [info] order parsing
+[2022-04-05 19:58:56.546] [l] [info] order parsing done for:26 , 1
+[2022-04-05 19:58:56.546] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 19:59:07.892] [l] [info] spark_rc:512
+[2022-04-05 19:59:07.892] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 19:59:07.892] [l] [info] begin process 26,1,offtask/20220405/se-195856-3411.json
+[2022-04-05 19:59:07.892] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json serial  /var/www/html/pe/offtask/20220405/se-195856-3411.json /var/www/html/pe/offtask/20220405/se-195856-3411-result.json
+[2022-04-05 19:59:12.939] [l] [info] spark_rc:7680
+[2022-04-05 20:00:02.001] [l] [info] process thread heart beat!
+[2022-04-05 20:01:03.067] [l] [info] process thread heart beat!
+[2022-04-05 20:02:04.136] [l] [info] process thread heart beat!
+[2022-04-05 20:03:05.284] [l] [info] process thread heart beat!
+[2022-04-05 20:04:00.730] [l] [info] recv nbytes 78
+[2022-04-05 20:04:00.730] [l] [info] order parsing
+[2022-04-05 20:04:00.730] [l] [info] order parsing done for:27 , 0
+[2022-04-05 20:04:00.730] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 20:04:01.394] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 20:04:01.394] [l] [info] begin process 27,0,offtask/20220405/zs-200400-7138.json
+[2022-04-05 20:04:01.394] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json stat  /var/www/html/pe/offtask/20220405/zs-200400-7138.json /var/www/html/pe/offtask/20220405/zs-200400-7138-result.json
+[2022-04-05 20:04:33.124] [l] [info] spark_rc:512
+[2022-04-05 20:04:38.134] [l] [info] process thread heart beat!
+[2022-04-05 20:05:35.843] [l] [info] recv nbytes 78
+[2022-04-05 20:05:35.843] [l] [info] order parsing
+[2022-04-05 20:05:35.862] [l] [info] order parsing done for:28 , 0
+[2022-04-05 20:05:35.872] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 20:05:36.224] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 20:05:36.224] [l] [info] begin process 28,0,offtask/20220405/zs-200535-7042.json
+[2022-04-05 20:05:36.234] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json stat  /var/www/html/pe/offtask/20220405/zs-200535-7042.json /var/www/html/pe/offtask/20220405/zs-200535-7042-result.json
+[2022-04-05 20:05:53.792] [l] [info] spark_rc:0
+[2022-04-05 20:05:56.795] [l] [info] process thread heart beat!
+[2022-04-05 20:06:57.860] [l] [info] process thread heart beat!
+[2022-04-05 20:07:09.645] [l] [info] recv nbytes 78
+[2022-04-05 20:07:09.645] [l] [info] order parsing
+[2022-04-05 20:07:09.645] [l] [info] order parsing done for:29 , 1
+[2022-04-05 20:07:09.645] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 20:07:09.869] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 20:07:09.869] [l] [info] begin process 29,1,offtask/20220405/se-200709-3736.json
+[2022-04-05 20:07:09.869] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json serial  /var/www/html/pe/offtask/20220405/se-200709-3736.json /var/www/html/pe/offtask/20220405/se-200709-3736-result.json
+[2022-04-05 20:07:26.852] [l] [info] spark_rc:0
+[2022-04-05 20:08:15.898] [l] [info] process thread heart beat!
+[2022-04-05 20:09:17.124] [l] [info] process thread heart beat!
+[2022-04-05 20:10:18.197] [l] [info] process thread heart beat!
+[2022-04-05 20:11:19.331] [l] [info] process thread heart beat!
+[2022-04-05 20:12:20.409] [l] [info] process thread heart beat!
+[2022-04-05 20:13:21.524] [l] [info] process thread heart beat!
+[2022-04-05 20:14:22.652] [l] [info] process thread heart beat!
+[2022-04-05 20:15:23.736] [l] [info] process thread heart beat!
+[2022-04-05 20:16:24.803] [l] [info] process thread heart beat!
+[2022-04-05 20:17:25.871] [l] [info] process thread heart beat!
+[2022-04-05 20:18:26.964] [l] [info] process thread heart beat!
+[2022-04-05 20:19:28.020] [l] [info] process thread heart beat!
+[2022-04-05 20:20:29.089] [l] [info] process thread heart beat!
+[2022-04-05 20:21:30.131] [l] [info] process thread heart beat!
+[2022-04-05 20:22:31.678] [l] [info] process thread heart beat!
+[2022-04-05 20:59:53.271] [l] [info] --------program start---------
+[2022-04-05 20:59:53.271] [l] [info] v1.0.1 created 2022-4-5
+[2022-04-05 21:00:13.309] [l] [info] recv nbytes 81
+[2022-04-05 21:00:13.309] [l] [info] order parsing
+[2022-04-05 21:00:13.309] [l] [info] order parsing done for:31 , 4
+[2022-04-05 21:00:13.309] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 21:00:13.367] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 21:00:13.367] [l] [info] begin process 31,4,offtask/20220405/tc2hb-210013-2918.json
+[2022-04-05 21:00:13.367] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json jshbase  /var/www/html/pe/offtask/20220405/tc2hb-210013-2918.json /var/www/html/pe/offtask/20220405/tc2hb-210013-2918-result.json
+[2022-04-05 21:00:16.672] [l] [info] recv nbytes 78
+[2022-04-05 21:00:16.672] [l] [info] order parsing
+[2022-04-05 21:00:16.672] [l] [info] order parsing done for:32 , 0
+[2022-04-05 21:00:16.672] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 21:00:18.674] [l] [info] recv nbytes 78
+[2022-04-05 21:00:18.674] [l] [info] order parsing
+[2022-04-05 21:00:18.674] [l] [info] order parsing done for:33 , 1
+[2022-04-05 21:00:18.674] [l] [info] global_orderMsgList add new order, curr size:2
+[2022-04-05 21:01:46.491] [l] [info] spark_rc:2
+[2022-04-05 21:01:46.491] [l] [info] prepare send result msg
+[2022-04-05 21:01:46.491] [l] [info] sendConnectResult:0
+[2022-04-05 21:01:46.491] [l] [info] send byte cnt:90
+[2022-04-05 21:01:46.491] [l] [info] global_orderMsgList pop the front order for process, curr size:1
+[2022-04-05 21:01:46.491] [l] [info] begin process 32,0,offtask/20220405/zs-210016-8556.json
+[2022-04-05 21:01:46.491] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json stat  /var/www/html/pe/offtask/20220405/zs-210016-8556.json /var/www/html/pe/offtask/20220405/zs-210016-8556-result.json
+[2022-04-05 21:04:41.153] [l] [info] --------program start---------
+[2022-04-05 21:04:41.153] [l] [info] v1.0.1 created 2022-4-5
+[2022-04-05 21:04:41.287] [l] [info] recv nbytes 81
+[2022-04-05 21:04:41.287] [l] [info] order parsing
+[2022-04-05 21:04:41.287] [l] [info] order parsing done for:34 , 4
+[2022-04-05 21:04:41.287] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 21:04:42.154] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 21:04:42.154] [l] [info] begin process 34,4,offtask/20220405/tc2hb-210430-0066.json
+[2022-04-05 21:04:42.154] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json jshbase  /var/www/html/pe/offtask/20220405/tc2hb-210430-0066.json /var/www/html/pe/offtask/20220405/tc2hb-210430-0066-result.json
+[2022-04-05 21:05:31.151] [l] [info] spark_rc:0
+[2022-04-05 21:05:31.151] [l] [info] prepare send result msg
+[2022-04-05 21:05:31.578] [l] [info] sendConnectResult:0
+[2022-04-05 21:05:31.856] [l] [info] send byte cnt:90
+[2022-04-05 21:10:12.380] [l] [info] recv nbytes 78
+[2022-04-05 21:10:12.380] [l] [info] order parsing
+[2022-04-05 21:10:12.380] [l] [info] order parsing done for:37 , 0
+[2022-04-05 21:10:12.380] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 21:10:13.240] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 21:10:13.240] [l] [info] begin process 37,0,offtask/20220405/zs-211012-1911.json
+[2022-04-05 21:10:13.240] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json stat  /var/www/html/pe/offtask/20220405/zs-211012-1911.json /var/www/html/pe/offtask/20220405/zs-211012-1911-result.json
+[2022-04-05 21:10:15.873] [l] [info] recv nbytes 78
+[2022-04-05 21:10:15.873] [l] [info] order parsing
+[2022-04-05 21:10:15.873] [l] [info] order parsing done for:38 , 1
+[2022-04-05 21:10:15.873] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 21:11:01.483] [l] [info] spark_rc:0
+[2022-04-05 21:11:01.483] [l] [info] prepare send result msg
+[2022-04-05 21:11:01.527] [l] [info] sendConnectResult:0
+[2022-04-05 21:11:01.527] [l] [info] send byte cnt:87
+[2022-04-05 21:11:01.527] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 21:11:01.527] [l] [info] begin process 38,1,offtask/20220405/se-211015-4869.json
+[2022-04-05 21:11:01.527] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json serial  /var/www/html/pe/offtask/20220405/se-211015-4869.json /var/www/html/pe/offtask/20220405/se-211015-4869-result.json
+[2022-04-05 21:11:08.764] [l] [info] recv nbytes 81
+[2022-04-05 21:11:08.764] [l] [info] order parsing
+[2022-04-05 21:11:08.764] [l] [info] order parsing done for:39 , 4
+[2022-04-05 21:11:08.764] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 21:11:50.189] [l] [info] spark_rc:0
+[2022-04-05 21:11:50.189] [l] [info] prepare send result msg
+[2022-04-05 21:11:50.189] [l] [info] sendConnectResult:0
+[2022-04-05 21:11:50.189] [l] [info] send byte cnt:87
+[2022-04-05 21:11:50.189] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 21:11:50.189] [l] [info] begin process 39,4,offtask/20220405/tc2hb-211108-7597.json
+[2022-04-05 21:11:50.189] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json jshbase  /var/www/html/pe/offtask/20220405/tc2hb-211108-7597.json /var/www/html/pe/offtask/20220405/tc2hb-211108-7597-result.json
+[2022-04-05 21:12:21.562] [l] [info] spark_rc:0
+[2022-04-05 21:12:21.562] [l] [info] prepare send result msg
+[2022-04-05 21:12:21.562] [l] [info] sendConnectResult:0
+[2022-04-05 21:12:21.562] [l] [info] send byte cnt:90
+[2022-04-05 21:17:41.618] [l] [info] process thread heart beat!
+[2022-04-05 21:27:44.243] [l] [info] process thread heart beat!
+[2022-04-05 21:37:46.522] [l] [info] process thread heart beat!
+[2022-04-05 21:47:48.681] [l] [info] process thread heart beat!
+[2022-04-05 21:57:51.046] [l] [info] process thread heart beat!
+[2022-04-05 22:07:53.252] [l] [info] process thread heart beat!
+[2022-04-05 22:17:55.791] [l] [info] process thread heart beat!
+[2022-04-05 22:27:58.423] [l] [info] process thread heart beat!
+[2022-04-05 22:38:00.654] [l] [info] process thread heart beat!
+[2022-04-05 22:47:02.047] [l] [info] recv nbytes 78
+[2022-04-05 22:47:02.047] [l] [info] order parsing
+[2022-04-05 22:47:02.047] [l] [info] order parsing done for:40 , 0
+[2022-04-05 22:47:02.047] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 22:47:02.962] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 22:47:02.962] [l] [info] begin process 40,0,offtask/20220405/zs-224701-3299.json
+[2022-04-05 22:47:02.962] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json stat  /var/www/html/pe/offtask/20220405/zs-224701-3299.json /var/www/html/pe/offtask/20220405/zs-224701-3299-result.json
+[2022-04-05 22:48:09.976] [l] [info] spark_rc:0
+[2022-04-05 22:48:09.976] [l] [info] prepare send result msg
+[2022-04-05 22:48:10.067] [l] [info] sendConnectResult:0
+[2022-04-05 22:48:10.067] [l] [info] send byte cnt:87
+[2022-04-05 22:49:02.715] [l] [info] recv nbytes 81
+[2022-04-05 22:49:02.715] [l] [info] order parsing
+[2022-04-05 22:49:02.715] [l] [info] order parsing done for:41 , 4
+[2022-04-05 22:49:02.715] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 22:49:03.165] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 22:49:03.165] [l] [info] begin process 41,4,offtask/20220405/tc2hb-224902-8014.json
+[2022-04-05 22:49:03.165] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json jshbase  /var/www/html/pe/offtask/20220405/tc2hb-224902-8014.json /var/www/html/pe/offtask/20220405/tc2hb-224902-8014-result.json
+[2022-04-05 22:49:21.502] [l] [info] spark_rc:512
+[2022-04-05 22:49:21.502] [l] [info] prepare send result msg
+[2022-04-05 22:49:21.502] [l] [info] sendConnectResult:0
+[2022-04-05 22:49:21.502] [l] [info] send byte cnt:92
+[2022-04-05 22:49:28.516] [l] [info] process thread heart beat!
+[2022-04-05 22:59:31.060] [l] [info] process thread heart beat!
+[2022-04-05 23:00:56.641] [l] [info] recv nbytes 81
+[2022-04-05 23:00:56.641] [l] [info] order parsing
+[2022-04-05 23:00:56.641] [l] [info] order parsing done for:42 , 4
+[2022-04-05 23:00:56.641] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 23:00:57.315] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 23:00:57.315] [l] [info] begin process 42,4,offtask/20220405/tc2hb-230056-0815.json
+[2022-04-05 23:00:57.315] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json jshbase  /var/www/html/pe/offtask/20220405/tc2hb-230056-0815.json /var/www/html/pe/offtask/20220405/tc2hb-230056-0815-result.json
+[2022-04-05 23:03:46.474] [l] [info] spark_rc:0
+[2022-04-05 23:03:46.475] [l] [info] prepare send result msg
+[2022-04-05 23:03:46.602] [l] [info] sendConnectResult:0
+[2022-04-05 23:03:46.602] [l] [info] send byte cnt:90
+[2022-04-05 23:06:24.997] [l] [info] recv nbytes 78
+[2022-04-05 23:06:24.997] [l] [info] order parsing
+[2022-04-05 23:06:24.997] [l] [info] order parsing done for:43 , 1
+[2022-04-05 23:06:24.997] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 23:06:25.891] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 23:06:25.891] [l] [info] begin process 43,1,offtask/20220405/se-230624-5436.json
+[2022-04-05 23:06:25.891] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json serial  /var/www/html/pe/offtask/20220405/se-230624-5436.json /var/www/html/pe/offtask/20220405/se-230624-5436-result.json
+[2022-04-05 23:06:54.215] [l] [info] recv nbytes 78
+[2022-04-05 23:06:54.215] [l] [info] order parsing
+[2022-04-05 23:06:54.215] [l] [info] order parsing done for:44 , 1
+[2022-04-05 23:06:54.215] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 23:07:06.404] [l] [info] spark_rc:0
+[2022-04-05 23:07:06.404] [l] [info] prepare send result msg
+[2022-04-05 23:07:06.423] [l] [info] sendConnectResult:0
+[2022-04-05 23:07:06.423] [l] [info] send byte cnt:87
+[2022-04-05 23:07:06.423] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 23:07:06.423] [l] [info] begin process 44,1,offtask/20220405/se-230653-3212.json
+[2022-04-05 23:07:06.423] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json serial  /var/www/html/pe/offtask/20220405/se-230653-3212.json /var/www/html/pe/offtask/20220405/se-230653-3212-result.json
+[2022-04-05 23:07:23.306] [l] [info] spark_rc:0
+[2022-04-05 23:07:23.306] [l] [info] prepare send result msg
+[2022-04-05 23:07:23.306] [l] [info] sendConnectResult:0
+[2022-04-05 23:07:23.306] [l] [info] send byte cnt:87
+[2022-04-05 23:12:34.623] [l] [info] recv nbytes 78
+[2022-04-05 23:12:34.623] [l] [info] order parsing
+[2022-04-05 23:12:34.623] [l] [info] order parsing done for:45 , 1
+[2022-04-05 23:12:34.623] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 23:12:34.838] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 23:12:34.838] [l] [info] begin process 45,1,offtask/20220405/se-231234-4866.json
+[2022-04-05 23:12:34.838] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json serial  /var/www/html/pe/offtask/20220405/se-231234-4866.json /var/www/html/pe/offtask/20220405/se-231234-4866-result.json
+[2022-04-05 23:12:53.087] [l] [info] spark_rc:0
+[2022-04-05 23:12:53.087] [l] [info] prepare send result msg
+[2022-04-05 23:12:53.088] [l] [info] sendConnectResult:0
+[2022-04-05 23:12:53.088] [l] [info] send byte cnt:87
+[2022-04-05 23:13:38.123] [l] [info] process thread heart beat!
+[2022-04-05 23:18:55.333] [l] [info] recv nbytes 78
+[2022-04-05 23:18:55.333] [l] [info] order parsing
+[2022-04-05 23:18:55.333] [l] [info] order parsing done for:46 , 1
+[2022-04-05 23:18:55.333] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 23:18:55.616] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 23:18:55.616] [l] [info] begin process 46,1,offtask/20220405/se-231855-7009.json
+[2022-04-05 23:18:55.616] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json serial  /var/www/html/pe/offtask/20220405/se-231855-7009.json /var/www/html/pe/offtask/20220405/se-231855-7009-result.json
+[2022-04-05 23:19:16.070] [l] [info] spark_rc:0
+[2022-04-05 23:19:16.070] [l] [info] prepare send result msg
+[2022-04-05 23:19:16.071] [l] [info] sendConnectResult:0
+[2022-04-05 23:19:16.071] [l] [info] send byte cnt:87
+[2022-04-05 23:24:00.765] [l] [info] process thread heart beat!
+[2022-04-05 23:24:46.932] [l] [info] recv nbytes 81
+[2022-04-05 23:24:46.932] [l] [info] order parsing
+[2022-04-05 23:24:46.932] [l] [info] order parsing done for:47 , 4
+[2022-04-05 23:24:46.932] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 23:24:47.847] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 23:24:47.847] [l] [info] begin process 47,4,offtask/20220405/tc2hb-232446-1214.json
+[2022-04-05 23:24:47.847] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json jshbase  /var/www/html/pe/offtask/20220405/tc2hb-232446-1214.json /var/www/html/pe/offtask/20220405/tc2hb-232446-1214-result.json
+[2022-04-05 23:24:57.040] [l] [info] spark_rc:512
+[2022-04-05 23:24:57.040] [l] [info] prepare send result msg
+[2022-04-05 23:24:57.040] [l] [info] sendConnectResult:0
+[2022-04-05 23:24:57.040] [l] [info] send byte cnt:92
+[2022-04-05 23:26:09.926] [l] [info] recv nbytes 78
+[2022-04-05 23:26:09.926] [l] [info] order parsing
+[2022-04-05 23:26:09.926] [l] [info] order parsing done for:48 , 1
+[2022-04-05 23:26:09.926] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 23:26:10.161] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 23:26:10.161] [l] [info] begin process 48,1,offtask/20220405/se-232609-9783.json
+[2022-04-05 23:26:10.161] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json serial  /var/www/html/pe/offtask/20220405/se-232609-9783.json /var/www/html/pe/offtask/20220405/se-232609-9783-result.json
+[2022-04-05 23:26:17.009] [l] [info] spark_rc:512
+[2022-04-05 23:26:17.009] [l] [info] prepare send result msg
+[2022-04-05 23:26:17.009] [l] [info] sendConnectResult:0
+[2022-04-05 23:26:17.009] [l] [info] send byte cnt:89
+[2022-04-05 23:27:40.714] [l] [info] recv nbytes 81
+[2022-04-05 23:27:40.714] [l] [info] order parsing
+[2022-04-05 23:27:40.714] [l] [info] order parsing done for:49 , 4
+[2022-04-05 23:27:40.714] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 23:27:41.161] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 23:27:41.161] [l] [info] begin process 49,4,offtask/20220405/tc2hb-232740-3597.json
+[2022-04-05 23:27:41.161] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json jshbase  /var/www/html/pe/offtask/20220405/tc2hb-232740-3597.json /var/www/html/pe/offtask/20220405/tc2hb-232740-3597-result.json
+[2022-04-05 23:28:39.509] [l] [info] recv nbytes 78
+[2022-04-05 23:28:39.509] [l] [info] order parsing
+[2022-04-05 23:28:39.509] [l] [info] order parsing done for:50 , 1
+[2022-04-05 23:28:39.669] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-05 23:29:23.942] [l] [info] spark_rc:0
+[2022-04-05 23:29:23.942] [l] [info] prepare send result msg
+[2022-04-05 23:29:24.562] [l] [info] sendConnectResult:0
+[2022-04-05 23:29:24.562] [l] [info] send byte cnt:90
+[2022-04-05 23:29:24.562] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-05 23:29:24.562] [l] [info] begin process 50,1,offtask/20220405/se-232837-8263.json
+[2022-04-05 23:29:24.562] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json serial  /var/www/html/pe/offtask/20220405/se-232837-8263.json /var/www/html/pe/offtask/20220405/se-232837-8263-result.json
+[2022-04-05 23:29:55.368] [l] [info] spark_rc:0
+[2022-04-05 23:29:55.368] [l] [info] prepare send result msg
+[2022-04-05 23:29:55.368] [l] [info] sendConnectResult:0
+[2022-04-05 23:29:55.368] [l] [info] send byte cnt:87

@@ -593,9 +593,9 @@ int PeLegend::drawGrayIntoPng(
             lbl1) ;
 
     }
-    int outpngwid = 0 ;
-    int outpnghei = 0 ;
-    wc.savePng2(outpngfile,outpngwid,outpnghei) ;
+    outPngWid = 0 ;
+    outPngHei = 0 ;
+    wc.savePng2(outpngfile,outPngWid,outPngHei) ;
 
     return 0 ;
 }
@@ -685,9 +685,9 @@ int PeLegend::drawRgbOrRgbaIntoPng(
 
         }
     }
-    int outpngwid = 0 ;
-    int outpnghei = 0 ;
-    wc.savePng2(outpngfile,outpngwid,outpnghei) ;
+    outPngWid = 0 ;
+    outPngHei = 0 ;
+    wc.savePng2(outpngfile,outPngWid,outPngHei) ;
     return 0 ;
 }
 int PeLegend::drawLinearOrDiscreteIntoPng(
@@ -841,9 +841,9 @@ int PeLegend::drawLinearOrDiscreteIntoPng(
 
     }
 
-    int outpngwid = 0 ;
-    int outpnghei = 0 ;
-    wc.savePng2(outpngfile,outpngwid,outpnghei) ;
+    outPngWid = 0 ;
+    outPngHei = 0 ;
+    wc.savePng2(outpngfile,outPngWid,outPngHei) ;
 
     return 0 ;
 }
@@ -944,9 +944,9 @@ int PeLegend::drawExactIntoPng(
                      ce0.label );
     }
 
-    int outpngwid = 0 ;
-    int outpnghei = 0 ;
-    wc.savePng2(outpngfile,outpngwid,outpnghei) ;
+    outPngWid = 0 ;
+    outPngHei = 0 ;
+    wc.savePng2(outpngfile,outPngWid,outPngHei) ;
 
     return 0 ;
 }

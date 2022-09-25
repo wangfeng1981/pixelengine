@@ -1,0 +1,1 @@
+./offtask_cppspark_0mqservice /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json

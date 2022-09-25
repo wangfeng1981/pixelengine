@@ -1,0 +1,38 @@
+[2022-04-09 14:53:43.020] [l] [info] --------program start---------
+[2022-04-09 14:53:43.020] [l] [info] v1.0.1 created 2022-4-5
+[2022-04-09 14:53:47.335] [l] [info] recv nbytes 78
+[2022-04-09 14:53:47.335] [l] [info] order parsing
+[2022-04-09 14:53:47.335] [l] [info] order parsing done for:59 , 0
+[2022-04-09 14:53:47.335] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-09 14:53:48.047] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-09 14:53:48.047] [l] [info] begin process 59,0,offtask/20220409/zs-145346-8933.json
+[2022-04-09 14:53:48.047] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json stat  /var/www/html/pe/offtask/20220409/zs-145346-8933.json /var/www/html/pe/offtask/20220409/zs-145346-8933-result.json
+[2022-04-09 14:53:57.562] [l] [info] spark_rc:4864
+[2022-04-09 14:53:57.562] [l] [info] prepare send result msg
+[2022-04-09 14:53:57.562] [l] [info] sendConnectResult:0
+[2022-04-09 14:53:57.562] [l] [info] send byte cnt:90
+[2022-04-09 19:29:31.211] [l] [info] --------program start---------
+[2022-04-09 19:29:31.211] [l] [info] v1.0.1 created 2022-4-5
+[2022-04-09 19:29:31.418] [l] [info] recv nbytes 78
+[2022-04-09 19:29:31.418] [l] [info] order parsing
+[2022-04-09 19:29:31.418] [l] [info] order parsing done for:67 , 1
+[2022-04-09 19:29:31.418] [l] [info] global_orderMsgList add new order, curr size:1
+[2022-04-09 19:29:32.243] [l] [info] global_orderMsgList pop the front order for process, curr size:0
+[2022-04-09 19:29:32.254] [l] [info] begin process 67,1,offtask/20220409/se-192852-1334.json
+[2022-04-09 19:29:32.254] [l] [info] will call:/usr/local/spark/bin/spark-submit --master spark://vb1:7077 /home/hadoop/IdeaProjects/Task16SparkV8TileComputing/out/artifacts/Task16SparkV8TileComputing_jar/Task16SparkV8TileComputing.jar /home/hadoop/IdeaProjects/Task17hbasewebservice/task17config.json serial  /var/www/html/pe/offtask/20220409/se-192852-1334.json /var/www/html/pe/offtask/20220409/se-192852-1334-result.json
+[2022-04-09 19:30:28.575] [l] [info] spark_rc:0
+[2022-04-09 19:30:28.575] [l] [info] prepare send result msg
+[2022-04-09 19:30:28.771] [l] [info] sendConnectResult:0
+[2022-04-09 19:30:28.771] [l] [info] send byte cnt:87
+[2022-04-09 19:40:29.623] [l] [info] process thread heart beat!
+[2022-04-09 19:50:31.810] [l] [info] process thread heart beat!
+[2022-04-09 20:00:33.605] [l] [info] process thread heart beat!
+[2022-04-09 20:10:35.348] [l] [info] process thread heart beat!
+[2022-04-09 20:20:37.016] [l] [info] process thread heart beat!
+[2022-04-09 20:30:39.206] [l] [info] process thread heart beat!
+[2022-04-09 20:40:41.131] [l] [info] process thread heart beat!
+[2022-04-09 20:50:43.144] [l] [info] process thread heart beat!
+[2022-04-09 21:00:45.079] [l] [info] process thread heart beat!
+[2022-04-09 21:10:46.980] [l] [info] process thread heart beat!
+[2022-04-09 21:20:48.926] [l] [info] process thread heart beat!
+[2022-04-09 21:30:50.905] [l] [info] process thread heart beat!

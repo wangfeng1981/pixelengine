@@ -1,0 +1,404 @@
+# depslib dependency file v1.0
+1663039922 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/offtask_cppspark_0mqservice/offtask_cppspark_0mqservice/main.cpp
+	<iostream>
+	"ajson5.h"
+	<fstream>
+	<string>
+	<list>
+	<zmq.h>
+	"spdlog/spdlog.h"
+	"spdlog/sinks/daily_file_sink.h"
+	<mutex>
+	<thread>
+	<chrono>
+	"wstringutils.h"
+	"offtaskworkerresult.h"
+
+1586374098 /home/hadoop/IdeaProjects/sharedcodes/ajson5.h
+	<stddef.h>
+	<stdint.h>
+	<string.h>
+	<fstream>
+	<string>
+	<Stream.h>
+	<istream>
+	<WString.h>
+	<string>
+	<stdlib.h>
+	<ostream>
+
+1628863889 /home/hadoop/IdeaProjects/libzmq-master/include/zmq.h
+	<errno.h>
+	<stddef.h>
+	<stdio.h>
+	<inttypes.h>
+	<stdint.h>
+	<poll.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/spdlog.h
+	<spdlog/common.h>
+	<spdlog/details/registry.h>
+	<spdlog/logger.h>
+	<spdlog/version.h>
+	<spdlog/details/synchronous_factory.h>
+	<chrono>
+	<functional>
+	<memory>
+	<string>
+	"spdlog-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/common.h
+	<spdlog/tweakme.h>
+	<spdlog/details/null_mutex.h>
+	<atomic>
+	<chrono>
+	<initializer_list>
+	<memory>
+	<exception>
+	<string>
+	<type_traits>
+	<functional>
+	<spdlog/fmt/fmt.h>
+	"common-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/tweakme.h
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/null_mutex.h
+	<atomic>
+	<utility>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/fmt/fmt.h
+	<spdlog/fmt/bundled/core.h>
+	<spdlog/fmt/bundled/format.h>
+	<fmt/core.h>
+	<fmt/format.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/fmt/bundled/core.h
+	<cstdio>
+	<cstring>
+	<functional>
+	<iterator>
+	<memory>
+	<string>
+	<type_traits>
+	<vector>
+	<string_view>
+	<experimental/string_view>
+	<fmt/core.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/fmt/bundled/format.h
+	<algorithm>
+	<cerrno>
+	<cmath>
+	<cstdint>
+	<limits>
+	<memory>
+	<stdexcept>
+	"core.h"
+	"os.h"
+	<intrin.h>
+	<fmt/format.h>
+	"format-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/fmt/bundled/format-inl.h
+	<cassert>
+	<cctype>
+	<climits>
+	<cmath>
+	<cstdarg>
+	<cstring>
+	<cwchar>
+	"format.h"
+	<locale>
+	<io.h>
+	<windows.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/common-inl.h
+	<spdlog/common.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/registry.h
+	<spdlog/common.h>
+	<spdlog/cfg/log_levels.h>
+	<chrono>
+	<functional>
+	<memory>
+	<string>
+	<unordered_map>
+	<mutex>
+	"registry-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/cfg/log_levels.h
+	<spdlog/common.h>
+	<string>
+	<unordered_map>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/registry-inl.h
+	<spdlog/details/registry.h>
+	<spdlog/common.h>
+	<spdlog/details/periodic_worker.h>
+	<spdlog/logger.h>
+	<spdlog/pattern_formatter.h>
+	<spdlog/sinks/wincolor_sink.h>
+	<spdlog/sinks/ansicolor_sink.h>
+	<chrono>
+	<functional>
+	<memory>
+	<string>
+	<unordered_map>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/periodic_worker.h
+	<chrono>
+	<condition_variable>
+	<functional>
+	<mutex>
+	<thread>
+	"periodic_worker-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/periodic_worker-inl.h
+	<spdlog/details/periodic_worker.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/logger.h
+	<spdlog/common.h>
+	<spdlog/details/log_msg.h>
+	<spdlog/details/backtracer.h>
+	<spdlog/details/os.h>
+	<vector>
+	"logger-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/log_msg.h
+	<spdlog/common.h>
+	<string>
+	"log_msg-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/log_msg-inl.h
+	<spdlog/details/log_msg.h>
+	<spdlog/details/os.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/os.h
+	<spdlog/common.h>
+	<ctime>
+	"os-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/os-inl.h
+	<spdlog/details/os.h>
+	<spdlog/common.h>
+	<algorithm>
+	<chrono>
+	<cstdio>
+	<cstdlib>
+	<cstring>
+	<ctime>
+	<string>
+	<thread>
+	<array>
+	<sys/stat.h>
+	<sys/types.h>
+	<io.h>
+	<process.h>
+	<spdlog/details/windows_include.h>
+	<share.h>
+	<limits>
+	<direct.h>
+	<fcntl.h>
+	<unistd.h>
+	<sys/syscall.h>
+	<pthread.h>
+	<pthread_np.h>
+	<lwp.h>
+	<thread.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/windows_include.h
+	<windows.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/backtracer.h
+	<spdlog/details/log_msg_buffer.h>
+	<spdlog/details/circular_q.h>
+	<atomic>
+	<mutex>
+	<functional>
+	"backtracer-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/log_msg_buffer.h
+	<spdlog/details/log_msg.h>
+	"log_msg_buffer-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/log_msg_buffer-inl.h
+	<spdlog/details/log_msg_buffer.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/circular_q.h
+	<vector>
+	<cassert>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/backtracer-inl.h
+	<spdlog/details/backtracer.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/logger-inl.h
+	<spdlog/logger.h>
+	<spdlog/sinks/sink.h>
+	<spdlog/details/backtracer.h>
+	<spdlog/pattern_formatter.h>
+	<cstdio>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/sinks/sink.h
+	<spdlog/details/log_msg.h>
+	<spdlog/formatter.h>
+	"sink-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/formatter.h
+	<spdlog/fmt/fmt.h>
+	<spdlog/details/log_msg.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/sinks/sink-inl.h
+	<spdlog/sinks/sink.h>
+	<spdlog/common.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/pattern_formatter.h
+	<spdlog/common.h>
+	<spdlog/details/log_msg.h>
+	<spdlog/details/os.h>
+	<spdlog/formatter.h>
+	<chrono>
+	<ctime>
+	<memory>
+	<string>
+	<vector>
+	<unordered_map>
+	"pattern_formatter-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/pattern_formatter-inl.h
+	<spdlog/pattern_formatter.h>
+	<spdlog/details/fmt_helper.h>
+	<spdlog/details/log_msg.h>
+	<spdlog/details/os.h>
+	<spdlog/fmt/fmt.h>
+	<spdlog/formatter.h>
+	<array>
+	<chrono>
+	<ctime>
+	<cctype>
+	<cstring>
+	<memory>
+	<mutex>
+	<string>
+	<thread>
+	<utility>
+	<vector>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/fmt_helper.h
+	<chrono>
+	<type_traits>
+	<spdlog/fmt/fmt.h>
+	<spdlog/common.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/sinks/wincolor_sink.h
+	<spdlog/common.h>
+	<spdlog/details/console_globals.h>
+	<spdlog/details/null_mutex.h>
+	<spdlog/sinks/sink.h>
+	<memory>
+	<mutex>
+	<string>
+	<array>
+	<spdlog/details/windows_include.h>
+	<wincon.h>
+	"wincolor_sink-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/console_globals.h
+	<spdlog/details/null_mutex.h>
+	<mutex>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/sinks/wincolor_sink-inl.h
+	<spdlog/sinks/wincolor_sink.h>
+	<spdlog/common.h>
+	<spdlog/pattern_formatter.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/sinks/ansicolor_sink.h
+	<spdlog/details/console_globals.h>
+	<spdlog/details/null_mutex.h>
+	<spdlog/sinks/sink.h>
+	<memory>
+	<mutex>
+	<string>
+	<array>
+	"ansicolor_sink-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/sinks/ansicolor_sink-inl.h
+	<spdlog/sinks/ansicolor_sink.h>
+	<spdlog/pattern_formatter.h>
+	<spdlog/details/os.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/version.h
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/synchronous_factory.h
+	"registry.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/spdlog-inl.h
+	<spdlog/spdlog.h>
+	<spdlog/common.h>
+	<spdlog/pattern_formatter.h>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/sinks/daily_file_sink.h
+	<spdlog/common.h>
+	<spdlog/details/file_helper.h>
+	<spdlog/details/null_mutex.h>
+	<spdlog/fmt/fmt.h>
+	<spdlog/sinks/base_sink.h>
+	<spdlog/details/os.h>
+	<spdlog/details/circular_q.h>
+	<spdlog/details/synchronous_factory.h>
+	<chrono>
+	<cstdio>
+	<ctime>
+	<mutex>
+	<string>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/file_helper.h
+	<spdlog/common.h>
+	<tuple>
+	"file_helper-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/details/file_helper-inl.h
+	<spdlog/details/file_helper.h>
+	<spdlog/details/os.h>
+	<spdlog/common.h>
+	<cerrno>
+	<chrono>
+	<cstdio>
+	<string>
+	<thread>
+	<tuple>
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/sinks/base_sink.h
+	<spdlog/common.h>
+	<spdlog/details/log_msg.h>
+	<spdlog/sinks/sink.h>
+	"base_sink-inl.h"
+
+1596708368 /home/hadoop/IdeaProjects/sharedcodes/spdlog/sinks/base_sink-inl.h
+	<spdlog/sinks/base_sink.h>
+	<spdlog/common.h>
+	<spdlog/pattern_formatter.h>
+	<memory>
+
+1641595343 source:/home/hadoop/IdeaProjects/sharedcodes/wstringutils.cpp
+
+1641595343 /home/hadoop/IdeaProjects/sharedcodes/wstringutils.h
+	<string>
+	<vector>
+	<iostream>
+	<algorithm>
+
+1649162064 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/offtaskworderresult.cpp
+	"offtaskworderresult.h"
+
+1649161918 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/offtaskworderresult.h
+	<string>
+	<sstream>
+
+1663052902 source:/home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/offtaskworkerresult.cpp
+	"offtaskworkerresult.h"
+
+1663052828 /home/hadoop/IdeaProjects/PixelEngine_TileCompute/pe_tilecompute/offtaskworkerresult.h
+	<string>
+	<sstream>
+
