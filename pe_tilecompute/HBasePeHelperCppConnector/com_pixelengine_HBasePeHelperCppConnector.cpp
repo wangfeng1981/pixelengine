@@ -64,6 +64,9 @@ using namespace ArduinoJson;
 //string global_connector_version_str = "connector_version:1.8.0 2022-09-09" ;
 
 //2022-9-27 增加 瓦片结果直接计算png二进制流
+//add ConvertRgbaData2PngBinary
+//add RenderTileData2Rgba
+//add ClipBinaryTileData
 string global_connector_version_str = "connector_version:1.9.0 2022-09-27" ;
 
 //外部调用，获得connector和core版本信息
@@ -1285,36 +1288,55 @@ jstring pestyleJsonText
 }
 
 
-// /// check script syntax ok
-// string CheckScriptOk(string& scriptSource) ;
-// /// get core version
-// inline string GetVersion() { return PixelEngine::pejs_version; }
-// //2020-9-13 get style from script
-// bool RunToGetStyleFromScript(string& scriptContent, PeStyle& retstyle, string& retLogText);
-// //2020-9-13
-// //run tile compute without render, return dataset
-// bool RunScriptForTileWithoutRender(void* extra, string& scriptContent, int64_t currentDatetime,
-// 	int z, int y, int x, PeTileData& tileData , string& logStr);
-// //run tile compute with render, return png
-// bool RunScriptForTileWithRender(void* extra, string& scriptContent, PeStyle& inStyle, int64_t currentDatetime,
-// 	int z, int y, int x, vector<unsigned char>& retPngBinary, string& logStr);//
 
-
-// //解析Dataset-Datetime 数据集时间日期对
-// bool RunScriptForDatasetDatetimePairs(void* extra,
-// 	string& scriptContent,vector<wDatasetDatetime>& retDsDtVec,string& errorText);
+/* 2022-9-27 裁剪二进制瓦片数据，裁剪区外使用filldata填充，不用v8，如果失败返回0字节数组
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    ClipBinaryTileData
+ * Signature: ([BIIIIIII[BD)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ClipBinaryTileData
+  (JNIEnv *env, jobject obj, jstring clsname,
+    jbyteArray dataArr,jint datatype,
+    jint width,jint height,jint nbands,
+    jint z,jint y,jint x,
+    jbyteArray tlvdata,jdouble filldata)
+{
 
 
 
 
+}
 
-    // const jbyteArray stringJbytes = (jbyteArray) env->CallObjectMethod(jStr, getBytes, env->NewStringUTF("UTF-8"));
+/* 2022-9-27 数据使用PeStyle（JSON格式字符串，可以为空PeStyle，空Style使用0-255渲染）渲染RGBA byte 4波段数组，不用v8，如果失败返回0字节数组
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RenderTileData2Rgba
+ * Signature: ([BIIIILjava/lang/String;)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RenderTileData2Rgba
+  (JNIEnv *env, jobject obj, jstring clsname,
+    jbyteArray dataArr,jint datatype,
+    jint width,jint height,jint nbands,
+    jstring peStyleJsonText)
+{
 
-    // size_t length = (size_t) env->GetArrayLength(stringJbytes);
-    // jbyte* pBytes = env->GetByteArrayElements(stringJbytes, NULL);
 
-    // std::string ret = std::string((char *)pBytes, length);
-    // env->ReleaseByteArrayElements(stringJbytes, pBytes, JNI_ABORT);
 
-    // env->DeleteLocalRef(javaHelperObject);
-    // env->DeleteLocalRef(javaHelperClass);
+	
+}
+
+
+/* 2022-9-27 4波段RGBA byte数组转压缩png二进制数据，不用v8，如果失败返回0字节数组
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    ConvertRgbaData2PngBinary
+ * Signature: ([BII)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_ConvertRgbaData2PngBinary
+  (JNIEnv *env, jobject obj, jstring clsname,
+    jbyteArray rgbaData,
+    jint width,jint height )
+{
+
+
+
+	
+}

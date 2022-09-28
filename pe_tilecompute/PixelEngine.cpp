@@ -149,8 +149,10 @@ const int PixelEngine::s_CompositeMethodSum=4;
 //2. const textOrNull=pe.read_file(filename);
 //3. const retcodeOrN9999 = pe.call_bash("some_command param1 param2...");
 //4. RunScriptFunctionForTextResultOrNothing 2022-9-9
-//5. add convert data into RGBA data. 2022-9-28
-string PixelEngine::pejs_version = string("2.9.0.1");
+//string PixelEngine::pejs_version = string("2.9.0.0");
+
+//1. add convert data into RGBA data. 2022-9-28
+string PixelEngine::pejs_version = string("2.10.0.0");
 
 
 //// mapreduce not used yet.
