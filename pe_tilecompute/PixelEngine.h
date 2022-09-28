@@ -999,6 +999,21 @@ protected:
     //3. const retcodeOrN9999 = pe.call_bash("some_command param1 param2...");
     static void GlobalFunc_PE_Call_Bash_CallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 
+public :
+    ///2022-9-27 不依赖v8和js，直接二进制数据渲染RGBA四波段结果,如果PeStyle无效直接按0-255绘图
+    bool RenderData2RgbaByPeStyle(
+        unsigned char* dataPtr,//BSQ
+        int datatype,
+        int wid,
+        int hei,
+        int nbands,
+        PeStyle& style,vector<unsigned char>& rgbaData,//BSQ RGBA four bands.
+        string& error) ;
+    /// public method to convert four bands RGBA byte data into png binary,
+    /// this is rewrap of private function innerRGBAData2Png, nothing more. 2022-9-27
+    bool rgbaData2Png(vector<unsigned char>& rgbaData, int width, int height, vector<unsigned char>& retPngBinary);
+
+
 } ;
 
 

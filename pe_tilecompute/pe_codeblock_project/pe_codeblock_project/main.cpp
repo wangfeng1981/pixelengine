@@ -31,6 +31,7 @@ void unit_test_get_datasetname();//2022-7-26
 void unit_test_dscoll_forEachData();//2022-9-4
 void unit_test_script_caller() ;//2022-9-6
 void unit_test_filereadwrite_bash() ;//2022-9-9
+void unit_test_data2rgba2png() ;//2022-9-28
 
 int main()
 {
@@ -94,6 +95,8 @@ int main()
     unit_test_script_caller() ;//2022-9-6
 
     unit_test_filereadwrite_bash();//2022-9-9
+
+    unit_test_data2rgba2png() ;//2022-9-28
 
     return 0;
 }
@@ -866,5 +869,73 @@ cout<<"-----------------unit_test_filereadwrite_bash ---------------"<<endl;
 
 }
 
+//2022-9-28
+void unit_test_data2rgba2png()
+{
+    DebugPixelEngineHelperInterface debugHelper ;
+    PixelEngine pe ;
+    //no v8 , no js, no helper
+    vector<short> tempFourBandData(256*256*4) ;
+    int ival=30000 ;
+    for(int ib=0;ib<4;++ib){
+        for(int iy =0;iy<256;++iy){
+            for(int ix =0;ix<256;++ix )
+            {
+                tempFourBandData[ib*65536+iy*256+ix] = ival ;
+                ival += 5 ;
+                if( ival>=65000 ) ival=1 ;
+            }
+        }
+    }
 
+    pe::PeStyle style = pe::PeStyle::emptyStyle();
+    style.type="linear";
+    pe::PeColorElement ce0 , ce1 ;
+    ce0.r=255;ce0.g=0;ce0.b=0;ce0.a=255;ce0.val=10000;
+    ce1.r=0;ce1.g=0;ce1.b=255;ce1.a=255;ce1.val=30000;
+    style.colors.push_back(ce0);
+    style.colors.push_back(ce1);
+
+
+    vector<unsigned char> rgba1 , rgba2, png1, png2;
+    string error1,error2;
+
+    bool ok1 = pe.RenderData2RgbaByPeStyle(
+        (unsigned char*)tempFourBandData.data() ,
+        3,
+        256,256,4,
+        style,
+        rgba1,
+        error1
+    ) ;
+    cout<<"1 "<<ok1<<","<<error1<<endl ;
+
+    pe::PeStyle noStyle = pe::PeStyle::emptyStyle() ;
+    bool ok2 = pe.RenderData2RgbaByPeStyle(
+        (unsigned char*)tempFourBandData.data() ,
+        3,
+        256,256,4,
+        noStyle,
+        rgba2,
+        error2
+    ) ;
+    cout<<"2 "<<ok2<<","<<error2<<endl ;
+
+    bool ok11 = pe.rgbaData2Png(rgba1,256,256,png1);
+    bool ok22 = pe.rgbaData2Png(rgba2,256,256,png2);
+    cout<<"11 "<<ok11<<endl;
+    cout<<"22 "<<ok22<<endl;
+
+    if( ok11 ){
+        FILE* pf = fopen("unit_test_data2rgba2png-1.png","wb");
+        fwrite(png1.data(),1,png1.size(),pf);
+        fclose(pf);
+    }
+    if( ok11 ){
+        FILE* pf = fopen("unit_test_data2rgba2png-2.png","wb");
+        fwrite(png2.data(),1,png2.size(),pf);
+        fclose(pf);
+    }
+
+}
 

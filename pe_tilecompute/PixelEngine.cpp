@@ -148,8 +148,10 @@ const int PixelEngine::s_CompositeMethodSum=4;
 //1. const isok=pe.write_file(filename, textcontent);
 //2. const textOrNull=pe.read_file(filename);
 //3. const retcodeOrN9999 = pe.call_bash("some_command param1 param2...");
-//4. RunScriptFunctionForTextResultOrNothing
-string PixelEngine::pejs_version = string("2.9.0.0 2022-09-09");
+//4. RunScriptFunctionForTextResultOrNothing 2022-9-9
+//5. add convert data into RGBA data. 2022-9-28
+string PixelEngine::pejs_version = string("2.9.0.1");
+
 
 //// mapreduce not used yet.
 bool PixelEngineMapReduce::isSame(PixelEngineMapReduce& mr)
@@ -9160,4 +9162,196 @@ bool PixelEngine::RunScriptFunctionForTextResultOrNothing(
 	this->isolate->Dispose();
 	return allOk;
 
+}
+
+
+//2022-9-27 不依赖v8和js，直接二进制数据渲染RGBA四波段结果,如果PeStyle无效直接按0-255绘图
+bool PixelEngine::RenderData2RgbaByPeStyle(
+    unsigned char* dataPtr,//BSQ
+        int datatype,
+        int wid,
+        int hei,
+        int nbands,
+    PeStyle& style,vector<unsigned char>& rgbaData,//BSQ RGBA four bands.
+    string& error)
+{
+    rgbaData.resize(0);
+    if( style.type=="" ){
+        //no render style
+        switch ( datatype)
+        {
+        case 1:
+        {
+            unsigned char* ptr = (unsigned char*)dataPtr;
+            this->innerData2RGBAWithoutStyle(ptr,wid,hei,nbands,rgbaData);
+        }
+        break;
+        case 2:
+        {
+            unsigned short* ptr = (unsigned short*)dataPtr;
+            this->innerData2RGBAWithoutStyle(ptr, wid,hei, nbands, rgbaData);
+        }
+        break;
+        case 3:
+        {
+            short* ptr = (short*)dataPtr;
+            this->innerData2RGBAWithoutStyle(ptr,wid,hei,nbands, rgbaData);
+        }
+        break;
+        case 4:
+        {
+            unsigned int* ptr = (unsigned int*)dataPtr;
+            this->innerData2RGBAWithoutStyle(ptr, wid,hei,nbands,rgbaData);
+        }
+        break;
+        case 5:
+        {
+            int* ptr = (int*)dataPtr;
+            this->innerData2RGBAWithoutStyle(ptr, wid,hei,nbands, rgbaData);
+        }
+        break;
+        case 6:
+        {
+            float* ptr = (float*)dataPtr;
+            this->innerData2RGBAWithoutStyle(ptr, wid,hei,nbands, rgbaData);
+        }
+        break;
+        case 7:
+        {
+            double* ptr = (double*)dataPtr;
+            this->innerData2RGBAWithoutStyle(ptr, wid,hei,nbands, rgbaData);
+        }
+        break;
+        default:
+            break;
+        }
+        //rgba to png
+        if (rgbaData.size() == 0)
+        {
+            error = "Data2RGBAWithoutStyle failed.";
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }else{
+        bool rgbaok = false;
+        string rgbaError ;
+        switch (datatype)
+        {
+            case 1:
+            {
+                unsigned char* ptr = (unsigned char*)dataPtr;
+                if (style.type == "gray" || style.type == "rgb" || style.type == "rgba") {
+                    rgbaok = this->innerData2RGBAByPeStyle2(ptr, wid,hei,nbands, style, rgbaData , rgbaError );
+                }
+                else {
+                    //discrete exact linear
+                    rgbaok = this->innerData2RGBAByPeStyle(ptr,wid,hei,nbands, style, rgbaData, rgbaError);
+                }
+            }
+            break;
+            case 2:
+            {
+                unsigned short * ptr = (unsigned short*)dataPtr;
+                if (style.type == "gray" || style.type == "rgb" || style.type == "rgba") {
+                    rgbaok = this->innerData2RGBAByPeStyle2(ptr,wid,hei,nbands, style, rgbaData, rgbaError);
+                }
+                else {
+                    //discrete exact linear
+                    rgbaok = this->innerData2RGBAByPeStyle(ptr,wid,hei,nbands, style, rgbaData, rgbaError);
+                }
+            }
+            break;
+            case 3:
+            {
+                short* ptr = (short*)dataPtr ;
+                if (style.type == "gray" || style.type == "rgb" || style.type == "rgba") {
+                    rgbaok = this->innerData2RGBAByPeStyle2(ptr,wid,hei,nbands, style, rgbaData, rgbaError);
+                }
+                else {
+                    //discrete exact linear
+                    rgbaok = this->innerData2RGBAByPeStyle(ptr,wid,hei,nbands, style, rgbaData, rgbaError);
+                }
+            }
+            break;
+            case 4:
+            {
+                unsigned int* ptr = (unsigned int*)dataPtr;
+                if (style.type == "gray" || style.type == "rgb" || style.type == "rgba") {
+                    rgbaok = this->innerData2RGBAByPeStyle2(ptr,wid,hei,nbands, style, rgbaData, rgbaError);
+                }
+                else {
+                    //discrete exact linear
+                    rgbaok = this->innerData2RGBAByPeStyle(ptr,wid,hei,nbands, style, rgbaData, rgbaError);
+                }
+            }
+            break;
+            case 5:
+            {
+                int* ptr = (int*)dataPtr ;
+                if (style.type == "gray" || style.type == "rgb" || style.type == "rgba") {
+                    rgbaok = this->innerData2RGBAByPeStyle2(ptr,wid,hei,nbands, style, rgbaData, rgbaError);
+                }
+                else {
+                    //discrete exact linear
+                    rgbaok = this->innerData2RGBAByPeStyle(ptr,wid,hei,nbands, style, rgbaData, rgbaError);
+                }
+            }
+            break;
+            case 6:
+            {
+                float* ptr = (float*)dataPtr ;
+                if (style.type == "gray" || style.type == "rgb" || style.type == "rgba") {
+                    rgbaok = this->innerData2RGBAByPeStyle2(ptr,wid,hei,nbands, style, rgbaData, rgbaError);
+                }
+                else {
+                    //discrete exact linear
+                    rgbaok = this->innerData2RGBAByPeStyle(ptr,wid,hei,nbands, style, rgbaData, rgbaError);
+                }
+            }
+            break;
+            case 7:
+            {
+                double* ptr = (double*)dataPtr ;
+                if (style.type == "gray" || style.type == "rgb" || style.type == "rgba") {
+                    rgbaok = this->innerData2RGBAByPeStyle2(ptr,wid,hei,nbands, style, rgbaData, rgbaError);
+                }
+                else {
+                    //discrete exact linear
+                    rgbaok = this->innerData2RGBAByPeStyle(ptr,wid,hei,nbands, style, rgbaData, rgbaError);
+                }
+            }
+            break;
+        default:
+            break;
+        }
+        //rgba to png
+        if (rgbaData.size() == 0||rgbaok==false)
+        {
+            error = string("Data2RGBAByPeStyle failed, ")+rgbaError;
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+}
+
+
+/// public method to convert four bands RGBA byte data into png binary,
+/// this is rewrap of private function innerRGBAData2Png, nothing more. 2022-9-27
+bool PixelEngine::rgbaData2Png(
+    vector<unsigned char>& rgbaData,
+    int width, int height,
+    vector<unsigned char>& retPngBinary)
+{
+    if( width>0 && height >0 && rgbaData.size() == width*height*4 )
+    {
+        return this->innerRGBAData2Png(rgbaData,width,height,retPngBinary);
+    }else{
+        return false;
+    }
 }

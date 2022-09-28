@@ -156,7 +156,13 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
   (JNIEnv *, jobject, jstring, jstring, jstring);
 
 
-
+/* 2022-9-27 TileComputeResult 直接使用pestyle json text渲染png二进制流数据，不经过V8和js代码
+ * Class:     com_pixelengine_HBasePeHelperCppConnector
+ * Method:    RenderTileComputeResultByPeStyleJsonText
+ * Signature: (Lcom/pixelengine/TileComputeResult;Ljava/lang/String;)Lcom/pixelengine/TileComputeResult;
+ */
+JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RenderTileComputeResultByPeStyleJsonText
+  (JNIEnv *, jobject, jstring , jobject, jstring);
 
 
 
