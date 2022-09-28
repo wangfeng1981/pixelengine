@@ -16,6 +16,7 @@
 #include "PeStyle.h"
 #include <sstream>
 #include "whsegtlvobject.h"//2022-3-23
+#include "jnihelpertools.h"//2022-9-28
 
 using namespace std;
 using namespace ArduinoJson;
@@ -67,7 +68,7 @@ using namespace ArduinoJson;
 //add ConvertRgbaData2PngBinary
 //add RenderTileData2Rgba
 //add ClipBinaryTileData
-string global_connector_version_str = "connector_version:1.9.0 2022-09-27" ;
+string global_connector_version_str = "connector_version:1.9.4" ;
 
 //外部调用，获得connector和core版本信息
 extern "C" void HBasePeHelperCppConnector_GetVersion(){
@@ -1130,166 +1131,9 @@ JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_Compute
 }
 
 
-/* 2022-9-27 TileComputeResult 直接使用pestyle json text渲染png二进制流数据，不经过V8和js代码
- * Class:     com_pixelengine_HBasePeHelperCppConnector
- * Method:    RenderTileComputeResultByPeStyleJsonText
- * Signature: (Lcom/pixelengine/TileComputeResult;Ljava/lang/String;)Lcom/pixelengine/TileComputeResult;
- */
-JNIEXPORT jobject JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RenderTileComputeResultByPeStyleJsonText
-(
-JNIEnv * env ,
-jobject object,
-jstring javaPEHelperClassName,
-jobject oldTileComputeResult,
-jstring pestyleJsonText
-)
-{
-	jclass	javaTileComputeResultClass = (env)->FindClass("com/pixelengine/TileComputeResult");
-	if( javaTileComputeResultClass == NULL )
-	{
-		printf("Error : not find class of com/pixelengine/TileComputeResult.");
-		return NULL ;
-	}
-
-	//PeStyle from json text 
-	string styleText = JavaPixelEngineHelperInterface::jstring2cstring(env,pestyleJsonText) ;
-	PeStyle style ;
-	bool styleok = style.loadFromJson(styleText) ;
-	if( styleok==false ){
-		printf("Error : parse style json failed.");
-		return NULL;
-	}
-
-	PixelEngine pe ;
 
 
-	if (style.type == "") {
-			string renderError;
-			bool renderok = innerRenderTileDataWithoutStyle(retTileData0, retPngBinary , renderError);
-			// logStr += renderError; //commented 2022-7-3
-            if( renderok==false ){ string tempErrStr=string("render exception:") + renderError;this->log(tempErrStr) ;}//2022-7-3
-			return renderok;
-		}
-		else {
-			//use input style
-			if(! PixelEngine::quietMode)cout << "Info : use input style" << endl;
-			string renderError;
-			bool renderok = this->innerRenderTileDataByPeStyle(retTileData0, inStyle,  retPngBinary, renderError);
-			// logStr += renderError;//commented 2022-7-3
-			if( renderok==false ){ string tempErrStr=string("render exception:") + renderError;this->log(tempErrStr) ;}//2022-7-3
-			return renderok;
-		}
-
-
-
-
-	string helperclassname = JavaPixelEngineHelperInterface::jstring2cstring(env,javaPEHelperClassName) ;
-	JavaPixelEngineHelperInterface helper(env, helperclassname) ;
-
-	int dataType = 0 ;
-	int outType = 0 ;
-	int nbands = 0 ;
-	int status= 0 ;
-	vector<unsigned char> olddata , newdata ;
-	int tilez,tiley,tilex ;
-
-	helper.getJavaObjectIntField(oldTileComputeResult,"status",status) ;
-	helper.getJavaObjectIntField(oldTileComputeResult,"outType",outType) ;
-	helper.getJavaObjectIntField(oldTileComputeResult,"dataType",dataType) ;
-	helper.getJavaObjectIntField(oldTileComputeResult,"nbands",nbands) ;
-	helper.getJavaObjectIntField(oldTileComputeResult,"z",tilez) ;
-	helper.getJavaObjectIntField(oldTileComputeResult,"y",tiley) ;
-	helper.getJavaObjectIntField(oldTileComputeResult,"x",tilex) ;
-	if( status==0 ){
-		helper.getJavaObjectByteArrField(oldTileComputeResult,"binaryData",olddata) ;
-		newdata.resize(olddata.size()) ;
-		//clip2
-		bool clipok = false ;
-		PixelEngine pe ;
-		if( dataType==1 ){
-			clipok = pe.innerCopyRoiData2(
-				(unsigned char*)olddata.data() ,
-				(unsigned char*)newdata.data(),
-				tlv,
-				(int)filldata1,
-				tilez, tiley, tilex,
-				256, 256 , nbands ) ;
-		}else if( dataType==2 ){
-			clipok = pe.innerCopyRoiData2(
-				(unsigned short*)olddata.data() ,
-				(unsigned short*)newdata.data(),
-				tlv,
-				(int)filldata1,
-				tilez, tiley, tilex,
-				256, 256 , nbands ) ;
-		}else if( dataType==3 ){
-			clipok = pe.innerCopyRoiData2(
-				( short*)olddata.data() ,
-				( short*)newdata.data(),
-				tlv,
-				(int)filldata1,
-				tilez, tiley, tilex,
-				256, 256 , nbands ) ;
-		}else if( dataType==4 ){
-			clipok = pe.innerCopyRoiData2(
-				(unsigned int*)olddata.data() ,
-				(unsigned int*)newdata.data(),
-				tlv,
-				(int)filldata1,
-				tilez, tiley, tilex,
-				256, 256 , nbands ) ;
-		}else if( dataType==5 ){
-			clipok = pe.innerCopyRoiData2(
-				(int*)olddata.data() ,
-				(int*)newdata.data(),
-				tlv,
-				(int)filldata1,
-				tilez, tiley, tilex,
-				256, 256 , nbands ) ;
-		}else if( dataType==6 ){
-			clipok = pe.innerCopyRoiData2(
-				(float*)olddata.data() ,
-				(float*)newdata.data(),
-				tlv,
-				(int)filldata1,
-				tilez, tiley, tilex,
-				256, 256 , nbands ) ;
-		}else if( dataType==7 ){
-			clipok = pe.innerCopyRoiData2(
-				(double*)olddata.data() ,
-				(double*)newdata.data(),
-				tlv,
-				(int)filldata1,
-				tilez, tiley, tilex,
-				256, 256 , nbands ) ;
-		}
-		if( clipok==false ){
-			cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_ClipTileComputeResultByHsegTlv bad clip."<<endl ;
-			return NULL ;
-		}
-	}
-
-
-	jobject	newResult = env->AllocObject(javaTileComputeResultClass);
-	helper.setJavaObjectIntField(newResult,"status",status) ;//status=0 ok.
-	helper.setJavaObjectIntField(newResult,"outType", outType) ;//0-dataset, 1-png
-	helper.setJavaObjectIntField(newResult,"dataType", dataType) ;//useful ?
-	helper.setJavaObjectIntField(newResult,"width",  256) ;
-	helper.setJavaObjectIntField(newResult,"height", 256) ;
-	helper.setJavaObjectIntField(newResult,"nbands", nbands) ;//useful ?
-	helper.setJavaObjectIntField(newResult,"z", tilez) ;
-	helper.setJavaObjectIntField(newResult,"y", tiley) ;
-	helper.setJavaObjectIntField(newResult,"x", tilex) ;
-	if( status==0 ){
-		helper.setJavaObjectByteArrField(newResult,"binaryData", newdata) ;
-	}
-
-	return newResult ;
-}
-
-
-
-/* 2022-9-27 裁剪二进制瓦片数据，裁剪区外使用filldata填充，不用v8，如果失败返回0字节数组
+/* 2022-9-27 裁剪二进制瓦片数据，裁剪区外使用filldata填充，不用v8，如果失败返回NULL
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    ClipBinaryTileData
  * Signature: ([BIIIIIII[BD)[B
@@ -1301,13 +1145,111 @@ JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_Clip
     jint z,jint y,jint x,
     jbyteArray tlvdata,jdouble filldata)
 {
+	//WHsegTlvObject
+	JniHelperTools jnitool ;
+	WHsegTlvObject tlv ;
+	{
+		vector<unsigned char> ctlvdata ;
+		bool oktlv = jnitool.copyJbyteArray2VectorData(env,tlvdata,ctlvdata) ;
+		if( oktlv==false ){
+			cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_ClipBinaryTileData bad input tlvdata."<<endl ;
+			return NULL ;
+		}
+		string error ;
+		bool ok1 = tlv.readFromBinaryData(ctlvdata,error) ;
+		if( ok1==false ){
+			cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_ClipBinaryTileData bad tlv:"<<error<<endl ;
+			return NULL ;
+		}
+	}
+	double filldata1 = filldata ;
 
+	int dataType = datatype ;
+	int outType =  dataType ;
+	vector<unsigned char> olddata , newdata ;
+	int tilez=z;
+	int tiley=y;
+	int tilex=x;
+	bool copyok1 = jnitool.copyJbyteArray2VectorData(env,dataArr,olddata);
+	if( copyok1==false ){
+		cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_ClipBinaryTileData copy input dataArr failed."<<endl ;
+		return NULL ;
+	}
 
-
-
+	newdata.resize(olddata.size()) ;
+	//clip2
+	bool clipok = false ;
+	PixelEngine pe ;
+	if( dataType==1 ){
+		clipok = pe.innerCopyRoiData2(
+			(unsigned char*)olddata.data() ,
+			(unsigned char*)newdata.data(),
+			tlv,
+			(int)filldata1,
+			tilez, tiley, tilex,
+			256, 256 , nbands ) ;
+	}else if( dataType==2 ){
+		clipok = pe.innerCopyRoiData2(
+			(unsigned short*)olddata.data() ,
+			(unsigned short*)newdata.data(),
+			tlv,
+			(int)filldata1,
+			tilez, tiley, tilex,
+			256, 256 , nbands ) ;
+	}else if( dataType==3 ){
+		clipok = pe.innerCopyRoiData2(
+			( short*)olddata.data() ,
+			( short*)newdata.data(),
+			tlv,
+			(int)filldata1,
+			tilez, tiley, tilex,
+			256, 256 , nbands ) ;
+	}else if( dataType==4 ){
+		clipok = pe.innerCopyRoiData2(
+			(unsigned int*)olddata.data() ,
+			(unsigned int*)newdata.data(),
+			tlv,
+			(int)filldata1,
+			tilez, tiley, tilex,
+			256, 256 , nbands ) ;
+	}else if( dataType==5 ){
+		clipok = pe.innerCopyRoiData2(
+			(int*)olddata.data() ,
+			(int*)newdata.data(),
+			tlv,
+			(int)filldata1,
+			tilez, tiley, tilex,
+			256, 256 , nbands ) ;
+	}else if( dataType==6 ){
+		clipok = pe.innerCopyRoiData2(
+			(float*)olddata.data() ,
+			(float*)newdata.data(),
+			tlv,
+			(int)filldata1,
+			tilez, tiley, tilex,
+			256, 256 , nbands ) ;
+	}else if( dataType==7 ){
+		clipok = pe.innerCopyRoiData2(
+			(double*)olddata.data() ,
+			(double*)newdata.data(),
+			tlv,
+			(int)filldata1,
+			tilez, tiley, tilex,
+			256, 256 , nbands ) ;
+	}
+	if( clipok==false ){
+		cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_ClipBinaryTileData bad clip."<<endl ;
+		return NULL ;
+	}
+	jbyteArray resArr = jnitool.createJbyteArrayByVectorData(env,newdata);
+	if( resArr==NULL){
+		cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_ClipBinaryTileData bad convert jbyteArray."<<endl ;
+		return NULL ;
+	}
+	return resArr ;
 }
 
-/* 2022-9-27 数据使用PeStyle（JSON格式字符串，可以为空PeStyle，空Style使用0-255渲染）渲染RGBA byte 4波段数组，不用v8，如果失败返回0字节数组
+/* 2022-9-27 数据使用PeStyle（JSON格式字符串，可以为空PeStyle，空Style使用0-255渲染）渲染RGBA byte 4波段数组，不用v8，如果失败返回NULL
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    RenderTileData2Rgba
  * Signature: ([BIIIILjava/lang/String;)[B
@@ -1318,14 +1260,51 @@ JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_Rend
     jint width,jint height,jint nbands,
     jstring peStyleJsonText)
 {
+	vector<unsigned char> dataVec,rgbaVec ;
+	JniHelperTools jnitool ;
+	bool copyok = jnitool.copyJbyteArray2VectorData(env, dataArr , dataVec ) ;
+	if( copyok==false ){
+		cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_RenderTileData2Rgba copy failed."<<endl;
+		return NULL ;
+	}
 
+	pe::PeStyle style ;
+	string cStyleText = JavaPixelEngineHelperInterface::jstring2cstring(env,peStyleJsonText) ;
+	if( cStyleText=="" ){
+		style = pe::PeStyle::emptyStyle();
+	}else{
+		bool styleok = style.loadFromJson(cStyleText);
+		if( styleok==false ){
+			cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_RenderTileData2Rgba style json bad:"<<cStyleText<<endl ;
+			return NULL ;
+		}
+	}
 
+	string rgbaError;
 
+	PixelEngine pe ;
+	pe.RenderData2RgbaByPeStyle(
+		dataVec.data() ,//BSQ
+        (int)datatype,
+        (int)width,
+        (int)height,
+        (int)nbands,
+        style,
+        rgbaVec,//BSQ RGBA four bands.
+        rgbaError
+		) ;
+
+	jbyteArray resArr = jnitool.createJbyteArrayByVectorData(env,rgbaVec);
+	if( resArr==NULL){
+		cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_RenderTileData2Rgba bad convert jbyteArray."<<endl ;
+		return NULL ;
+	}
+	return resArr ;
 	
 }
 
 
-/* 2022-9-27 4波段RGBA byte数组转压缩png二进制数据，不用v8，如果失败返回0字节数组
+/* 2022-9-27 4波段RGBA byte数组转压缩png二进制数据，不用v8，如果失败返回NULL
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    ConvertRgbaData2PngBinary
  * Signature: ([BII)[B
@@ -1335,8 +1314,29 @@ JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_Conv
     jbyteArray rgbaData,
     jint width,jint height )
 {
+	JniHelperTools jnitool ;
+	vector<unsigned char> rgbaVec, pngVec ;
+	bool rgbaok = jnitool.copyJbyteArray2VectorData(env,rgbaData,rgbaVec) ;
+	if( rgbaok==false ){
+		cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_ConvertRgbaData2PngBinary rgbadata bad."<<endl ;
+		return NULL ;
+	}
 
+	PixelEngine pe ;
+	bool pngok = pe.rgbaData2Png(
+		rgbaVec ,
+		width, 
+		height,
+		pngVec );
+	if( pngok==false ){
+		cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_ConvertRgbaData2PngBinary convert png bad."<<endl ;
+		return NULL ;
+	}
+	jbyteArray resArr = jnitool.createJbyteArrayByVectorData(env,pngVec);
+	if( resArr==NULL){
+		cout<<"Java_com_pixelengine_HBasePeHelperCppConnector_ConvertRgbaData2PngBinary bad convert jbyteArray."<<endl ;
+		return NULL ;
+	}
+	return resArr ;
 
-
-	
 }

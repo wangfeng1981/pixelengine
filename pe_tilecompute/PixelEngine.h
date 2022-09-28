@@ -1001,6 +1001,7 @@ protected:
 
 public :
     ///2022-9-27 不依赖v8和js，直接二进制数据渲染RGBA四波段结果,如果PeStyle无效直接按0-255绘图
+	/// 注意这里与之前内部渲染不同，这里的结果rgba是BSQ顺序，而老的程序是BIP顺序
     bool RenderData2RgbaByPeStyle(
         unsigned char* dataPtr,//BSQ
         int datatype,
@@ -1011,7 +1012,10 @@ public :
         string& error) ;
     /// public method to convert four bands RGBA byte data into png binary,
     /// this is rewrap of private function innerRGBAData2Png, nothing more. 2022-9-27
-    bool rgbaData2Png(vector<unsigned char>& rgbaData, int width, int height, vector<unsigned char>& retPngBinary);
+    bool rgbaData2Png(
+    	vector<unsigned char>& rgbaData, //BSQ
+    	int width, int height,
+    	vector<unsigned char>& retPngBinary);
 
 
 } ;

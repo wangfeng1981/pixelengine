@@ -152,7 +152,9 @@ const int PixelEngine::s_CompositeMethodSum=4;
 //string PixelEngine::pejs_version = string("2.9.0.0");
 
 //1. add convert data into RGBA data. 2022-9-28
-string PixelEngine::pejs_version = string("2.10.0.0");
+//2. bugfixed for RenderData2RgbaByPeStyle output rgba is from BIP to correct BSQ.
+//3. bugfixed. inside rgbaData2Png input BSQ data will be transform to BIP for png.
+string PixelEngine::pejs_version = string("2.10.1.2");
 
 
 //// mapreduce not used yet.
@@ -5482,8 +5484,6 @@ void PixelEngine::GlobalFunc_RoiCallBack(const v8::FunctionCallbackInfo<v8::Valu
 
 	PeRoi roi ;
 	roi.zlevel = zlevel;
-	cout<<"debug zlevel:"<<zlevel<<endl;
-	roi.zlevel = zlevel;
 	roi.proj = proj;
 	thisPePtr->roiVector.push_back(roi) ;
 	int roiIndex = thisPePtr->roiVector.size()-1;
@@ -6127,7 +6127,6 @@ bool PixelEngine::innerCopyRoiData2(
             hseg_scale_to_tilez *= 2.0 ;
         }
 	}
-
 	wLevelHseg& useRoilevel = roi.allLevelHsegs[iroilevel] ;
 
 	if( useRoilevel.hsegs.size()>0 ){
@@ -9168,6 +9167,7 @@ bool PixelEngine::RunScriptFunctionForTextResultOrNothing(
 
 
 //2022-9-27 不依赖v8和js，直接二进制数据渲染RGBA四波段结果,如果PeStyle无效直接按0-255绘图
+// 该函数最后将innerData2RGBAWithoutStyle的BIP像素顺序转为BSQ顺序
 bool PixelEngine::RenderData2RgbaByPeStyle(
     unsigned char* dataPtr,//BSQ
         int datatype,
@@ -9235,6 +9235,14 @@ bool PixelEngine::RenderData2RgbaByPeStyle(
         }
         else
         {
+        	vector<unsigned char> tempBIP = rgbaData ;
+        	const int asize = wid*hei ;
+        	for(int it=0;it<asize;++it) {
+        		rgbaData[it]         = tempBIP[it*4+0] ;
+        		rgbaData[it+asize]   = tempBIP[it*4+1] ;
+        		rgbaData[it+asize*2] = tempBIP[it*4+2] ;
+        		rgbaData[it+asize*3] = tempBIP[it*4+3] ;
+        	}
             return true;
         }
     }else{
@@ -9337,6 +9345,14 @@ bool PixelEngine::RenderData2RgbaByPeStyle(
         }
         else
         {
+        	vector<unsigned char> tempBIP = rgbaData ;
+        	const int asize = wid*hei ;
+        	for(int it=0;it<asize;++it) {
+        		rgbaData[it]         = tempBIP[it*4+0] ;
+        		rgbaData[it+asize]   = tempBIP[it*4+1] ;
+        		rgbaData[it+asize*2] = tempBIP[it*4+2] ;
+        		rgbaData[it+asize*3] = tempBIP[it*4+3] ;
+        	}
             return true;
         }
     }
@@ -9352,7 +9368,15 @@ bool PixelEngine::rgbaData2Png(
 {
     if( width>0 && height >0 && rgbaData.size() == width*height*4 )
     {
-        return this->innerRGBAData2Png(rgbaData,width,height,retPngBinary);
+    	vector<unsigned char> tempBIP = rgbaData ;
+    	const int asize = width*height ;
+    	for(int it = 0;it<asize;++it ){
+    		tempBIP[it*4+0] = rgbaData[it] ;
+    		tempBIP[it*4+1] = rgbaData[it+asize] ;
+    		tempBIP[it*4+2] = rgbaData[it+asize*2] ;
+    		tempBIP[it*4+3] = rgbaData[it+asize*3] ;
+    	}
+        return this->innerRGBAData2Png(tempBIP,width,height,retPngBinary);
     }else{
         return false;
     }

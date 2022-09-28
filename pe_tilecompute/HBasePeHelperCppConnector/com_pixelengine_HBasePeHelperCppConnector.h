@@ -156,7 +156,7 @@ JNIEXPORT jstring JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_RunScri
   (JNIEnv *, jobject, jstring, jstring, jstring);
 
 
-/* 2022-9-27 裁剪二进制瓦片数据，裁剪区外使用filldata填充，不用v8，如果失败返回0字节数组
+/* 2022-9-27 裁剪二进制瓦片数据，裁剪区外使用filldata填充，不用v8，如果失败返回NULL
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    ClipBinaryTileData
  * Signature: ([BIIIIIII[BD)[B
@@ -168,7 +168,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_Clip
     jint z,jint y,jint x,
     jbyteArray tlvdata,jdouble filldata);
 
-/* 2022-9-27 数据使用PeStyle（JSON格式字符串，可以为空PeStyle，空Style使用0-255渲染）渲染RGBA byte 4波段数组，不用v8，如果失败返回0字节数组
+/* 2022-9-27 数据使用PeStyle（JSON格式字符串，可以为空PeStyle，空Style使用0-255渲染）渲染RGBA byte 4波段数组，不用v8，如果失败返回NULL
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    RenderTileData2Rgba
  * Signature: ([BIIIILjava/lang/String;)[B
@@ -179,7 +179,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_pixelengine_HBasePeHelperCppConnector_Rend
     jint width,jint height,jint nbands,
     jstring peStyleJsonText);
 
-/* 2022-9-27 4波段RGBA byte数组转压缩png二进制数据，不用v8，如果失败返回0字节数组
+/* 2022-9-27 4波段RGBA byte数组转压缩png二进制数据，不用v8，如果失败返回NULL
  * Class:     com_pixelengine_HBasePeHelperCppConnector
  * Method:    ConvertRgbaData2PngBinary
  * Signature: ([BII)[B
