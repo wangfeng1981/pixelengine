@@ -154,7 +154,9 @@ const int PixelEngine::s_CompositeMethodSum=4;
 //1. add convert data into RGBA data. 2022-9-28
 //2. bugfixed for RenderData2RgbaByPeStyle output rgba is from BIP to correct BSQ.
 //3. bugfixed. inside rgbaData2Png input BSQ data will be transform to BIP for png.
-string PixelEngine::pejs_version = string("2.10.1.2");
+//string PixelEngine::pejs_version = string("2.10.1.2");
+//4. add pe.file_exist('/some/filename'), return true or false. 2022-12-11
+string PixelEngine::pejs_version = string("2.11.0.0");
 
 
 //// mapreduce not used yet.
@@ -3694,6 +3696,10 @@ bool PixelEngine::initTemplate( PixelEngine* thePE,Isolate* isolate, Local<Conte
     Maybe<bool> ok0909_3 = pe->Set(context
 		,String::NewFromUtf8(isolate, "call_bash").ToLocalChecked(),
            FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_PE_Call_Bash_CallBack)->GetFunction(context).ToLocalChecked() );
+    //2022-12-11
+    Maybe<bool> ok0909_4 = pe->Set(context
+		,String::NewFromUtf8(isolate, "file_exist").ToLocalChecked(),
+           FunctionTemplate::New(isolate, PixelEngine::GlobalFunc_PE_File_Exist_CallBack)->GetFunction(context).ToLocalChecked() );
 
 
 
@@ -9074,6 +9080,40 @@ void PixelEngine::GlobalFunc_PE_Call_Bash_CallBack(const v8::FunctionCallbackInf
     string cmd1 = convertV8LocalValue2CppString(isolate,cmd0) ;
     int retcode = system(cmd1.c_str()) ;
 	args.GetReturnValue().Set(retcode) ;
+}
+
+//4. const isok=pe.file_exist(filename); 2022-12-11
+void PixelEngine::GlobalFunc_PE_File_Exist_CallBack(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    if(! PixelEngine::quietMode)cout<<"inside GlobalFunc_PE_File_Exist_CallBack"<<endl;
+	if (args.Length() != 1 ){
+		if(! PixelEngine::quietMode)cout<<"Error: args.Length != 1 "<<endl ;
+		args.GetReturnValue().Set(false) ;
+		return;
+	}
+	Isolate* isolate = args.GetIsolate() ;
+	v8::HandleScope handle_scope(isolate);
+	Local<Context> context(isolate->GetCurrentContext()) ;
+    PixelEngine* thisPePtr = PixelEngine::getPixelEnginePointer(args);
+
+	Local<Value> filename0 = args[0];
+
+    if( filename0->IsString()==false ){
+        string err="Error:filename not string.";
+        cout<<err<<endl;
+        thisPePtr->log(err);
+        args.GetReturnValue().Set(false) ;
+		return;
+    }
+    string filename1 = convertV8LocalValue2CppString(isolate,filename0) ;
+
+    FILE* pf = fopen(filename1.c_str() , "r") ;
+    if( pf==0 ){
+        args.GetReturnValue().Set(false) ;
+    }else{
+        fclose(pf);pf=0;
+        args.GetReturnValue().Set(true) ;
+    }
 }
 
 bool PixelEngine::RunScriptFunctionForTextResultOrNothing(

@@ -998,6 +998,8 @@ protected:
     static void GlobalFunc_PE_Read_File_CallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
     //3. const retcodeOrN9999 = pe.call_bash("some_command param1 param2...");
     static void GlobalFunc_PE_Call_Bash_CallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
+    //4. const isok=pe.file_exist(filename); 2022-12-11
+    static void GlobalFunc_PE_File_Exist_CallBack(const v8::FunctionCallbackInfo<v8::Value>& args) ;
 
 public :
     ///2022-9-27 不依赖v8和js，直接二进制数据渲染RGBA四波段结果,如果PeStyle无效直接按0-255绘图

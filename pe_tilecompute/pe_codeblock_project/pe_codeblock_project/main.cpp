@@ -32,6 +32,7 @@ void unit_test_dscoll_forEachData();//2022-9-4
 void unit_test_script_caller() ;//2022-9-6
 void unit_test_filereadwrite_bash() ;//2022-9-9
 void unit_test_data2rgba2png() ;//2022-9-28
+void unit_test_file_exist();//2022-12-11
 
 int main()
 {
@@ -97,6 +98,8 @@ int main()
     unit_test_filereadwrite_bash();//2022-9-9
 
     unit_test_data2rgba2png() ;//2022-9-28
+
+    unit_test_file_exist();//2022-12-11
 
     return 0;
 }
@@ -937,5 +940,19 @@ void unit_test_data2rgba2png()
         fclose(pf);
     }
 
+}
+
+void unit_test_file_exist()
+{
+cout<<"-----------------unit_test_file_exist ---------------"<<endl;
+    string ss = "function main(){"
+                "let ok1=pe.file_exist('/home/hadoop/test.qgs');"
+                "let ok2=pe.file_exist('/home/hadoop/test22222.qgs');"
+                "pe.log(ok1);pe.log(ok2);"
+                "}" ;
+    DebugPixelEngineHelperInterface debugHelper ;
+    PixelEngine pe ;
+    string res1;
+    bool ok1 = pe.RunScriptFunctionForTextResultOrNothing(ss,"main",0,0,0,res1);
 }
 
